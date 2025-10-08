@@ -22,39 +22,50 @@
     </head>
     <body>
         <header>
-            <nav class="navbar navbar-expand-lg navbar-light">
-                <div class="collapse navbar-collapse" id="navbar">
-                    <a href="/" class="navbar-brand">
-                        <img src="/img/hdcevents_logo.svg" alt="HDC Events">
+            <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                <div class="container-fluid" id="navbar">
+                    <!-- Logo + título -->
+                    <a href="/" class="navbar-brand d-flex align-items-center">
+                        <img src="/img/ifpa.png" alt="Logo IFPA">
                     </a>
-                    <ul class="navbar-nav">
-                        <li class="nav-item">
-                            <a href="/" class="nav-link">Eventos</a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="/events/create" class="nav-link">Criar Eventos</a>
-                        </li>
-                        @auth
-                            <li class="nav-item">
-                                <a href="/dashboard" class="nav-link">Meus eventos</a>
-                            </li>
-                            <li class="nav-item">
-                                <form action="/logout" method="POST">
-                                    @csrf
-                                    <button type="submit" class="btn btn-link nav-link">Sair</button>
-                                </form>
+                    <h4>TADS</h4>
 
-                            </li>
-                        @endauth
-                        @guest
+                    <!-- Botão hamburguer -->
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarrr"
+                        aria-controls="navbarrr" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+
+                    <!-- Menu -->
+                    <div class="collapse navbar-collapse" id="navbarrr">
+                        <ul class="navbar-nav ms-auto">
                             <li class="nav-item">
-                                <a href="/login" class="nav-link">Entrar</a>
+                                <a href="/" class="nav-link">Eventos</a>
                             </li>
                             <li class="nav-item">
-                                <a href="/register" class="nav-link">Cadastar</a>
+                                <a href="/events/create" class="nav-link">Criar Eventos</a>
                             </li>
-                        @endguest
-                    </ul>
+                            @auth
+                                <li class="nav-item">
+                                    <a href="/dashboard" class="nav-link">Meus eventos</a>
+                                </li>
+                                <li class="nav-item">
+                                    <form action="/logout" method="POST">
+                                        @csrf
+                                        <button type="submit" class="btn btn-link nav-link" id="sair">Sair</button>
+                                    </form>
+                                </li>
+                            @endauth
+                            @guest
+                                <li class="nav-item">
+                                    <a href="/login" class="nav-link">Entrar</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="/register" class="nav-link">Cadastrar</a>
+                                </li>
+                            @endguest
+                        </ul>
+                    </div>
                 </div>
             </nav>
         </header>
@@ -69,7 +80,7 @@
             </div>
         </main>
         <footer>
-            <p>HDC Events &copy; 2020</p>
+            <p>Kenzo e Marcelo &copy; 2025</p>
         </footer>
         <!-- ionicons -->
         <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>

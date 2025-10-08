@@ -14,10 +14,15 @@ class Event extends Model
     // 
     // Já o atributo 'date' será automaticamente convertido para um objeto Carbon (classe de datas do Laravel),
     // permitindo usar métodos como format(), addDays(), diffForHumans(), etc., de forma simples.
-    protected $casts = [
-        'items' => 'array',
-        'date' => 'datetime',
-    ];
+   protected $casts = [
+    'target_audience' => 'array',
+    'prerequisites' => 'array',
+    'modules' => 'array',
+    'start_date' => 'date',
+    'end_date' => 'date',
+    'datetime_registration' => 'datetime',
+];
+
 
     // Tudo que foi enviado pelo POST pode ser atualizado, sem restrição.
     protected $guarded = [];

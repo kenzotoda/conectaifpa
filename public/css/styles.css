@@ -22,14 +22,18 @@ header {
 }
 
 .btn.btn-primary {
-    background-color: #F2A340;
-    border: 2px solid #C28008;
+    background-color: #34972F; /* verde base */
+    border: 2px solid #1F6F21; /* verde mais escuro para contraste */
+    color: #fff; /* texto branco */
+    transition: all 0.3s;
 }
 
 .btn.btn-primary:hover {
-    background-color: #C28008;
-    border-color: #C28008;
+    background-color: #1F6F21; /* verde escuro no hover */
+    border-color: #1F6F21;
+    color: #fff;
 }
+
 
 .msg {
     background-color: #D4EDD4;
@@ -43,13 +47,18 @@ header {
 
 /* Navbar */
 #navbar img {
-    width: 50px;
+    width: 100px;
 }
 
 #navbar {
     justify-content: space-between;
     background-color: #fff;
-    padding: 5px 0;
+    padding: 0px 10px;
+}
+
+.navbar_group {
+    display: flex;
+    align-items: center;
 }
 
 #navbar a {
@@ -58,37 +67,55 @@ header {
 }
 
 #navbar a:hover {
-    color: #F2A340;
+    color: #34972F;
 }
 
-#navbar button {
+/* #navbar button {
+    font-size: 14px;
+    color: #757575;
+} */
+
+#navbar #sair {
     font-size: 14px;
     color: #757575;
 }
 
-#navbar button:hover {
+#navbar #sair:hover {
     color: #F2A340;
 }
 
 /* Search Container */
 #search-container {
-    background-image: url("../img/banner.jpg");
-    background-size: cover;
-    background-position: center;
-    height: 400px;
-    padding: 50px;
+    background: linear-gradient(135deg, #002b1b, #00563f, #009f6b);
+    height: 500px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center; 
+    align-items: center;     
     text-align: center;
+    color: #fff;
 }
 
 #search-container h1 {
-    color: #F2A340;
-    margin-bottom: 30px;
-    font-weight: 900;
+    margin-bottom: 20px;
+    font-size: 2.5rem;
+    font-weight: bold;
 }
 
-#search-container form {
-    width: 50%;
-    margin: 0 auto;
+#search-container .form-control {
+    max-width: 400px;
+    padding: 15px;
+    border-radius: 30px;
+    border: none;
+    font-size: 1.1rem;
+    box-shadow: 0 0 15px rgba(0,255,150,0.3);
+    transition: box-shadow 0.3s;
+}
+
+#search-container .form-control:focus {
+    box-shadow: 0 0 25px rgba(0,255,150,0.6);
+    outline: none;
 }
 
 /* Events list */
@@ -107,7 +134,10 @@ header {
 
 #cards-container {
     display: flex;
+    flex-wrap: wrap; /* já quebra linha quando não cabe */
+     /* espaço entre os cards, horizontal e vertical */
 }
+
 
 #events-container .card {
     flex: 1 1 24%;
@@ -117,11 +147,15 @@ header {
     margin: .5%;
 }
 
-#events-container img {
-    max-height: 150px;
+#events-container .card img {
+    width: 100%;         /* ocupa toda a largura do card */
+    height: auto;        /* mantém proporção da imagem */
+    max-height: 180px;   /* opcional: limita a altura máxima */
     border-top-left-radius: 10px;
     border-top-right-radius: 10px;
+    object-fit: cover;   /* corta partes que não cabem, mas mantém proporção */
 }
+
 
 .card .card-date {
     font-size: 12px;
@@ -184,7 +218,7 @@ header {
 
 #info-container ion-icon {
     font-size: 20px;
-    color: #F2A340;
+    color: #34972F;
     margin-right: 5px;
 }
 
@@ -238,4 +272,26 @@ footer {
 
 footer p {
     margin: 0;
+}
+
+
+/* Ativo quando o menu está em modo hamburguer (até 991px) */
+@media (max-width: 991px) {
+
+    /* exemplo: deixar links com mais espaçamento */
+    #navbar .nav-link {
+        padding: 10px 0;
+    }
+}
+
+/* Até 768px (celulares), os cards ficam em coluna */
+@media (max-width: 768px) {
+    #cards-container {
+        flex-direction: column;
+        gap: 40px;
+    }
+
+    #cards-container .card {
+        max-width: 100%;
+    }
 }

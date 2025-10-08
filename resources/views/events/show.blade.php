@@ -1,4 +1,4 @@
-@extends('layouts.main')
+@extends('layouts.newMain')
 
 @section('title', $event['title'])
 
@@ -7,7 +7,7 @@
     <div class="col-md-10 offset-md-1">
         <div class="row">
             <div id="image-container" class="col-md-6">
-                <img src="/img/events/{{ $event['image'] }}" class="img-fluid" alt="{{ $event['title'] }}">
+                <img src="{{ asset('storage/events/' . $event->image) }}" class="img-fluid" alt="{{ $event['title'] }}">
             </div>
             <div id="info-container" class="col-md-6">
                 <h1>{{ $event['title'] }}</h1>
@@ -20,14 +20,18 @@
                 </form>
                 <h3>O evento conta com:</h3>
                 <ul id="items-list">
-                    @foreach ($event['items'] as $item)
-                        <li><ion-icon name="play-outline"></ion-icon><span>{{ $item }}</span></li>
-                    @endforeach
+                    @if (!empty($event['items']) && is_array($event['items']))
+                        @foreach ($event['items'] as $item)
+                            <li><ion-icon name="play-outline"></ion-icon><span>{{ $item }}</span></li>
+                        @endforeach
+                    @else
+                        <li>Não há itens de infraestrutura</li>
+                    @endif
                 </ul>
             </div>
             <div class="col-md-12" id="description-container">
                 <h3>Sobre o evento:</h3>
-                <p class="event-description">{{ $event['description'] }}</p>
+                <p class="event-description">{{ $event['description'] ?? 'Nenhuma descrição informada' }}</p>
             </div>
         </div>
     </div>

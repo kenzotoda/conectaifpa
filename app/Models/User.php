@@ -20,6 +20,10 @@ class User extends Authenticatable
     use Notifiable;
     use TwoFactorAuthenticatable;
 
+    // Constantes para papéis de usuário
+    const ROLE_COORDINATOR = 'coordinator';
+    const ROLE_PARTICIPANT = 'participant';
+
     /**
      * The attributes that are mass assignable.
      *
@@ -29,6 +33,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role', // agora o Laravel aceita atribuição de role
     ];
 
     /**
@@ -80,4 +85,13 @@ class User extends Authenticatable
         return $this->belongsToMany('App\Models\Event');
     }
 
+    public function isCoordinator()
+    {
+        return $this->role === self::ROLE_COORDINATOR;
+    }
+
+    public function isParticipant()
+    {
+        return $this->role === self::ROLE_PARTICIPANT;
+    }
 }

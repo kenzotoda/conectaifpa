@@ -2,6 +2,108 @@
 @tailwind components;
 @tailwind utilities;
 
-[x-cloak] {
-    display: none;
+:root {
+    --background: #ffffff;
+    --foreground: #374151;
+    --card: #f0fdf4;
+    --card-foreground: #374151;
+    --primary: #126D23;
+    --primary-foreground: #ffffff;
+    --secondary: #16a34a;
+    --secondary-foreground: #ffffff;
+    --muted: #f0fdf4;
+    --muted-foreground: #6b7280;
+    --accent: #16a34a;
+    --border: #e5e7eb;
+    --radius: 0.5rem;
+}
+
+.font-montserrat { font-family: 'Montserrat', sans-serif; }
+.font-open-sans { font-family: 'Open Sans', sans-serif; }
+
+.text-primary-custom { color: var(--primary); }
+.bg-primary-custom { background-color: var(--primary); }
+.bg-card { background-color: var(--card); }
+.text-card-foreground { color: var(--card-foreground); }
+.bg-secondary { background-color: var(--secondary); }
+.text-secondary { color: var(--secondary); }
+.text-muted-foreground { color: var(--muted-foreground); }
+
+.card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(18, 109, 35, 0.15);
+}
+
+/* Botões */
+.btn-primary {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    transition: all 0.3s ease;
+}
+.btn-primary:hover {
+    background-color: var(--secondary);
+    transform: translateY(-1px);
+}
+.btn-outline {
+    border: 2px solid var(--primary);
+    color: var(--primary);
+    background-color: transparent;
+    transition: all 0.3s ease;
+}
+.btn-outline:hover {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+}
+.btn-primary-simple {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    transition: none;
+}
+.btn-primary-simple:hover {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    transform: none;
+}
+
+/* Inputs e formulários */
+.form-input {
+    border: 2px solid #e5e7eb;
+    transition: all 0.3s ease;
+}
+.form-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(18, 109, 35, 0.1);
+}
+.form-label {
+    color: var(--card-foreground);
+    font-weight: 600;
+}
+
+/* Animações */
+.dynamic-item {
+    animation: slideIn 0.3s ease;
+}
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Layout flex para fixar footer */
+@layer base {
+  html, body {
+    height: 100%;
+  }
+  body {
+    @apply flex flex-col;
+  }
+  main {
+    @apply flex-1 container mx-auto px-4 py-6;
+  }
 }

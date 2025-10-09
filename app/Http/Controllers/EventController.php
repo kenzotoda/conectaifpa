@@ -170,6 +170,12 @@ class EventController extends Controller
     $event->coordinator_phone = $request->coordinator_phone;
     $event->datetime_registration = $request->datetime_registration ?? null;
 
+    // Garante que a pasta 'events' exista
+    $uploadPath = storage_path('app/public/events');
+    if (!file_exists($uploadPath)) {
+        mkdir($uploadPath, 0755, true);
+    }
+
     // Upload de imagem
     if ($request->hasFile('image') && $request->file('image')->isValid()) {
         $requestImage = $request->image;

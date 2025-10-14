@@ -1,8 +1,30 @@
 @extends('layouts.newMain')
 
-@section('title', 'Criar Evento')
+@section('title', 'Editar Evento')
 
 @section('content')
+
+    @php
+        // Público-alvo
+        $targetAudience = array_map(function($item) {
+            $val = is_string($item) ? json_decode($item, true) : $item;
+            return is_string($val) ? trim($val, '"') : $val;
+        }, $event->target_audience ?? []);
+
+        // Pré-requisitos
+        $prerequisites = array_map(function($item) {
+            $val = is_string($item) ? json_decode($item, true) : $item;
+            return is_string($val) ? trim($val, '"') : $val;
+        }, $event->prerequisites ?? []);
+
+        // Módulos
+        $modules = array_map(function($item) {
+            $val = is_string($item) ? json_decode($item, true) : $item;
+            return $val;
+        }, $event->modules ?? []);
+    @endphp
+
+
     
     <!-- Hero Section  -->
     <section class="bg-gradient-to-br from-green-50 to-emerald-50 py-12">
@@ -32,8 +54,9 @@
     <section class="py-12">
         <div class="container mx-auto px-4">
             <div class="max-w-4xl mx-auto">
-                <form action="/events" method="POST" enctype="multipart/form-data" class="bg-white rounded-2xl shadow-lg p-8">
+                <form action="/events/update/{{ $event['id'] }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-2xl shadow-lg p-8">
                     @csrf
+                    @method('PUT')
                      <!-- Basic Information  -->
                     <div class="mb-8">
                         <h2 class="font-montserrat font-bold text-2xl text-gray-800 mb-6 flex items-center">
@@ -55,42 +78,44 @@
                                     type="text" 
                                     class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
                                     placeholder="Ex: Introdução à Programação Python"
+                                    value="{{ $event->title }}"
                                     required
                                 >
                             </div>
                             
-                             <!-- Category  -->
+                            <!-- Category -->
                             <div>
                                 <label class="form-label block text-sm font-montserrat mb-2">
                                     Categoria *
                                 </label>
                                 <select id="category" name="category" class="form-input w-full px-4 py-3 rounded-lg font-open-sans" required>
                                     <option value="">Selecione uma categoria</option>
-                                    <option value="Tecnologia">Tecnologia</option>
-                                    <option value="Negócios">Negócios</option>
-                                    <option value="Design">Design</option>
-                                    <option value="Ciências">Ciências</option>
-                                    <option value="Humanas">Humanas</option>
-                                    <option value="Saúde">Saúde</option>
-                                    <option value="Idiomas">Idiomas</option>
-                                    <option value="Artes">Artes</option>
+                                    <option value="Tecnologia" <?= ($event['category'] ?? '') === 'Tecnologia' ? 'selected' : '' ?>>Tecnologia</option>
+                                    <option value="Negócios" <?= ($event['category'] ?? '') === 'Negócios' ? 'selected' : '' ?>>Negócios</option>
+                                    <option value="Design" <?= ($event['category'] ?? '') === 'Design' ? 'selected' : '' ?>>Design</option>
+                                    <option value="Ciências" <?= ($event['category'] ?? '') === 'Ciências' ? 'selected' : '' ?>>Ciências</option>
+                                    <option value="Humanas" <?= ($event['category'] ?? '') === 'Humanas' ? 'selected' : '' ?>>Humanas</option>
+                                    <option value="Saúde" <?= ($event['category'] ?? '') === 'Saúde' ? 'selected' : '' ?>>Saúde</option>
+                                    <option value="Idiomas" <?= ($event['category'] ?? '') === 'Idiomas' ? 'selected' : '' ?>>Idiomas</option>
+                                    <option value="Artes" <?= ($event['category'] ?? '') === 'Artes' ? 'selected' : '' ?>>Artes</option>
                                 </select>
                             </div>
-                            
-                             <!-- Modality  -->
+
+                            <!-- Modality -->
                             <div>
                                 <label class="form-label block text-sm font-montserrat mb-2">
                                     Modalidade *
                                 </label>
                                 <select id="modality" name="modality" class="form-input w-full px-4 py-3 rounded-lg font-open-sans" required>
                                     <option value="">Selecione a modalidade</option>
-                                    <option value="Presencial">Presencial</option>
-                                    <option value="Online">Online</option>
-                                    <option value="Híbrido">Híbrido</option>
+                                    <option value="Presencial" <?= ($event['modality'] ?? '') === 'Presencial' ? 'selected' : '' ?>>Presencial</option>
+                                    <option value="Online" <?= ($event['modality'] ?? '') === 'Online' ? 'selected' : '' ?>>Online</option>
+                                    <option value="Híbrido" <?= ($event['modality'] ?? '') === 'Híbrido' ? 'selected' : '' ?>>Híbrido</option>
                                 </select>
                             </div>
+
                             
-                             <!-- Capacity  -->
+                            <!-- Capacity  -->
                             <div>
                                 <label class="form-label block text-sm font-montserrat mb-2">
                                     Capacidade de Alunos
@@ -102,6 +127,7 @@
                                     class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
                                     placeholder="Ex: 30"
                                     min="1"
+                                    value="{{ $event->capacity }}"
                                 >
                             </div>
                             
@@ -116,12 +142,13 @@
                                     name="ead_link"
                                     class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
                                     placeholder="https://ead.universidade.edu.br/curso"
+                                    value="{{ $event->ead_link }}"
                                 >
                             </div>
                         </div>
                     </div>
 
-                     <!-- Description  -->
+                    <!-- Description -->
                     <div class="mb-8">
                         <label class="form-label block text-sm font-montserrat mb-2">
                             Descrição do Curso *
@@ -132,10 +159,10 @@
                             class="form-input w-full px-4 py-3 rounded-lg font-open-sans h-32 resize-none"
                             placeholder="Descreva seu curso, objetivos de aprendizado, metodologia e informações importantes para os alunos..."
                             required
-                        ></textarea>
+                        ><?= htmlspecialchars($event['description'] ?? '') ?></textarea>
                     </div>
 
-                     <!-- Target Audience  -->
+                    <!-- Target Audience  -->
                     <div class="mb-8">
                         <h2 class="font-montserrat font-bold text-2xl text-gray-800 mb-6 flex items-center">
                             <div class="w-8 h-8 bg-primary-custom rounded-full flex items-center justify-center mr-3">
@@ -244,7 +271,7 @@
                         <!-- ALTERAÇÃO: removi names dos inputs originais, agora serão enviados como hidden inputs dentro de cada item -->
                     </div>
 
-                     <!-- Date and Time  -->
+                    <!-- Date and Time  -->
                     <div class="mb-8">
                         <h2 class="font-montserrat font-bold text-2xl text-gray-800 mb-6 flex items-center">
                             <div class="w-8 h-8 bg-primary-custom rounded-full flex items-center justify-center mr-3">
@@ -262,10 +289,12 @@
                                 <input
                                     id="start_date"
                                     name="start_date"
-                                    type="date" 
+                                    type="date"
                                     class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
+                                    value="{{ $event->start_date->format('Y-m-d') }}"
                                     required
                                 >
+
                             </div>
                             
                              <!-- End Date  -->
@@ -278,6 +307,7 @@
                                     name="end_date"
                                     type="date" 
                                     class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
+                                    value="{{ $event->end_date ? $event->end_date->format('Y-m-d') : '' }}"
                                 >
                             </div>
                             
@@ -289,8 +319,9 @@
                                 <input
                                     id="start_time"
                                     name="start_time"
-                                    type="time" 
+                                    type="time"
                                     class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
+                                    value="{{ \Carbon\Carbon::parse($event->start_time)->format('H:i') }}"
                                 >
                             </div>
                             
@@ -301,9 +332,10 @@
                                 </label>
                                 <input
                                     id="end_time"
-                                    name="end_time" 
-                                    type="time" 
+                                    name="end_time"
+                                    type="time"
                                     class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
+                                    value="{{ $event->end_time ? \Carbon\Carbon::parse($event->end_time)->format('H:i') : '' }}"
                                 >
                             </div>
                         </div>
@@ -330,6 +362,7 @@
                                     type="text" 
                                     class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
                                     placeholder="Ex: Campus Central"
+                                    value="{{ $event->campus }}"
                                     required
                                 >
                             </div>
@@ -345,6 +378,7 @@
                                     type="text" 
                                     class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
                                     placeholder="Ex: Bloco A - 2º andar"
+                                    value="{{ $event->building }}"
                                     required
                                 >
                             </div>
@@ -360,6 +394,7 @@
                                     type="text" 
                                     class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
                                     placeholder="Ex: Sala 201 - Laboratório de Informática"
+                                    value="{{ $event->venue }}"
                                     required
                                 >
                             </div>
@@ -375,12 +410,13 @@
                                     type="text" 
                                     class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
                                     placeholder="Ex: Rua Exemplo, 123 - Bairro"
+                                    value="{{ $event->address }}"
                                     required
                                 >
                             </div>
                         </div>
                         
-                         <!-- Additional Location Info  -->
+                        <!-- Additional Location Info  -->
                         <div class="mt-4">
                             <label class="form-label block text-sm font-montserrat mb-2">
                                 Informações Adicionais de Localização
@@ -390,8 +426,9 @@
                                 name="location_details"
                                 class="form-input w-full px-4 py-3 rounded-lg font-open-sans h-20 resize-none"
                                 placeholder="Pontos de referência, instruções de acesso, estacionamento..."
-                            ></textarea>
+                            ><?= htmlspecialchars($event->location_details ?? '') ?></textarea>
                         </div>
+
                     </div>
 
                     <!-- Course Image -->
@@ -421,9 +458,15 @@
                                 Selecionar Arquivo
                             </button>
                         </div>
+
+                        @if ($event->image)
+                            <div class="mt-4 flex justify-center">
+                                <img src="{{ asset('storage/events/' . $event->image) }}" 
+                                    alt="Imagem do curso"
+                                    class="rounded-lg shadow-md max-h-48 object-cover">
+                            </div>
+                        @endif
                     </div>
-
-
 
 
                      <!-- Coordination Contact  -->
@@ -447,6 +490,7 @@
                                     type="text" 
                                     class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
                                     placeholder="Ex: Prof. Dr. João Silva"
+                                    value="{{ $event->coordinator_name }}"
                                     required
                                 >
                             </div>
@@ -462,6 +506,7 @@
                                     type="email" 
                                     class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
                                     placeholder="coordenacao@universidade.edu.br"
+                                    value="{{ $event->coordinator_email }}"
                                     required
                                 >
                             </div>
@@ -477,6 +522,7 @@
                                     type="tel" 
                                     class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
                                     placeholder="(11) 99999-9999"
+                                    value="{{ $event->coordinator_phone }}"
                                     required
                                 >
                             </div>
@@ -515,6 +561,7 @@
                                     name="datetime_registration"
                                     type="datetime-local" 
                                     class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
+                                    value="{{ $event->datetime_registration }}"
                                 >
                             </div>
                         </div>
@@ -534,9 +581,9 @@
         </div>
     </section>
 
-     
     <script>
-        // LÓGICA DO EAD-LINK
+    document.addEventListener("DOMContentLoaded", () => {
+
         const modalitySelect = document.getElementById('modality');
         const eadContainer = document.getElementById('ead-link-container');
         const eadInput = document.getElementById('ead-link');
@@ -557,92 +604,99 @@
         // Executa quando o usuário muda a modalidade
         modalitySelect.addEventListener('change', toggleEAD);
 
+        // --- Funções genéricas de adicionar/remover ---
+        function createItem(containerId, nameAttr, value) {
+            const list = document.getElementById(containerId);
+            const item = document.createElement('div');
+            item.className = 'dynamic-item flex items-center justify-between bg-gray-50 px-4 py-3 rounded-lg';
+            item.innerHTML = `
+                <span class="font-open-sans text-gray-700">${value}</span>
+                <input type="hidden" name="${nameAttr}" value='${JSON.stringify(value)}'>
+                <button type="button" onclick="this.parentElement.remove()" 
+                        class="text-red-500 hover:text-red-700 font-bold">&times;</button>
+            `;
+            list.appendChild(item);
+        }
 
-        // --- Target Audience ---
-        function addTargetAudience() {
+        // --- Público Alvo ---
+        const oldTargetAudience = @json($targetAudience);
+        if (Array.isArray(oldTargetAudience)) {
+            oldTargetAudience.forEach(a => createItem('target-audience-list', 'target_audience[]', a));
+        }
+
+        window.addTargetAudience = function () {
             const input = document.getElementById('target-audience-input');
             const value = input.value.trim();
-            if(value) {
-                const list = document.getElementById('target-audience-list');
-                const item = document.createElement('div');
-                item.className = 'dynamic-item flex items-center justify-between bg-gray-50 px-4 py-3 rounded-lg';
-                item.innerHTML = `
-                    <span class="font-open-sans text-gray-700">${value}</span>
-                    <input type="hidden" name="target_audience[]" value='${JSON.stringify(value)}'>
-                    <button type="button" onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-700 font-bold">
-                        &times;
-                    </button>
-                `;
-                list.appendChild(item);
+            if (value) {
+                createItem('target-audience-list', 'target_audience[]', value);
                 input.value = '';
             }
+        };
+
+        // --- Pré-Requisitos ---
+        const oldPrerequisites  = @json($prerequisites);
+        if (Array.isArray(oldPrerequisites)) {
+            oldPrerequisites.forEach(p => createItem('prerequisites-list', 'prerequisites[]', p));
         }
 
-        // --- Prerequisites ---
-        function addPrerequisite() {
+        window.addPrerequisite = function () {
             const input = document.getElementById('prerequisites-input');
             const value = input.value.trim();
-            if(value) {
-                const list = document.getElementById('prerequisites-list');
-                const item = document.createElement('div');
-                item.className = 'dynamic-item flex items-center justify-between bg-gray-50 px-4 py-3 rounded-lg';
-                item.innerHTML = `
-                    <span class="font-open-sans text-gray-700">${value}</span>
-                    <input type="hidden" name="prerequisites[]" value='${JSON.stringify(value)}'>
-                    <button type="button" onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-700 font-bold">
-                        &times;
-                    </button>
-                `;
-                list.appendChild(item);
+            if (value) {
+                createItem('prerequisites-list', 'prerequisites[]', value);
                 input.value = '';
             }
+        };
+
+        // --- Módulos ---
+        function addModule(name = '', hours = '', description = '') {
+            const list = document.getElementById('modules-list');
+            const item = document.createElement('div');
+            item.className = 'dynamic-item bg-gray-50 px-4 py-3 rounded-lg';
+            item.innerHTML = `
+                <div class="flex justify-between mb-2">
+                    <span class="font-open-sans text-gray-700 font-semibold">${name} (${hours})</span>
+                    <button type="button" onclick="this.parentElement.parentElement.remove()" 
+                            class="text-red-500 hover:text-red-700 font-bold">&times;</button>
+                </div>
+                <p class="text-gray-600 mb-2">${description}</p>
+                <input type="hidden" name="modules[]" 
+                       value='${JSON.stringify({ name, hours, description })}'>
+            `;
+            list.appendChild(item);
         }
 
-        // --- Modules ---
-        function addModule() {
+        const oldModules        = @json($modules);
+        if (Array.isArray(oldModules)) {
+            oldModules.forEach(mod => {
+                const m = typeof mod === 'string' ? JSON.parse(mod) : mod;
+                addModule(m.name, m.hours, m.description);
+            });
+        }
+
+        window.addModule = function () {
             const name = document.getElementById('module-name-input').value.trim();
             const hours = document.getElementById('module-hours-input').value.trim();
             const description = document.getElementById('module-description-input').value.trim();
-
-            if(name && hours && description) {
-                const list = document.getElementById('modules-list');
-                const moduleObj = { name, hours, description };
-
-                const item = document.createElement('div');
-                item.className = 'dynamic-item bg-gray-50 px-4 py-3 rounded-lg';
-                item.innerHTML = `
-                    <div class="flex justify-between mb-2">
-                        <span class="font-open-sans text-gray-700 font-semibold">${name} (${hours})</span>
-                        <button type="button" onclick="this.parentElement.parentElement.remove()" class="text-red-500 hover:text-red-700 font-bold">&times;</button>
-                    </div>
-                    <p class="text-gray-600 mb-2">${description}</p>
-                    <input type="hidden" name="modules[]" value='${JSON.stringify(moduleObj)}'>
-                `;
-                list.appendChild(item);
-
+            if (name && hours && description) {
+                addModule(name, hours, description);
                 document.getElementById('module-name-input').value = '';
                 document.getElementById('module-hours-input').value = '';
                 document.getElementById('module-description-input').value = '';
             }
-        }
+        };
 
-        // Allow Enter key to add items
-        document.getElementById('target-audience-input').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                addTargetAudience();
-            }
+        // --- Enter key shortcut ---
+        document.getElementById('target-audience-input')?.addEventListener('keypress', e => {
+            if (e.key === 'Enter') { e.preventDefault(); window.addTargetAudience(); }
         });
-
-        document.getElementById('prerequisites-input').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                addPrerequisite();
-            }
+        document.getElementById('prerequisites-input')?.addEventListener('keypress', e => {
+            if (e.key === 'Enter') { e.preventDefault(); window.addPrerequisite(); }
         });
-    </script>
+    });
+</script>
 
-    <script>
+<script>
     const fileInput = document.getElementById('image');
     const button = document.getElementById('select-file-btn');
     const dropArea = document.getElementById('drop-area');
@@ -654,14 +708,16 @@
 
     // Exibir o nome do arquivo selecionado
     fileInput.addEventListener('change', () => {
-        if(fileInput.files.length > 0){
+        if (fileInput.files.length > 0) {
             button.textContent = fileInput.files[0].name;
+        } else {
+            button.textContent = 'Selecionar Arquivo';
         }
     });
 
     // Drag & Drop
     ['dragenter', 'dragover'].forEach(eventName => {
-        dropArea.addEventListener(eventName, (e) => {
+        dropArea.addEventListener(eventName, e => {
             e.preventDefault();
             e.stopPropagation();
             dropArea.classList.add('border-primary');
@@ -669,14 +725,14 @@
     });
 
     ['dragleave', 'drop'].forEach(eventName => {
-        dropArea.addEventListener(eventName, (e) => {
+        dropArea.addEventListener(eventName, e => {
             e.preventDefault();
             e.stopPropagation();
             dropArea.classList.remove('border-primary');
         }, false);
     });
 
-    dropArea.addEventListener('drop', (e) => {
+    dropArea.addEventListener('drop', e => {
         const files = e.dataTransfer.files;
         if (files.length > 0) {
             fileInput.files = files;

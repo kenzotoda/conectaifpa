@@ -1,61 +1,53 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Plataforma de Eventos Acadêmicos - IFPA
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+## Tema de Pesquisa
+Desenvolvimento de uma **plataforma web responsiva** para gerenciamento e criação de eventos acadêmicos no IFPA.
 
-## About Laravel
+## Problema de Pesquisa
+Atualmente, a organização e a divulgação de eventos acadêmicos enfrentam dificuldades devido à falta de um sistema unificado que concentre informações relevantes como cadastro, inscrições e programação. Essa ausência de centralização gera problemas de comunicação, baixa adesão dos participantes e processos administrativos pouco eficientes.  
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Diante disso, o projeto busca responder à seguinte questão:  
+**Como o desenvolvimento de uma plataforma web responsiva pode contribuir para otimizar a gestão e a criação de eventos acadêmicos, facilitando o acesso da comunidade acadêmica e aprimorando os processos institucionais?**
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Objetivo do Projeto
+O objetivo deste TCC é criar uma plataforma web que permita:
+- **Cadastro e gerenciamento de eventos:** possibilitando a inclusão de informações detalhadas, como título, descrição, datas, horários e local.  
+- **Gerenciamento de inscrições:** controle de participantes, limite de vagas e prazos de inscrição.  
+- **Divulgação e acesso facilitado:** interface responsiva, acessível em dispositivos móveis e desktops, com informações claras sobre os eventos.  
+- **Centralização de dados:** unificação de informações importantes em um único sistema, tornando os processos administrativos mais eficientes.  
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Funcionalidades
+- Cadastro de eventos com título, descrição, categoria, modalidade, capacidade, datas e horários.
+- Upload de imagens para os eventos.
+- Cadastro de pré-requisitos, público-alvo e módulos do evento.
+- Gerenciamento de inscrições com controle de prazo.
+- Interface responsiva, permitindo acesso via desktop, tablet e mobile.
+- E-mails de confirmação e notificações (opcional, dependendo da implementação).
 
-## Learning Laravel
+## Tecnologias Utilizadas
+- **Backend:** PHP com Laravel
+- **Frontend:** HTML, CSS, JavaScript, Tailwind CSS
+- **Banco de Dados:** MySQL
+- **Controle de Versão:** Git/GitHub
+- **Hospedagem (opcional):** Local via XAMPP ou servidor de produção
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Estrutura do Projeto
+O projeto segue uma arquitetura MVC (Model-View-Controller) típica do Laravel:
+- **Models:** representam os dados do sistema, como eventos e usuários.  
+- **Controllers:** controlam a lógica do sistema e manipulam as requisições.  
+- **Views:** páginas web responsivas para interação com o usuário.  
+- **Migrations:** definem a estrutura do banco de dados.
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## Conclusão Esperada
+Com a implementação desta plataforma, espera-se:
+- Facilitar a **criação, divulgação e gerenciamento de eventos** acadêmicos no IFPA.
+- Aumentar a **participação da comunidade acadêmica** nos eventos.
+- Melhorar a **eficiência dos processos administrativos**, centralizando informações importantes.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Autor
+**[Kenzo Ribeiro Toda]**  
+Curso: [Tecnologia em Análise e Desenvolvimento de Sistemas]  
+Instituição: Instituto Federal do Pará (IFPA)
 
-## Laravel Sponsors
-
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
-
-### Premium Partners
-
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Observações
+Este projeto faz parte do Trabalho de Conclusão de Curso (TCC) e visa propor uma solução prática e funcional para os desafios relacionados à gestão de eventos acadêmicos na instituição.

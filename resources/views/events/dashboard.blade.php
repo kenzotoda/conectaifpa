@@ -30,6 +30,10 @@
                                 <td><a href="/events/{{ $event['id'] }}">{{ $event['title'] }}</a></td>
                                 <td>{{ count($event->users) }}</td>
                                 <td class="flex gap-2">
+                                    <a href="events/registered/{{ $event['id'] }}" class="btn btn-warning">
+                                        Gerenciar Inscritos
+                                    </a>
+                                    <a href="/events/{{ $event['id'] }}" class="btn btn-success">Ver Detalhes</a>
                                     <a href="/events/edit/{{ $event['id'] }}" class="btn btn-info edit-btn flex items-center gap-1">
                                         <ion-icon name="create-outline"></ion-icon> Editar
                                     </a>
@@ -78,7 +82,7 @@
                                 <td>{{ $loop->index + 1 }}</td>
                                 <td><a href="/events/{{ $event['id'] }}">{{ $event['title'] }}</a></td>
                                 <td>{{ count($event->users) }}</td>
-                                <td>
+                                <td class="flex gap-2">
                                     <form action="/events/leave/{{ $event->id }}" method="POST">
                                         @csrf
                                         @method('DELETE')
@@ -86,6 +90,8 @@
                                             <ion-icon name="trash-outline"></ion-icon> Sair do evento
                                         </button>
                                     </form>
+                                    <a href="#" class="btn btn-info">Área do Participante</a>
+                                    <a href="/events/{{ $event['id'] }}" class="btn btn-success">Ver Detalhes</a>
                                 </td>
                             </tr>
                         @endforeach

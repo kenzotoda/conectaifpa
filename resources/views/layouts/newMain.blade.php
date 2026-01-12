@@ -57,7 +57,14 @@
                     @endif
 
                     @auth
-                        <a href="/dashboard" class="font-montserrat font-semibold text-gray-700 hover:text-primary transition-colors no-underline">Meus Eventos</a>
+                        @if(auth()->check() && auth()->user()->isCoordinator())
+                            <a href="/dashboard" class="font-montserrat font-semibold text-gray-700 hover:text-primary transition-colors no-underline">Área do Coordenador</a>
+                        @endif
+
+                        @if(auth()->check() && auth()->user()->isParticipant())
+                            <a href="/dashboard" class="font-montserrat font-semibold text-gray-700 hover:text-primary transition-colors no-underline">Área do Participante</a>
+                        @endif
+                        
 
                         <form action="/logout" method="POST">
                             @csrf
@@ -74,7 +81,7 @@
                 <!-- APLICAR LOGICA DE PERMISSÃO NO MOBILE TAMBEM -->
                 
                 <!-- Mobile Menu Button -->
-                <button class="md:hidden p-2">
+                <button id="menu-toggle" class="md:hidden p-2">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                     </svg>
@@ -82,14 +89,22 @@
             </div>
             
             <!-- Mobile Navigation -->
-            <div class="md:hidden mt-4 pb-4 border-t border-gray-200 pt-4">
+            <div id="mobile-menu" class="md:hidden hidden mt-4 pb-4 border-t border-gray-200 pt-4">
                 <div class="flex flex-col space-y-3">
-                    <a href="/" class="font-montserrat font-semibold text-gray-700 hover:text-primary transition-colors no-underline">Eventos</a>
+                    <a href="/#eventos" class="font-montserrat font-semibold text-gray-700 hover:text-primary transition-colors no-underline">Ver Eventos</a>
                     
-                    <a href="/events/create" class="font-montserrat font-semibold text-gray-700 hover:text-primary transition-colors no-underline">Criar Eventos</a>
+                    @if(auth()->check() && auth()->user()->isCoordinator())
+                        <a href="/events/create" class="font-montserrat font-semibold text-gray-700 hover:text-primary transition-colors no-underline">Criar Evento</a>
+                    @endif
 
                     @auth
-                        <a href="/dashboard" class="font-montserrat font-semibold text-gray-700 hover:text-primary transition-colors no-underline">Meus Eventos</a>
+                        @if(auth()->check() && auth()->user()->isCoordinator())
+                            <a href="/dashboard" class="font-montserrat font-semibold text-gray-700 hover:text-primary transition-colors no-underline">Área do Coordenador</a>
+                        @endif
+
+                        @if(auth()->check() && auth()->user()->isParticipant())
+                            <a href="/dashboard" class="font-montserrat font-semibold text-gray-700 hover:text-primary transition-colors no-underline">Área do Participante</a>
+                        @endif
                         
                         <form action="/logout" method="POST">
                             @csrf
@@ -100,7 +115,7 @@
                     @guest
                         <a href="/login" class="btn-outline px-4 py-2 rounded-lg font-montserrat font-semibold text-center no-underline">Entrar</a>
 
-                        <a href="/register" class="btn-primary px-4 py-2 rounded-lg font-montserrat font-semibold text-center no-underline">Cadastrar</a>
+                        <a href="/register" class="btn-primary px-4 py-2 rounded-lg font-montserrat font-semibold text-center no-underline">Criar uma conta</a>
                     @endguest
                     
                 </div>
@@ -119,7 +134,7 @@
     <footer class="bg-gray-800 text-white py-9">
     <div class="container mx-auto text-center">
         <p class="text-gray-300 text-sm m-0">
-            © 2025 ConectaIFPA. Todos os direitos reservados. Feito com ❤️ para a comunidade universitária.
+            © 2025 ConectaIFPA. Todos os direitos reservados. Feito com carinho para a comunidade universitária.
         </p>
     </div>
 </footer>

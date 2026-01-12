@@ -3,7 +3,8 @@
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\EventController;
-use Laravel\Fortify\Http\Controllers\RegisteredUserController;
+use App\Http\Controllers\Auth\RegisteredUserController;
+
 
 Route::get('/', [EventController::class, 'index']);
 Route::get('/events/load-more', [EventController::class, 'loadMore'])
@@ -27,4 +28,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/register/coordinator', [RegisteredUserController::class, 'storeCoordinator']);
 });
 
-Route::get('/event/{id}', [EventController::class, 'newShow']);
+Route::get('/events/registered/{id}', [EventController::class, 'registered'])->middleware(['auth', 'isCoordinator']);
+
+Route::get('/events/{id}/export-csv', [EventController::class, 'exportCsv'])->middleware(['auth', 'isCoordinator']);
+
+Route::delete('/events/{eventId}/remove/{userId}', [EventController::class, 'removeParticipant'])->middleware(['auth', 'isCoordinator']);
+// Route::get('/event/{id}', [EventController::class, 'newShow']);
+

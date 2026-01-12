@@ -1,7 +1,7 @@
 @foreach ($events as $event)
     <!-- Event Card -->
     <div class="bg-card rounded-xl overflow-hidden shadow-lg card-hover transition-all duration-300">
-        <div class="h-48 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+        <div class="w-full h-48 overflow-hidden">
             <img src="{{ asset('storage/events/' . $event->image) }}" alt="{{ $event->title }}" class="w-full h-full object-cover">
         </div>
         <div class="p-6">
@@ -31,7 +31,7 @@
                     </svg>
                     {{ $event->campus }}
                 </div>
-                <a href="/event/{{ $event['id'] }}" class="btn-primary px-4 py-2 rounded-lg font-montserrat font-semibold text-sm no-underline">
+                <a href="/events/{{ $event['id'] }}" class="btn-primary px-4 py-2 rounded-lg font-montserrat font-semibold text-sm no-underline">
                     Ver Detalhes
                 </a>
             </div>

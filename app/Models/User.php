@@ -33,7 +33,9 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role', // agora o Laravel aceita atribuição de role
+        'role',
+        'matricula',
+        'curso',
     ];
 
     /**

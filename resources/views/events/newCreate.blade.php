@@ -93,7 +93,7 @@
                              <!-- Capacity  -->
                             <div>
                                 <label class="form-label block text-sm font-montserrat mb-2">
-                                    Capacidade de Alunos
+                                    Capacidade de Alunos *
                                 </label>
                                 <input
                                     id="capacity"
@@ -148,17 +148,18 @@
                              <!-- Dynamic target audience items will be added here -->
                         </div>
                         
-                        <div class="flex gap-3">
+                        <div class="mb-4">
                             <input 
                                 type="text" 
                                 id="target-audience-input"
-                                class="form-input flex-1 px-4 py-3 rounded-lg font-open-sans"
+                                class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
                                 placeholder="Ex: Estudantes de graduação em Ciência da Computação"
                             >
+                        </div>
                             <button type="button" onclick="addTargetAudience()" class="btn-primary px-6 py-3 rounded-lg font-montserrat font-semibold whitespace-nowrap">
                                 + Adicionar
                             </button>
-                        </div>
+                        
                         <!-- ALTERAÇÃO: removi name do input original, os valores agora serão enviados via hidden inputs -->
                     </div>
 
@@ -175,17 +176,18 @@
                              <!-- Dynamic prerequisites items will be added here -->
                         </div>
                         
-                        <div class="flex gap-3">
+                        <div class="mb-4">
                             <input 
                                 type="text" 
                                 id="prerequisites-input"
-                                class="form-input flex-1 px-4 py-3 rounded-lg font-open-sans"
+                                class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
                                 placeholder="Ex: Conhecimento básico de lógica de programação"
                             >
+                        </div>
                             <button type="button" onclick="addPrerequisite()" class="btn-primary px-6 py-3 rounded-lg font-montserrat font-semibold whitespace-nowrap">
                                 + Adicionar
                             </button>
-                        </div>
+                        
                         <!-- ALTERAÇÃO: removi name do input original, os valores agora serão enviados via hidden inputs -->
                     </div>
 
@@ -367,7 +369,7 @@
                              <!-- Address  -->
                             <div>
                                 <label class="form-label block text-sm font-montserrat mb-2">
-                                    Endereço
+                                    Endereço *
                                 </label>
                                 <input
                                     id="address"
@@ -444,7 +446,7 @@
                                 <input
                                     id="coordinator_name"
                                     name="coordinator_name"
-                                    type="text" 
+                                    type="text"
                                     class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
                                     placeholder="Ex: Prof. Dr. João Silva"
                                     required
@@ -466,7 +468,7 @@
                                 >
                             </div>
                             
-                             <!-- Contact Phone  -->
+                            <!-- Contact Phone  -->
                             <div>
                                 <label class="form-label block text-sm font-montserrat mb-2">
                                     Telefone da Coordenação *
@@ -474,7 +476,10 @@
                                 <input
                                     id="coordinator_phone"
                                     name="coordinator_phone"
-                                    type="tel" 
+                                    type="tel"
+                                    inputmode="numeric"
+                                    autocomplete="tel"
+                                    maxlength="15"
                                     class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
                                     placeholder="(11) 99999-9999"
                                     required

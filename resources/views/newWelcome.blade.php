@@ -108,7 +108,7 @@
             </div>
     </section>
 
-    <!-- CTA Section -->
+    <!-- CTA Section
     <section class="bg-gradient-to-r from-green-600 to-emerald-600 py-16">
         <div class="container mx-auto px-4 text-center">
             <h2 class="font-montserrat font-black text-3xl md:text-4xl text-white mb-6">
@@ -122,7 +122,7 @@
                 Criar Meu Evento
             </a>
         </div>
-    </section>
+    </section> -->
 
 
 @endsection

@@ -84,7 +84,12 @@ class EventController extends Controller
 
         'coordinator_name' => 'required|string|max:255',
         'coordinator_email' => 'required|email|max:255',
-        'coordinator_phone' => 'required|string|max:20',
+        'coordinator_phone' => [
+            'required',
+            'string',
+            'max:20',
+            'regex:/^\(\d{2}\)\s\d{4,5}-\d{4}$/'
+        ],
 
         'datetime_registration' => 'nullable|date|before_or_equal:start_date',
     ], [
@@ -145,6 +150,20 @@ class EventController extends Controller
         'image.image' => 'O arquivo enviado deve ser uma imagem (JPEG, PNG, JPG ou GIF).',
         'image.mimes' => 'A imagem deve estar em formato JPEG, PNG, JPG ou GIF.',
         'image.max' => 'A imagem não pode ter mais de 5MB.',
+
+        // Coordenador
+        'coordinator_name.required' => 'O nome do coordenador é obrigatório.',
+        'coordinator_name.string' => 'O nome do coordenador deve ser um texto válido.',
+        'coordinator_name.max' => 'O nome do coordenador não pode ter mais de 255 caracteres.',
+
+        'coordinator_email.required' => 'O e-mail da coordenação é obrigatório.',
+        'coordinator_email.email' => 'Informe um e-mail válido para a coordenação.',
+        'coordinator_email.max' => 'O e-mail da coordenação não pode ter mais de 255 caracteres.',
+
+        'coordinator_phone.required' => 'O telefone da coordenação é obrigatório.',
+        'coordinator_phone.string' => 'O telefone da coordenação deve ser um texto válido.',
+        'coordinator_phone.max' => 'O telefone da coordenação não pode ter mais de 20 caracteres.',
+        'coordinator_phone.regex' => 'O telefone deve estar no formato (11) 99999-9999.',
 
         // Prazo de Inscrição
         'datetime_registration.before_or_equal' => 'O prazo de inscrição não pode ser posterior à data de início do evento.',
@@ -301,7 +320,12 @@ class EventController extends Controller
 
         'coordinator_name' => 'required|string|max:255',
         'coordinator_email' => 'required|email|max:255',
-        'coordinator_phone' => 'required|string|max:20',
+        'coordinator_phone' => [
+            'required',
+            'string',
+            'max:20',
+            'regex:/^\(\d{2}\)\s\d{4,5}-\d{4}$/'
+        ],
 
         'datetime_registration' => 'nullable|date|before_or_equal:start_date',
     ], [
@@ -362,6 +386,20 @@ class EventController extends Controller
         'image.image' => 'O arquivo enviado deve ser uma imagem (JPEG, PNG, JPG ou GIF).',
         'image.mimes' => 'A imagem deve estar em formato JPEG, PNG, JPG ou GIF.',
         'image.max' => 'A imagem não pode ter mais de 5MB.',
+
+        // Coordenador
+        'coordinator_name.required' => 'O nome do coordenador é obrigatório.',
+        'coordinator_name.string' => 'O nome do coordenador deve ser um texto válido.',
+        'coordinator_name.max' => 'O nome do coordenador não pode ter mais de 255 caracteres.',
+
+        'coordinator_email.required' => 'O e-mail da coordenação é obrigatório.',
+        'coordinator_email.email' => 'Informe um e-mail válido para a coordenação.',
+        'coordinator_email.max' => 'O e-mail da coordenação não pode ter mais de 255 caracteres.',
+
+        'coordinator_phone.required' => 'O telefone da coordenação é obrigatório.',
+        'coordinator_phone.string' => 'O telefone da coordenação deve ser um texto válido.',
+        'coordinator_phone.max' => 'O telefone da coordenação não pode ter mais de 20 caracteres.',
+        'coordinator_phone.regex' => 'O telefone deve estar no formato (11) 99999-9999.',
 
         // Prazo de Inscrição
         'datetime_registration.before_or_equal' => 'O prazo de inscrição não pode ser posterior à data de início do evento.',
@@ -446,5 +484,70 @@ class EventController extends Controller
         return redirect('/dashboard')->with('msg', 'Você saiu com sucesso do evento: ' . $event->title);
 
     }
+
+    public function registered($id) {
+        $event = Event::findOrFail($id);
+
+        
+        $users = $event->users;
+
+        
+        return view('events.registered', ['event' => $event, 'users' => $users]);
+    }
+
+    public function exportCsv($id) {
+
+        $event = Event::findOrFail($id);
+        $users = $event->users;
+
+        $fileName = 'inscritos_' . $event->title . '.csv';
+
+        // Cabeçalhos para download
+        $headers = [
+            "Content-type"        => "text/csv; charset=UTF-8",
+            "Content-Disposition" => "attachment; filename=\"$fileName\"",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $callback = function() use ($users) {
+            $file = fopen('php://output', 'w');
+
+            // Adicionar BOM UTF-8 para evitar acentos bugados
+            echo "\xEF\xBB\xBF";
+
+            // Cabeçalho
+            fputcsv($file, ['Nome', 'Email']);
+
+            // Dados
+            foreach ($users as $user) {
+                fputcsv($file, [
+                    $user->name,
+                    $user->email,
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+
+    public function removeParticipant($eventId, $userId) {
+        
+        $event = Event::findOrFail($eventId);
+
+        // garante que o user está inscrito
+        if ($event->users()->where('users.id', $userId)->exists()) {
+            $event->users()->detach($userId);
+
+            return back()->with('msg', 'Aluno removido com sucesso!');
+        }
+
+        return back()->with('msg', 'O aluno não estava inscrito neste evento.');
+    }
+
 
 }

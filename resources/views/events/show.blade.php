@@ -55,10 +55,18 @@
                             </div>
                         </div>
 
-                        @if ($event->capacity - count($event->users) == 0)
-                            <span class="text-emerald-50">Vagas esgotadas!</span>
+                        @if ($event->registrationClosed())
+                            <span class="text-emerald-50 font-semibold">
+                                ⏰ Prazo de inscrição encerrado
+                            </span>
+
+                        @elseif ($event->isFull())
+                            <span class="text-emerald-50 font-semibold">
+                                🚫 Vagas esgotadas
+                            </span>
+
                         @else
-                           @if(auth()->check() && auth()->user()->isParticipant())
+                            @if(auth()->check() && auth()->user()->isParticipant())
                                 <!-- Botão de Confirmação -->
                                 <form action="/events/join/{{ $event['id'] }}" method="POST">
                                     @csrf
@@ -77,7 +85,6 @@
                                     </button>
                                 </form>
                             @endif
-
 
                             @guest
                                 <!-- Botão de Confirmação -->
@@ -119,7 +126,16 @@
                             </div>
                             <div>
                                 <span class="text-slate-600 text-xs">Horário:</span>
-                                <span class="font-semibold text-slate-900">{{ $event->start_time }} - {{ $event->end_time }}</span>
+                                <span class="font-semibold text-slate-900">
+                                <span class="font-semibold text-slate-900">
+                                    {{ date('H:i', strtotime($event->start_time)) }}
+
+                                    @if($event->end_time)
+                                        - {{ date('H:i', strtotime($event->end_time)) }}
+                                    @endif
+                                </span>
+
+
                             </div>
                         </div>
                     </div>
@@ -228,7 +244,7 @@
                                 </li>
                                 <li class="flex flex-col">
                                     <span class="font-semibold text-amber-700">Ambiente EAD:</span>
-                                    <a href="#" id="eventEADLink" target="_blank" class="text-amber-600 hover:text-amber-800 hover:underline font-medium mt-1 inline-flex items-center gap-1">
+                                    <a href="{{ $event->ead_link }}" id="eventEADLink" target="_blank" class="text-amber-600 hover:text-amber-800 hover:underline font-medium mt-1 inline-flex items-center gap-1">
                                     Acessar ambiente
                                     <ion-icon name="open-outline" class="text-sm"></ion-icon>
                                     </a>
@@ -262,7 +278,7 @@
                                 <h3 class="font-bold text-purple-900 text-lg">{{ $m['name'] ?? 'Módulo' }}</h3>
                             </div>
                             <p class="text-slate-700 text-sm mb-3 leading-relaxed">{{ $m['description'] ?? '' }}</p>
-                            <span class="text-purple-600 font-semibold text-sm">⏱️ {{ $m['hours'] ?? '' }}</span>
+                            <span class="text-purple-600 font-semibold text-sm"> <ion-icon name="time-outline"></ion-icon> {{ $m['hours'] ?? '' }}</span>
                         </div>
                     @endforeach
                 </div>

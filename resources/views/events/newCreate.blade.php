@@ -402,7 +402,7 @@
                             <div class="w-8 h-8 bg-primary-custom rounded-full flex items-center justify-center mr-3">
                                 <span class="text-white font-bold text-sm">7</span>
                             </div>
-                            Imagem do Curso
+                            Imagem do Curso (1980 x 1080)
                         </h2>
 
                         <div id="drop-area" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer">

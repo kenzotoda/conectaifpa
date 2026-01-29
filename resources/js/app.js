@@ -1,8 +1,13 @@
 import '../css/app.css'
 
-/* bootstrap */
+/* Bootstrap */
 import 'bootstrap/dist/css/bootstrap.min.css'
-import 'bootstrap'
+import { Tooltip } from 'bootstrap'
+
+import Swal from 'sweetalert2'
+
+window.Swal = Swal
+
 
 /* ==============================
    LOAD MORE EVENTS
@@ -90,4 +95,14 @@ document.addEventListener('DOMContentLoaded', () => {
         e.target.value = value
     })
 })
+
+
+// Bootstrap tooltips
+document.addEventListener('DOMContentLoaded', () => {
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+
+    tooltipTriggerList.forEach(el => {
+        new Tooltip(el);
+    });
+});
 

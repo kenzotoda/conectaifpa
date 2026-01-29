@@ -25,6 +25,8 @@
                         <th>#</th>
                         <th>Nome</th>
                         <th>E-mail</th>
+                        <th>Matrícula</th>
+                        <th>Curso</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
@@ -35,6 +37,8 @@
                             <td>{{ $index + 1 }}</td>
                             <td>{{ $user->name }}</td>
                             <td>{{ $user->email }}</td>
+                            <td>{{ $user->matricula }}</td>
+                            <td>{{ $user->curso }}</td>
                             <td>
                                 <form action="/events/{{ $event['id'] }}/remove/{{ $user->id }}" method="POST" onsubmit="return confirm('Remover este aluno do evento?');">
                                     @csrf

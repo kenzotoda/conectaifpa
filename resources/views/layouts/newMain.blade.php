@@ -10,22 +10,12 @@
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
-
-        @vite(['resources/js/app.js'])
-
-        <!-- Procura a pasta css direto na pasta public -->
-        <!-- <link rel="stylesheet" href="/css/styles.css"> -->
-
-        <!-- Procura a pasta js direto na pasta public -->
-        <!-- <script src="/js/scripts.js"></script> -->
-
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;900&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
 
-        <style>
-            
-        </style>
+        @vite(['resources/js/app.js'])
        
     </head>
+
     <body class="font-open-sans bg-white text-gray-700 leading-relaxed">
 
     <!-- Header -->
@@ -125,8 +115,18 @@
 
     <main>
         @if (session('msg'))
-            <p class="msg">{{ session('msg') }}</p>
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    if (window.Swal) {
+                        Swal.fire({
+                            icon: 'success',
+                            text: "{{ session('msg') }}",
+                        })
+                    }
+                })
+            </script>
         @endif
+
         @yield('content')
     </main>
 

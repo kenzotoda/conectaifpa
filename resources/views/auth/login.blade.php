@@ -4,60 +4,67 @@
 
 @section('content')
 
-    <x-guest-layout>
-        <x-authentication-card>
-            <x-slot name="logo">
-                <x-authentication-card-logo />
-            </x-slot>
+<div class="min-h-[calc(100vh-160px)] flex items-center justify-center px-4">
+    <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
 
-            <x-validation-errors class="mb-4" />
+        <!-- Logo -->
+        <div class="flex justify-center mb-10">
+            <i class="bi bi-lock-fill text-6xl"></i>
+        </div>
 
-            @session('status')
-                <div class="mb-4 font-medium text-sm text-green-600">
-                    {{ $value }}
-                </div>
-            @endsession
+        <x-validation-errors class="mb-4" />
 
-            <form method="POST" action="{{ route('login') }}">
-                @csrf
+        @session('status')
+            <div class="mb-4 font-medium text-sm text-green-600 text-center">
+                {{ $value }}
+            </div>
+        @endsession
 
-                <div>
-                    <x-label for="email" value="{{ __('Email') }}" />
-                    <x-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
-                </div>
+        <form method="POST" action="{{ route('login') }}">
+            @csrf
 
-                <div class="mt-4">
-                    <x-label for="password" value="{{ __('Password') }}" />
-                    <x-input id="password" class="block mt-1 w-full" type="password" name="password" required autocomplete="current-password" />
-                </div>
+            <div>
+                <x-label for="email" value="Email" />
+                <x-input id="email"
+                         class="block mt-1 w-full"
+                         type="email"
+                         name="email"
+                         :value="old('email')"
+                         required
+                         autofocus />
+            </div>
 
-                <div class="block mt-4">
-                    <label for="remember_me" class="flex items-center">
-                        <x-checkbox id="remember_me" name="remember" />
-                        <span class="ms-2 text-sm text-gray-600">{{ __('Lembre de mim') }}</span>
-                    </label>
-                </div>
+            <div class="mt-4">
+                <x-label for="password" value="Senha" />
+                <x-input id="password"
+                         class="block mt-1 w-full"
+                         type="password"
+                         name="password"
+                         required />
+            </div>
 
-                <div class="flex items-center justify-end mt-4">
-                    @if (Route::has('password.request'))
-                        <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('password.request') }}">
-                            {{ __('Esqueceu sua senha?') }}
-                        </a>
-                    @endif
+            <div class="flex items-center justify-between mt-4">
+                <label class="flex items-center">
+                    <x-checkbox name="remember" />
+                    <span class="ml-2 text-sm text-gray-600">Lembre de mim</span>
+                </label>
 
-                    <x-button class="ms-4">
-                        {{ __('Entrar') }}
-                    </x-button>
-                </div>
-            </form>
-        </x-authentication-card>
-    </x-guest-layout>
+                @if (Route::has('password.request'))
+                    <a class="text-sm text-primary hover:underline"
+                       href="{{ route('password.request') }}">
+                        Esqueceu a senha?
+                    </a>
+                @endif
+            </div>
+
+            <div class="mt-6">
+                <x-button class="w-full justify-center">
+                    Entrar
+                </x-button>
+            </div>
+        </form>
+
+    </div>
+</div>
 
 @endsection
-
-
-
-
-
-
-

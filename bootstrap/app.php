@@ -3,7 +3,8 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use App\Http\Middleware\IsCoordinator; // importa o middleware
+use App\Http\Middleware\IsCoordinator;
+use App\Http\Middleware\TrustProxies; // 👈 IMPORTANTE
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -13,10 +14,16 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+
+        // 👇 ATIVA O TRUST PROXIES
+        $middleware->trustProxies(at: TrustProxies::class);
+
+        // 👇 seus aliases continuam intactos
         $middleware->alias([
             'isCoordinator' => IsCoordinator::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
-    })->create();
+    })
+    ->create();

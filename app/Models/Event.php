@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class Event extends Model
 {
@@ -40,6 +41,16 @@ class Event extends Model
     public function users()
     {
         return $this->belongsToMany('App\Models\User');
+    }
+
+    public function registrationClosed()
+    {
+        return Carbon::now()->greaterThan(Carbon::parse($this->datetime_registration));
+    }
+
+    public function isFull()
+    {
+        return $this->users()->count() >= $this->capacity;
     }
 
 }

@@ -84,6 +84,32 @@
     font-weight: 600;
 }
 
+/* Stepper */
+.form-step {
+    display: none;
+}
+
+.form-step.active {
+    display: block;
+}
+
+.step-indicator {
+    width: 36px;
+    height: 36px;
+    border-radius: 9999px;
+    background: #d1d5db;
+    color: white;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.step-indicator.active {
+    background: #16a34a; /* verde */
+}
+
+
 /* Animações */
 .dynamic-item {
     animation: slideIn 0.3s ease;

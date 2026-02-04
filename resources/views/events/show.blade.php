@@ -56,13 +56,15 @@
                         </div>
 
                         @if ($event->registrationClosed())
-                            <span class="text-emerald-50 font-semibold">
-                                ⏰ Prazo de inscrição encerrado
+                            <span class="text-emerald-50 font-semibold inline-flex items-center gap-2">
+                                <ion-icon name="alarm-outline" class="text-lg"></ion-icon>
+                                Prazo de inscrição encerrado
                             </span>
 
                         @elseif ($event->isFull())
-                            <span class="text-emerald-50 font-semibold">
-                                🚫 Vagas esgotadas
+                            <span class="text-emerald-50 font-semibold inline-flex items-center gap-2">
+                                <ion-icon name="close-circle-outline" class="text-lg"></ion-icon>
+                                Vagas esgotadas
                             </span>
 
                         @else

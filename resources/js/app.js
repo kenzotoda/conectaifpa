@@ -4,9 +4,13 @@ import '../css/app.css'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import { Tooltip } from 'bootstrap'
 
-import Swal from 'sweetalert2'
+/* DataTables Bootstrap 5 */
+import DataTable from 'datatables.net-bs5'
+import 'datatables.net-bs5/css/dataTables.bootstrap5.min.css'
 
+import Swal from 'sweetalert2'
 window.Swal = Swal
+
 
 
 /* ==============================
@@ -103,6 +107,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
     tooltipTriggerList.forEach(el => {
         new Tooltip(el);
+    });
+});
+
+
+document.addEventListener('DOMContentLoaded', function () {
+
+    let table = new DataTable('#participantsTable', {
+        responsive: true,
+        pageLength: 10,
+        lengthMenu: [10, 25, 50, 100],
+        columnDefs: [
+            { orderable: false, targets: 5 } // coluna Ações
+        ],
+        language: {
+            decimal: "",
+            emptyTable: "Nenhum registro encontrado",
+            info: "Mostrando _START_ até _END_ de _TOTAL_ registros",
+            infoEmpty: "Mostrando 0 até 0 de 0 registros",
+            infoFiltered: "(filtrado de _MAX_ registros no total)",
+            thousands: ".",
+            lengthMenu: "Mostrar _MENU_ registros",
+            loadingRecords: "Carregando...",
+            processing: "Processando...",
+            search: "Pesquisar:",
+            zeroRecords: "Nenhum registro correspondente encontrado",
+            paginate: {
+                first: "Primeiro",
+                last: "Último",
+                next: "Próximo",
+                previous: "Anterior"
+            },
+            aria: {
+                sortAscending: ": ativar para ordenar a coluna de forma crescente",
+                sortDescending: ": ativar para ordenar a coluna de forma decrescente"
+            }
+        }
     });
 });
 

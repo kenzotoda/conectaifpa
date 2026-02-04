@@ -124,11 +124,15 @@
                 </div>
             @endif
 
-            <div class="flex items-center justify-between mt-6">
-                <a href="{{ route('login') }}"
-                class="text-sm text-gray-600 hover:text-primary underline">
-                    Já cadastrado?
-                </a>
+            <div class="flex items-center mt-6 
+                {{ request()->routeIs('register.coordinator') ? 'justify-end' : 'justify-between' }}">
+                
+                @if (!request()->routeIs('register.coordinator'))
+                    <a href="{{ route('login') }}"
+                        class="text-sm text-gray-600 hover:text-primary underline">
+                        Já cadastrado?
+                    </a>
+                @endif
 
                 <x-button>
                     @if (request()->routeIs('register.coordinator'))
@@ -138,6 +142,7 @@
                     @endif
                 </x-button>
             </div>
+
         </form>
 
 

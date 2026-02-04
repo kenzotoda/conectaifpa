@@ -35,3 +35,6 @@ Route::get('/events/{id}/export-csv', [EventController::class, 'exportCsv'])->mi
 Route::delete('/events/{eventId}/remove/{userId}', [EventController::class, 'removeParticipant'])->middleware(['auth', 'isCoordinator']);
 // Route::get('/event/{id}', [EventController::class, 'newShow']);
 
+Route::post('/events/validate-step', [EventController::class, 'validateStep'])
+    ->name('events.validate-step');
+

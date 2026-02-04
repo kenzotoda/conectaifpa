@@ -37,7 +37,7 @@
         <h1 class="m-0 fw-bold">Meus Eventos</h1>
 
         <div class="d-flex gap-2">
-            <a href="/coordinators/create"
+            <a href="{{ route('register.coordinator') }}"
                class="bg-indigo-700 hover:bg-indigo-800 transition-colors no-underline text-white d-flex align-items-center gap-2 px-2 py-1 rounded-lg">
                 <ion-icon name="person-add-outline"></ion-icon>
                 Novo Coordenador
@@ -114,7 +114,8 @@
                                                     class="btn btn-sm btn-outline-danger"
                                                     data-bs-toggle="tooltip"
                                                     data-bs-placement="bottom"
-                                                    data-bs-title="Deletar">
+                                                    data-bs-title="Deletar"
+                                            >
                                                     <ion-icon name="trash-outline"></ion-icon>
                                             </button>
                                         </form>

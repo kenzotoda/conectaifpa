@@ -34,37 +34,66 @@
                 
                 
                 <!-- Navigation Desktop -->
-                <div class="hidden md:flex items-center space-x-8">
-                    <!-- <a href="/" class="font-montserrat font-semibold text-gray-700 hover:text-primary transition-colors no-underline">Início</a> -->
-                    
-                    <a href="/#eventos" class="font-montserrat font-semibold text-gray-700 hover:text-primary transition-colors no-underline">Ver Eventos</a>
+                <div class="hidden md:flex items-center w-full justify-end gap-6">
+
+                    <!-- Links principais -->
+                    <div class="flex items-center gap-5">
+                        <a href="/#eventos"
+                        class="text-sm font-semibold text-gray-700 hover:text-gray-900 no-underline transition">
+                            Eventos
+                        </a>
+
+                        @auth
+                            @if(auth()->user()->isCoordinator())
+                                <a href="/dashboard"
+                                class="text-sm font-semibold text-gray-700 hover:text-gray-900 no-underline transition">
+                                    Dashboard
+                                </a>
+                            @endif
+
+                            @if(auth()->user()->isParticipant())
+                                <a href="/dashboard"
+                                class="text-sm font-semibold text-gray-700 hover:text-gray-900 no-underline transition">
+                                    Minha Área
+                                </a>
+                            @endif
+                        @endauth
+                    </div>
 
                     @if(auth()->check() && auth()->user()->isCoordinator())
                         <a href="/events/create"
-                        class="btn-primary px-4 py-2 rounded-lg font-montserrat font-semibold no-underline">
-                            Criar Evento
+                        class="px-3 py-1.5 rounded-md bg-primary-custom text-white text-sm font-semibold no-underline hover:opacity-90 transition">
+                            Novo evento
                         </a>
                     @endif
 
                     @auth
-                        @if(auth()->check() && auth()->user()->isCoordinator())
-                            <a href="/dashboard" class="font-montserrat font-semibold text-gray-700 hover:text-primary transition-colors no-underline">Área do Coordenador</a>
-                        @endif
-
-                        @if(auth()->check() && auth()->user()->isParticipant())
-                            <a href="/dashboard" class="font-montserrat font-semibold text-gray-700 hover:text-primary transition-colors no-underline">Área do Participante</a>
-                        @endif
-                        
-
-                        <form action="/logout" method="POST">
-                            @csrf
-                            <button type="submit" class="font-montserrat font-semibold text-gray-700 hover:text-primary transition-colors" id="sair">Sair</button>
-                        </form>
+                        <!-- Área do usuário -->
+                        <div class="flex items-center gap-4 ml-4 pl-4 border-l border-gray-200">
+                            <form action="/logout" method="POST">
+                                @csrf
+                                <button type="submit"
+                                    class="text-sm font-medium text-gray-500 hover:text-red-600 transition"
+                                    id="sair">
+                                    Sair
+                                </button>
+                            </form>
+                        </div>
                     @endauth
 
                     @guest
-                        <a href="/login" class="btn-outline px-4 py-2 rounded-lg font-montserrat font-semibold no-underline">Entrar</a>
-                        <a href="/register" class="btn-primary px-4 py-2 rounded-lg font-montserrat font-semibold no-underline">Criar uma conta</a>    
+                        <!-- Ações -->
+                        <div class="flex items-center gap-3 ml-4 pl-4 border-l border-gray-200">
+                            <a href="/login"
+                            class="text-sm font-semibold text-gray-700 hover:text-gray-900 no-underline transition">
+                                Entrar
+                            </a>
+
+                            <a href="/register"
+                            class="px-3 py-1.5 rounded-md border border-gray-300 text-sm font-semibold text-gray-700 no-underline hover:bg-gray-100 transition">
+                                Criar conta
+                            </a>
+                        </div>
                     @endguest
                 </div>
 
@@ -79,37 +108,71 @@
             </div>
             
             <!-- Mobile Navigation -->
-            <div id="mobile-menu" class="md:hidden hidden mt-4 pb-4 border-t border-gray-200 pt-4">
-                <div class="flex flex-col space-y-3">
-                    <a href="/#eventos" class="font-montserrat font-semibold text-gray-700 hover:text-primary transition-colors no-underline">Ver Eventos</a>
-                    
-                    @if(auth()->check() && auth()->user()->isCoordinator())
-                        <a href="/events/create" class="font-montserrat font-semibold text-gray-700 hover:text-primary transition-colors no-underline">Criar Evento</a>
-                    @endif
+            <div id="mobile-menu"
+                class="md:hidden hidden mt-4 pt-4 border-t border-gray-200 bg-white">
+
+                <div class="flex flex-col gap-4">
+
+                    <!-- Links principais -->
+                    <a href="/#eventos"
+                    class="text-sm font-semibold text-gray-700 hover:text-gray-900 no-underline transition">
+                        Eventos
+                    </a>
 
                     @auth
-                        @if(auth()->check() && auth()->user()->isCoordinator())
-                            <a href="/dashboard" class="font-montserrat font-semibold text-gray-700 hover:text-primary transition-colors no-underline">Área do Coordenador</a>
+                        @if(auth()->user()->isCoordinator())
+                            <a href="/dashboard"
+                            class="text-sm font-semibold text-gray-700 hover:text-gray-900 no-underline transition">
+                                Dashboard
+                            </a>
                         @endif
 
-                        @if(auth()->check() && auth()->user()->isParticipant())
-                            <a href="/dashboard" class="font-montserrat font-semibold text-gray-700 hover:text-primary transition-colors no-underline">Área do Participante</a>
+                        @if(auth()->user()->isParticipant())
+                            <a href="/dashboard"
+                            class="text-sm font-semibold text-gray-700 hover:text-gray-900 no-underline transition">
+                                Minha Área
+                            </a>
                         @endif
-                        
-                        <form action="/logout" method="POST">
-                            @csrf
-                            <button type="submit" class="font-montserrat font-semibold text-gray-700 hover:text-primary transition-colors" id="sair">Sair</button>
-                        </form>
                     @endauth
 
-                    @guest
-                        <a href="/login" class="btn-outline px-4 py-2 rounded-lg font-montserrat font-semibold text-center no-underline">Entrar</a>
+                    @if(auth()->check() && auth()->user()->isCoordinator())
+                        <a href="/events/create"
+                        class="mt-2 px-4 py-2 rounded-md bg-primary-custom text-white text-sm font-semibold text-center no-underline hover:opacity-90 transition">
+                            Novo evento
+                        </a>
+                    @endif
 
-                        <a href="/register" class="btn-primary px-4 py-2 rounded-lg font-montserrat font-semibold text-center no-underline">Criar uma conta</a>
+                    @guest
+                        <div class="flex flex-col gap-2 pt-3 border-t border-gray-200">
+                            <a href="/login"
+                            class="text-sm font-semibold text-gray-700 hover:text-gray-900 no-underline text-center transition">
+                                Entrar
+                            </a>
+
+                            <a href="/register"
+                            class="px-4 py-2 rounded-md border border-gray-300 text-sm font-semibold text-gray-700 text-center no-underline hover:bg-gray-100 transition">
+                                Criar conta
+                            </a>
+                        </div>
                     @endguest
-                    
+
+                    @auth
+                        <!-- Logout separado -->
+                        <div class="pt-3 border-t border-gray-200">
+                            <form action="/logout" method="POST">
+                                @csrf
+                                <button type="submit"
+                                    class="w-full text-left text-sm font-medium text-gray-500 hover:text-red-600 transition"
+                                    id="sair">
+                                    Sair
+                                </button>
+                            </form>
+                        </div>
+                    @endauth
+
                 </div>
             </div>
+
         </nav>
     </header>
 

@@ -26,18 +26,20 @@
 
 
     
-    <!-- Hero Section  -->
+    <!-- Hero Section -->
     <section class="bg-gradient-to-br from-green-50 to-emerald-50 py-12">
         <div class="container mx-auto px-4 text-center">
             <h1 class="font-montserrat font-black text-3xl md:text-5xl text-gray-800 mb-4 text-balance">
-                Crie Seu <span class="text-primary-custom">Curso</span> Universitário
+                Editar <span class="text-primary-custom">Curso</span>
             </h1>
+
             <p class="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto text-pretty">
-                Organize experiências de aprendizado incríveis para a comunidade acadêmica. 
-                Preencha os dados abaixo e publique seu curso em minutos.
+                Revise, atualize e ajuste as informações do curso conforme necessário.
+                Todas as alterações serão aplicadas após a confirmação.
             </p>
         </div>
     </section>
+
 
     <!-- ERROS NO FORMULÁRIO -->
     @if ($errors->any())

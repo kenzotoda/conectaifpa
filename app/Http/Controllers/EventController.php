@@ -12,6 +12,8 @@ use App\Models\Event;
 // Acesso ao Model de usuários
 use App\Models\User;
 
+use Illuminate\Support\Facades\Storage;
+
 class EventController extends Controller
 {
     public function index(Request $request){
@@ -501,6 +503,12 @@ class EventController extends Controller
 
         // Atualiza imagem apenas se houver upload
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
+
+            // APAGA A IMAGEM ANTIGA (SE EXISTIR)
+            if ($event->image) {
+                Storage::disk('public')->delete('events/' . $event->image);
+            }
+
             $requestImage = $request->image;
             $extension = $requestImage->extension();
             $imageName = md5($requestImage->getClientOriginalName() . strtotime("now")) . "." . $extension;

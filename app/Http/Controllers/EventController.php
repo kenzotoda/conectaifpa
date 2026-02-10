@@ -14,6 +14,9 @@ use App\Models\User;
 
 use Illuminate\Support\Facades\Storage;
 
+use Illuminate\Support\Facades\Http;
+
+
 class EventController extends Controller
 {
     public function index(Request $request){
@@ -267,13 +270,35 @@ class EventController extends Controller
         // =========================
 
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
-            $requestImage = $request->image;
+
+            $requestImage = $request->file('image');
             $extension = $requestImage->extension();
             $imageName = md5(
                 $requestImage->getClientOriginalName() . now()->timestamp
             ) . "." . $extension;
 
-            $requestImage->storeAs('events', $imageName, 'public');
+            $bucket = config('services.supabase.bucket');
+            $path = "events/$imageName";
+
+            # SALVA COMO UM ARQUIVO REAL NO BUCKET
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . config('services.supabase.service_role'),
+                'apikey'        => config('services.supabase.service_role'),
+                'Content-Type'  => $requestImage->getMimeType(),
+            ])->withBody(
+                file_get_contents($requestImage->getRealPath()),
+                $requestImage->getMimeType()
+            )->post(
+                config('services.supabase.url') .
+                "/storage/v1/object/$bucket/$path"
+            );
+
+
+            if (!$response->successful()) {
+                abort(500, 'Erro ao enviar imagem para o Supabase');
+            }
+
+            // continua salvando só o nome (igual antes)
             $event->image = $imageName;
         }
 
@@ -504,17 +529,51 @@ class EventController extends Controller
         // Atualiza imagem apenas se houver upload
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
 
-            // APAGA A IMAGEM ANTIGA (SE EXISTIR)
+            $bucket = config('services.supabase.bucket');
+
+            // 1️⃣ Apaga imagem antiga no Supabase
             if ($event->image) {
-                Storage::disk('public')->delete('events/' . $event->image);
+                $oldPath = "events/{$event->image}";
+
+                Http::withHeaders([
+                    'Authorization' => 'Bearer ' . config('services.supabase.service_role'),
+                    'apikey'        => config('services.supabase.service_role'),
+                ])->delete(
+                    config('services.supabase.url') .
+                    "/storage/v1/object/$bucket/$oldPath"
+                );
             }
 
-            $requestImage = $request->image;
+            // 2️⃣ Upload da nova imagem
+            $requestImage = $request->file('image');
             $extension = $requestImage->extension();
-            $imageName = md5($requestImage->getClientOriginalName() . strtotime("now")) . "." . $extension;
-            $requestImage->storeAs('events', $imageName, 'public');
+            $imageName = md5(
+                $requestImage->getClientOriginalName() . now()->timestamp
+            ) . "." . $extension;
+
+            $path = "events/$imageName";
+
+            # SALVA COMO UM ARQUIVO REAL NO BUCKET
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . config('services.supabase.service_role'),
+                'apikey'        => config('services.supabase.service_role'),
+                'Content-Type'  => $requestImage->getMimeType(),
+            ])->withBody(
+                file_get_contents($requestImage->getRealPath()),
+                $requestImage->getMimeType()
+            )->post(
+                config('services.supabase.url') .
+                "/storage/v1/object/$bucket/$path"
+            );
+
+
+            if (!$response->successful()) {
+                abort(500, 'Erro ao enviar imagem para o Supabase');
+            }
+
             $event->image = $imageName;
         }
+
 
         $event->save();
 

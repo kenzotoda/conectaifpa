@@ -2,7 +2,10 @@
     <!-- Event Card -->
     <div class="bg-card rounded-xl overflow-hidden shadow-lg card-hover transition-all duration-300">
         <div class="w-full h-48 overflow-hidden">
-            <img src="{{ asset('storage/events/' . $event->image) }}" alt="{{ $event->title }}" class="w-full h-full object-cover">
+            <img 
+                src="{{ config('services.supabase.url') }}/storage/v1/object/public/{{ config('services.supabase.bucket') }}/events/{{ $event->image }}" 
+                alt="{{ $event->title }}" 
+                class="w-full h-full object-cover">
         </div>
         <div class="p-6">
             <div class="flex items-center justify-between mb-3">

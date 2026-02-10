@@ -28,7 +28,7 @@
             <div class="lg:col-span-2 order-2 lg:order-1">
                 <div class="relative">
                     <img 
-                        src="{{ asset('storage/events/' . $event->image) }}"
+                        src="{{ config('services.supabase.url') }}/storage/v1/object/public/{{ config('services.supabase.bucket') }}/events/{{ $event->image }}"
                         alt="{{ $event->title }}"
                         class="w-full h-auto max-h-[600px] mx-auto
                             rounded-2xl shadow-2xl
@@ -127,18 +127,22 @@
                                 <ion-icon name="time-outline" class="text-teal-600 text-lg"></ion-icon>
                             </div>
                             <div>
-                                <span class="text-slate-600 text-xs">Horário:</span>
-                                <span class="font-semibold text-slate-900">
-                                <span class="font-semibold text-slate-900">
-                                    {{ date('H:i', strtotime($event->start_time)) }}
+                                @if($event->start_time)
+                                    <span class="text-slate-600 text-xs">Horário:</span>
+                                    <span class="font-semibold text-slate-900">
+                                        {{ date('H:i', strtotime($event->start_time)) }}
 
-                                    @if($event->end_time)
-                                        - {{ date('H:i', strtotime($event->end_time)) }}
-                                    @endif
-                                </span>
-
-
+                                        @if($event->end_time)
+                                            - {{ date('H:i', strtotime($event->end_time)) }}
+                                        @endif
+                                    </span>
+                                @else
+                                    <span class="text-slate-500 italic">
+                                        Horário não informado
+                                    </span>
+                                @endif
                             </div>
+
                         </div>
                     </div>
                 </div>

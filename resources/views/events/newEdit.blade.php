@@ -463,7 +463,8 @@
 
                         @if ($event->image)
                             <div class="mt-4 flex justify-center">
-                                <img src="{{ asset('storage/events/' . $event->image) }}" 
+                                <img 
+                                    src="{{ config('services.supabase.url') }}/storage/v1/object/public/{{ config('services.supabase.bucket') }}/events/{{ $event->image }}" 
                                     alt="Imagem do curso"
                                     class="rounded-lg shadow-md max-h-48 object-cover">
                             </div>

@@ -2,23 +2,32 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use App\Models\User;
 
 class DatabaseSeeder extends Seeder
 {
     /**
      * Seed the application's database.
      */
-    public function run()
-{
-    \App\Models\User::factory()->create([
-        'name' => 'Administrador Inicial',
-        'email' => 'admin@conectaIFPA.com',
-        'password' => bcrypt('senha123'),
-        'role' => \App\Models\User::ROLE_COORDINATOR,
-    ]);
-}
+    public function run(): void
+    {
+        $password = env('ADMIN_INITIAL_PASSWORD');
+
+        if (!$password) {
+            throw new \RuntimeException(
+                'ADMIN_INITIAL_PASSWORD não está definido no .env'
+            );
+        }
+
+        User::updateOrCreate(
+            ['email' => 'admin@conectaifpa.com'],
+            [
+                'name'     => 'Administrador Inicial',
+                'password' => bcrypt($password),
+                'role'     => User::ROLE_COORDINATOR,
+            ]
+        );
+    }
 
 }

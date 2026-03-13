@@ -173,17 +173,18 @@
                                 <!-- Dynamic target audience items will be added here -->
                             </div>
                             
-                            <div class="mb-4">
+                            <div class="mb-4 flex flex-col gap-3">
                                 <input 
                                     type="text" 
                                     id="target-audience-input"
                                     class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
                                     placeholder="Ex: Estudantes de graduação em Ciência da Computação"
                                 >
-                            </div>
                                 <button type="button" onclick="addTargetAudience()" class="btn-primary px-6 py-3 rounded-lg font-montserrat font-semibold whitespace-nowrap">
                                     + Adicionar
                                 </button>
+                            </div>
+                                
                             
                             <!-- ALTERAÇÃO: removi name do input original, os valores agora serão enviados via hidden inputs -->
                         </div>
@@ -201,17 +202,18 @@
                                 <!-- Dynamic prerequisites items will be added here -->
                             </div>
                             
-                            <div class="mb-4">
+                            <div class="mb-4 flex flex-col gap-3">
                                 <input 
                                     type="text" 
                                     id="prerequisites-input"
                                     class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
                                     placeholder="Ex: Conhecimento básico de lógica de programação"
                                 >
-                            </div>
                                 <button type="button" onclick="addPrerequisite()" class="btn-primary px-6 py-3 rounded-lg font-montserrat font-semibold whitespace-nowrap">
                                     + Adicionar
                                 </button>
+                            </div>
+                
                             
                             <!-- ALTERAÇÃO: removi name do input original, os valores agora serão enviados via hidden inputs -->
                         </div>
@@ -664,13 +666,24 @@
             if(value) {
                 const list = document.getElementById('target-audience-list');
                 const item = document.createElement('div');
-                item.className = 'dynamic-item flex items-center justify-between bg-gray-50 px-4 py-3 rounded-lg';
+                item.className = 'dynamic-item bg-gray-50 px-4 py-3 rounded-lg';
                 item.innerHTML = `
-                    <span class="font-open-sans text-gray-700">${value}</span>
-                    <input type="hidden" name="target_audience[]" value='${JSON.stringify(value)}'>
-                    <button type="button" onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-700 font-bold">
-                        &times;
-                    </button>
+                    <div class="flex flex-col gap-2">
+                        <span class="font-open-sans text-gray-700 break-words whitespace-normal">
+                            ${value}
+                        </span>
+
+                        <div class="flex justify-end">
+                            <button 
+                                type="button" 
+                                onclick="this.closest('.dynamic-item').remove()" 
+                                class="text-red-500 hover:text-red-700 font-bold">
+                                Remover
+                            </button>
+                        </div>
+
+                        <input type="hidden" name="target_audience[]" value='${JSON.stringify(value)}'>
+                    </div>
                 `;
                 list.appendChild(item);
                 input.value = '';
@@ -684,13 +697,24 @@
             if(value) {
                 const list = document.getElementById('prerequisites-list');
                 const item = document.createElement('div');
-                item.className = 'dynamic-item flex items-center justify-between bg-gray-50 px-4 py-3 rounded-lg';
+                item.className = 'dynamic-item bg-gray-50 px-4 py-3 rounded-lg';
                 item.innerHTML = `
-                    <span class="font-open-sans text-gray-700">${value}</span>
-                    <input type="hidden" name="prerequisites[]" value='${JSON.stringify(value)}'>
-                    <button type="button" onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-700 font-bold">
-                        &times;
-                    </button>
+                    <div class="flex flex-col gap-2">
+                        <span class="font-open-sans text-gray-700 break-words whitespace-normal">
+                            ${value}
+                        </span>
+
+                        <div class="flex justify-end">
+                            <button 
+                                type="button" 
+                                onclick="this.closest('.dynamic-item').remove()" 
+                                class="text-red-500 hover:text-red-700 font-bold">
+                                Remover
+                            </button>
+                        </div>
+
+                        <input type="hidden" name="prerequisites[]" value='${JSON.stringify(value)}'>
+                    </div>
                 `;
                 list.appendChild(item);
                 input.value = '';
@@ -710,12 +734,27 @@
                 const item = document.createElement('div');
                 item.className = 'dynamic-item bg-gray-50 px-4 py-3 rounded-lg';
                 item.innerHTML = `
-                    <div class="flex justify-between mb-2">
-                        <span class="font-open-sans text-gray-700 font-semibold">${name} (${hours})</span>
-                        <button type="button" onclick="this.parentElement.parentElement.remove()" class="text-red-500 hover:text-red-700 font-bold">&times;</button>
+                    <div class="flex flex-col gap-3">
+
+                        <span class="font-open-sans text-gray-700 font-semibold break-all">
+                            ${name} (${hours})
+                        </span>
+
+                        <p class="text-gray-600 break-words whitespace-normal">
+                            ${description}
+                        </p>
+
+                        <div class="flex justify-end">
+                            <button 
+                                type="button" 
+                                onclick="this.closest('.dynamic-item').remove()" 
+                                class="text-red-500 hover:text-red-700 font-bold">
+                                Remover
+                            </button>
+                        </div>
+
+                        <input type="hidden" name="modules[]" value='${JSON.stringify(moduleObj)}'>
                     </div>
-                    <p class="text-gray-600 mb-2">${description}</p>
-                    <input type="hidden" name="modules[]" value='${JSON.stringify(moduleObj)}'>
                 `;
                 list.appendChild(item);
 

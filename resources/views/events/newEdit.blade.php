@@ -177,7 +177,7 @@
                              <!-- Dynamic target audience items will be added here -->
                         </div>
                         
-                        <div class="flex gap-3">
+                        <div class="flex flex-col gap-3">
                             <input 
                                 type="text" 
                                 id="target-audience-input"
@@ -204,7 +204,7 @@
                              <!-- Dynamic prerequisites items will be added here -->
                         </div>
                         
-                        <div class="flex gap-3">
+                        <div class="flex flex-col gap-3">
                             <input 
                                 type="text" 
                                 id="prerequisites-input"

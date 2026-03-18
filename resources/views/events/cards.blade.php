@@ -1,13 +1,13 @@
 @foreach ($events as $event)
     <!-- Event Card -->
-    <div class="bg-card rounded-xl overflow-hidden shadow-lg card-hover transition-all duration-300">
+    <div class="bg-card rounded-xl overflow-hidden shadow-lg card-hover transition-all duration-300 min-w-0">
         <div class="w-full h-48 overflow-hidden">
             <img 
                 src="{{ config('services.supabase.url') }}/storage/v1/object/public/{{ config('services.supabase.bucket') }}/events/{{ $event->image }}" 
                 alt="{{ $event->title }}" 
                 class="w-full h-full object-cover">
         </div>
-        <div class="p-6">
+        <div class="p-6 min-w-0 overflow-hidden">
             <div class="flex items-center justify-between mb-3">
                 <span class="bg-primary-custom text-white px-3 py-1 rounded-full text-sm font-montserrat font-semibold">
                     {{ $event->category }}
@@ -20,10 +20,10 @@
                 </span>
 
             </div>
-            <h3 class="font-montserrat font-bold text-xl text-card-foreground mb-2">
+            <h3 class="font-montserrat font-bold text-xl text-card-foreground mb-2 break-words line-clamp-2">
                 {{ $event->title }}
             </h3>
-            <p class="text-muted-foreground mb-4 text-pretty">
+            <p class="text-muted-foreground mb-4 text-pretty break-words line-clamp-3 [overflow-wrap:anywhere]">
                 {{ $event->description }}
             </p>
             <div class="flex items-center justify-between">

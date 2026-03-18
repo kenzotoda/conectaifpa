@@ -60,6 +60,12 @@ class Event extends Model
         return $this->belongsTo('App\Models\User');
     }
 
+    // Retorna as novidades do evento (mais recentes primeiro).
+    public function eventNews()
+    {
+        return $this->hasMany(EventNews::class)->orderBy('created_at', 'desc');
+    }
+
     // Retorna os usuários participantes do evento. || (N:N)
     // Aqui não existe uma chave estrangeira direta nas tabelas users e events que resolva essa relação.
     // Então é necessário criar uma tabela intermediária (chamada de tabela pivô).

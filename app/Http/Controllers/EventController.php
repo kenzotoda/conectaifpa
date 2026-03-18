@@ -9,6 +9,9 @@ use Illuminate\Validation\Rule;
 // Acesso ao Model de eventos
 use App\Models\Event;
 
+// Acesso ao Model de novidades
+use App\Models\EventNews;
+
 // Acesso ao Model de usuários
 use App\Models\User;
 
@@ -681,6 +684,61 @@ class EventController extends Controller
         }
 
         return back()->with('msg', 'O aluno não estava inscrito neste evento.');
+    }
+
+
+    public function novidades($id)
+    {
+        $event = Event::findOrFail($id);
+
+        if (auth()->id() != $event->user_id) {
+            return redirect('/dashboard');
+        }
+
+        $novidades = $event->eventNews()->orderBy('created_at', 'desc')->get();
+
+        return view('events.novidades', ['event' => $event, 'novidades' => $novidades]);
+    }
+
+
+    public function storeNovidade(Request $request, $id)
+    {
+        $event = Event::findOrFail($id);
+
+        if (auth()->id() != $event->user_id) {
+            return redirect('/dashboard');
+        }
+
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'content' => 'required|string|max:2000',
+        ], [
+            'title.required' => 'O título da novidade é obrigatório.',
+            'content.required' => 'O conteúdo da novidade é obrigatório.',
+        ]);
+
+        EventNews::create([
+            'event_id' => $event->id,
+            'title' => $request->title,
+            'content' => $request->content,
+        ]);
+
+        return redirect("/events/{$event->id}/novidades")->with('msg', 'Novidade adicionada com sucesso!');
+    }
+
+
+    public function destroyNovidade($eventId, $novidadeId)
+    {
+        $event = Event::findOrFail($eventId);
+
+        if (auth()->id() != $event->user_id) {
+            return redirect('/dashboard');
+        }
+
+        $novidade = EventNews::where('event_id', $eventId)->where('id', $novidadeId)->firstOrFail();
+        $novidade->delete();
+
+        return redirect("/events/{$event->id}/novidades")->with('msg', 'Novidade removida com sucesso!');
     }
 
 

@@ -169,7 +169,7 @@
                                 Público Alvo
                             </h2>
                             
-                            <div id="target-audience-list" class="space-y-3 mb-4">
+                            <div id="target-audience-list" class="space-y-3 mb-4 min-w-0 overflow-hidden">
                                 <!-- Dynamic target audience items will be added here -->
                             </div>
                             
@@ -198,7 +198,7 @@
                                 Pré-Requisitos
                             </h2>
                             
-                            <div id="prerequisites-list" class="space-y-3 mb-4">
+                            <div id="prerequisites-list" class="space-y-3 mb-4 min-w-0 overflow-hidden">
                                 <!-- Dynamic prerequisites items will be added here -->
                             </div>
                             
@@ -239,7 +239,7 @@
                                 Módulos do Curso
                             </h2>
                             
-                            <div id="modules-list" class="space-y-4 mb-4">
+                            <div id="modules-list" class="space-y-4 mb-4 min-w-0 overflow-hidden">
                                 <!-- Dynamic modules will be added here -->
                             </div>
                             
@@ -666,10 +666,10 @@
             if(value) {
                 const list = document.getElementById('target-audience-list');
                 const item = document.createElement('div');
-                item.className = 'dynamic-item bg-gray-50 px-4 py-3 rounded-lg';
+                item.className = 'dynamic-item bg-gray-50 px-4 py-3 rounded-lg min-w-0 overflow-hidden';
                 item.innerHTML = `
-                    <div class="flex flex-col gap-2">
-                        <span class="font-open-sans text-gray-700 break-words whitespace-normal">
+                    <div class="flex flex-col gap-2 min-w-0">
+                        <span class="font-open-sans text-gray-700 break-words min-w-0" style="overflow-wrap: anywhere;">
                             ${value}
                         </span>
 
@@ -697,10 +697,10 @@
             if(value) {
                 const list = document.getElementById('prerequisites-list');
                 const item = document.createElement('div');
-                item.className = 'dynamic-item bg-gray-50 px-4 py-3 rounded-lg';
+                item.className = 'dynamic-item bg-gray-50 px-4 py-3 rounded-lg min-w-0 overflow-hidden';
                 item.innerHTML = `
-                    <div class="flex flex-col gap-2">
-                        <span class="font-open-sans text-gray-700 break-words whitespace-normal">
+                    <div class="flex flex-col gap-2 min-w-0">
+                        <span class="font-open-sans text-gray-700 break-words min-w-0" style="overflow-wrap: anywhere;">
                             ${value}
                         </span>
 
@@ -732,15 +732,15 @@
                 const moduleObj = { name, hours, description };
 
                 const item = document.createElement('div');
-                item.className = 'dynamic-item bg-gray-50 px-4 py-3 rounded-lg';
+                item.className = 'dynamic-item bg-gray-50 px-4 py-3 rounded-lg min-w-0 overflow-hidden';
                 item.innerHTML = `
-                    <div class="flex flex-col gap-3">
+                    <div class="flex flex-col gap-3 min-w-0">
 
-                        <span class="font-open-sans text-gray-700 font-semibold break-all">
+                        <span class="font-open-sans text-gray-700 font-semibold break-words min-w-0" style="overflow-wrap: anywhere;">
                             ${name} (${hours})
                         </span>
 
-                        <p class="text-gray-600 break-words whitespace-normal">
+                        <p class="text-gray-600 break-words whitespace-normal min-w-0" style="overflow-wrap: anywhere;">
                             ${description}
                         </p>
 

@@ -4,65 +4,69 @@
 
 @section('content')
 <!-- ===== CONTAINER PRINCIPAL ===== -->
-<div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+<div class="min-h-screen bg-white overflow-x-hidden">
 
-    <!-- ===== BANNER COM TÍTULO ===== -->
-    <section class="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 py-8 sm:py-12 lg:py-16 relative overflow-hidden">
-        <div class="absolute inset-0 opacity-10">
-            <div class="absolute top-0 left-1/4 w-96 h-96 bg-white rounded-full filter blur-3xl"></div>
-            <div class="absolute bottom-0 right-1/4 w-96 h-96 bg-white rounded-full filter blur-3xl"></div>
-        </div>
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white text-center text-balance leading-tight">
-                {{ $event->title }}
-            </h1>
+    @php
+        $imageUrl = config('services.supabase.url') . '/storage/v1/object/public/' . config('services.supabase.bucket') . '/events/' . $event->image;
+    @endphp
+
+    <!-- ===== HERO: IMAGEM COM TÍTULO SOBREPOSTO ===== -->
+    <section class="relative w-full min-h-[320px] sm:min-h-[380px] max-h-[65vh] overflow-hidden">
+        <img 
+            src="{{ $imageUrl }}"
+            alt="{{ $event->title }}"
+            class="absolute inset-0 w-full h-full object-cover object-center"
+        >
+        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20"></div>
+
+        <!-- Botão: Abrir imagem original -->
+        <a href="{{ $imageUrl }}" target="_blank" rel="noopener noreferrer"
+           class="absolute top-4 right-4 z-20 flex items-center gap-2 px-3 py-2 rounded-lg bg-black/50 hover:bg-black/70 text-white text-sm font-medium backdrop-blur-sm transition-colors"
+           title="Abrir imagem em tamanho original">
+            <ion-icon name="expand-outline" class="text-lg"></ion-icon>
+            <span class="hidden sm:inline">Ver imagem</span>
+        </a>
+        
+        <div class="absolute inset-0 z-10 flex flex-col">
+            <div class="flex-1"></div>
+            <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-8 sm:pb-12 lg:pb-16 lg:pr-[calc(28rem+2rem)]">
+                <h1 class="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-white tracking-tight max-w-4xl break-words [overflow-wrap:anywhere]">
+                    {{ $event->title }}
+                </h1>
+                <p class="mt-3 text-emerald-300/90 text-sm sm:text-base font-medium">
+                    {{ $event->category }} · {{ $event->modality }}
+                </p>
+            </div>
         </div>
     </section>
 
-
-    <!-- ===== HERO SECTION COM IMAGEM E BOTÃO ===== -->
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12 items-start">
-            
-            <!-- Imagem do Evento -->
-            <div class="lg:col-span-2 order-2 lg:order-1">
-                <div class="relative">
-                    <img 
-                        src="{{ config('services.supabase.url') }}/storage/v1/object/public/{{ config('services.supabase.bucket') }}/events/{{ $event->image }}"
-                        alt="{{ $event->title }}"
-                        class="w-full h-auto max-h-[600px] mx-auto
-                            rounded-2xl shadow-2xl
-                            object-contain"
-                    >
-                </div>
-            </div>
-
-
-            <!-- Card de Inscrição -->
-            <div class="lg:col-span-1 order-1 lg:order-2 sticky top-4 lg:top-8">
-                <div class="bg-white rounded-2xl shadow-2xl border border-emerald-100 overflow-hidden">
-                    <div class="bg-gradient-to-r from-emerald-600 to-teal-600 p-6 sm:p-8">
-                        <h2 class="text-white text-lg sm:text-xl font-bold mb-6">Inscreva-se Agora</h2>
+    <!-- ===== CARD DE INSCRIÇÃO (FLUTUANTE) ===== -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-24 sm:-mt-32 lg:-mt-40 relative z-20">
+        <div class="flex justify-center lg:justify-end">
+            <div class="w-full max-w-md">
+                <div class="bg-white rounded-2xl shadow-xl border border-slate-200/80 overflow-hidden backdrop-blur-sm">
+                    <div class="bg-slate-900 p-6 sm:p-8">
+                        <h2 class="text-white text-lg sm:text-xl font-bold mb-6">Inscreva-se</h2>
                         
                         <!-- Info Rápida -->
-                        <div class="space-y-3 mb-6 pb-6 border-b border-emerald-400/30">
+                        <div class="space-y-3 mb-6 pb-6 border-b border-slate-600">
                             <div class="flex items-center justify-between text-sm">
-                                <span class="text-emerald-50">Vagas Disponíveis:</span>
+                                <span class="text-slate-400">Vagas Disponíveis:</span>
                                 <span class="font-bold text-white text-lg">{{ $event->capacity - count($event->users) }}/{{ $event->capacity }}</span>
                             </div>
-                            <div class="w-full bg-emerald-400/20 rounded-full h-2">
-                                <div class="bg-white rounded-full h-2" style="width: {{ (count($event->users) / $event->capacity * 100) }}%"></div>
+                            <div class="w-full bg-slate-700 rounded-full h-2">
+                                <div class="bg-emerald-500 rounded-full h-2 transition-all" style="width: {{ (count($event->users) / $event->capacity * 100) }}%"></div>
                             </div>
                         </div>
 
                         @if ($event->registrationClosed())
-                            <span class="text-emerald-50 font-semibold inline-flex items-center gap-2">
+                            <span class="text-slate-400 font-semibold inline-flex items-center gap-2">
                                 <ion-icon name="alarm-outline" class="text-lg"></ion-icon>
                                 Prazo de inscrição encerrado
                             </span>
 
                         @elseif ($event->isFull())
-                            <span class="text-emerald-50 font-semibold inline-flex items-center gap-2">
+                            <span class="text-slate-400 font-semibold inline-flex items-center gap-2">
                                 <ion-icon name="close-circle-outline" class="text-lg"></ion-icon>
                                 Vagas esgotadas
                             </span>
@@ -76,10 +80,10 @@
                                         type="submit"
                                         id="event-submit"
                                         class="w-full flex items-center justify-center gap-2
-                                            bg-white text-emerald-700 font-semibold
-                                            px-6 py-3 rounded-xl shadow-lg
-                                            hover:shadow-xl hover:bg-emerald-50
-                                            transition-all duration-300
+                                            bg-emerald-500 text-white font-semibold
+                                            px-6 py-3 rounded-xl
+                                            hover:bg-emerald-600
+                                            transition-all duration-200
                                             text-sm sm:text-base"
                                     >
                                         <ion-icon name="checkmark-circle" class="text-xl"></ion-icon>
@@ -96,10 +100,10 @@
                                         type="submit"
                                         id="event-submit"
                                         class="w-full flex items-center justify-center gap-2
-                                            bg-white text-emerald-700 font-semibold
-                                            px-6 py-3 rounded-xl shadow-lg
-                                            hover:shadow-xl hover:bg-emerald-50
-                                            transition-all duration-300
+                                            bg-emerald-500 text-white font-semibold
+                                            px-6 py-3 rounded-xl
+                                            hover:bg-emerald-600
+                                            transition-all duration-200
                                             text-sm sm:text-base"
                                     >
                                         <ion-icon name="checkmark-circle" class="text-xl"></ion-icon>
@@ -119,7 +123,7 @@
                             </div>
                             <div>
                                 <span class="text-slate-600 text-xs">Início:</span>
-                                <span class="font-semibold text-slate-900">{{ date('d/m/Y', strtotime($event['start_date'])) }}</span>
+                                <span class="font-semibold text-slate-900">{{ $event->start_date->format('d/m/Y') }}</span>
                             </div>
                         </div>
                         <div class="flex items-center gap-3 text-sm">
@@ -130,19 +134,15 @@
                                 @if($event->start_time)
                                     <span class="text-slate-600 text-xs">Horário:</span>
                                     <span class="font-semibold text-slate-900">
-                                        {{ date('H:i', strtotime($event->start_time)) }}
-
+                                        {{ \Carbon\Carbon::parse($event->start_time)->format('H:i') }}
                                         @if($event->end_time)
-                                            - {{ date('H:i', strtotime($event->end_time)) }}
+                                            – {{ \Carbon\Carbon::parse($event->end_time)->format('H:i') }}
                                         @endif
                                     </span>
                                 @else
-                                    <span class="text-slate-500 italic">
-                                        Horário não informado
-                                    </span>
+                                    <span class="text-slate-500 italic">Horário não informado</span>
                                 @endif
                             </div>
-
                         </div>
                     </div>
                 </div>
@@ -151,110 +151,119 @@
     </section>
 
     <!-- ===== CONTEÚDO PRINCIPAL ===== -->
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
+    <section class="bg-slate-50/50 py-12 sm:py-16 lg:py-20 overflow-x-hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-w-0">
         <div id="eventPage" class="space-y-12">
 
             <!-- ===== SEÇÃO: SOBRE O EVENTO ===== -->
             <div class="space-y-6">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
-                        <ion-icon name="information-circle-outline" class="text-white text-2xl"></ion-icon>
-                    </div>
-                    <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900">Sobre o Evento</h2>
-                </div>
+                <h2 class="text-xl sm:text-2xl font-bold text-slate-900 border-l-4 border-emerald-500 pl-4">Sobre o Evento</h2>
                 
-                <div class="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 sm:p-8 lg:p-10">
-                    <p id="eventDescription" class="text-slate-700 leading-relaxed text-sm sm:text-base lg:text-lg mb-8">
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 lg:p-10 overflow-hidden">
+                    <p id="eventDescription" class="text-slate-600 leading-relaxed text-base lg:text-lg mb-10 break-words [overflow-wrap:anywhere]">
                         {{ $event->description }}
                     </p>
 
-                    <!-- Grid de Informações -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 min-w-0">
                         
-                        <!-- Card: Datas e Horários -->
-                        <div class="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-6 border border-emerald-200 hover:shadow-lg transition-shadow duration-300">
+                        <div class="bg-slate-50/50 rounded-xl p-6 border border-slate-200 min-w-0 overflow-hidden">
                             <div class="flex items-center gap-3 mb-4">
-                                <div class="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center">
+                                <div class="w-9 h-9 bg-slate-900 rounded-lg flex items-center justify-center flex-shrink-0">
                                     <ion-icon name="calendar-outline" class="text-white text-lg"></ion-icon>
                                 </div>
-                                <h3 class="font-bold text-emerald-900 text-lg">Datas e Horários</h3>
+                                <h3 class="font-semibold text-slate-900">Datas e Horários</h3>
                             </div>
-                            <ul class="space-y-3 text-sm text-slate-700">
+                            <ul class="space-y-3 text-sm">
                                 <li>
-                                    <span class="font-semibold text-emerald-700 block">Início:</span>
-                                    <span id="eventStartDate" class="text-slate-600">{{ date('d/m/Y', strtotime($event['start_date'])) }}</span>
+                                    <span class="text-slate-500 block">Início</span>
+                                    <span id="eventStartDate" class="text-slate-800 font-medium">{{ $event->start_date->format('d/m/Y') }}</span>
+                                </li>
+                                @if($event->end_date)
+                                <li>
+                                    <span class="text-slate-500 block">Término</span>
+                                    <span id="eventEndDate" class="text-slate-800 font-medium">{{ $event->end_date->format('d/m/Y') }}</span>
+                                </li>
+                                @endif
+                                @if($event->datetime_registration)
+                                <li>
+                                    <span class="text-slate-500 block">Prazo de Inscrição</span>
+                                    <span id="eventRegistrationPeriod" class="text-slate-800 font-medium">{{ $event->datetime_registration->format('d/m/Y') }} às {{ $event->datetime_registration->format('H:i') }}</span>
+                                </li>
+                                @endif
+                                <li>
+                                    <span class="text-slate-500 block">Horários</span>
+                                    <span id="eventSchedule" class="text-slate-800 font-medium">
+                                        @if($event->start_time && $event->end_time)
+                                            {{ \Carbon\Carbon::parse($event->start_time)->format('H:i') }} às {{ \Carbon\Carbon::parse($event->end_time)->format('H:i') }}
+                                        @elseif($event->start_time)
+                                            {{ \Carbon\Carbon::parse($event->start_time)->format('H:i') }}
+                                        @else
+                                            <span class="text-slate-500 italic font-normal">Não informado</span>
+                                        @endif
+                                    </span>
                                 </li>
                                 <li>
-                                    <span class="font-semibold text-emerald-700 block">Prazo de Inscrição:</span>
-                                    <span id="eventRegistrationPeriod" class="text-slate-600">{{ $event->datetime_registration }}</span>
-                                </li>
-                                <li>
-                                    <span class="font-semibold text-emerald-700 block">Horários:</span>
-                                    <span id="eventSchedule" class="text-slate-600">{{ $event->start_time }} às {{ $event->end_time }}</span>
-                                </li>
-                                <li>
-                                    <span class="font-semibold text-emerald-700 block">Modalidade:</span>
-                                    <span id="eventModality" class="text-slate-600">{{ $event->modality }}</span>
+                                    <span class="text-slate-500 block">Modalidade</span>
+                                    <span id="eventModality" class="text-slate-800 font-medium">{{ $event->modality }}</span>
                                 </li>
                             </ul>
                         </div>
 
-                        <!-- Card: Localização -->
-                        <div class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-6 border border-blue-200 hover:shadow-lg transition-shadow duration-300">
+                        <div class="bg-slate-50/50 rounded-xl p-6 border border-slate-200 min-w-0 overflow-hidden">
                             <div class="flex items-center gap-3 mb-4">
-                                <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                                <div class="w-9 h-9 bg-slate-900 rounded-lg flex items-center justify-center flex-shrink-0">
                                     <ion-icon name="location-outline" class="text-white text-lg"></ion-icon>
                                 </div>
-                                <h3 class="font-bold text-blue-900 text-lg">Localização</h3>
+                                <h3 class="font-semibold text-slate-900">Localização</h3>
                             </div>
-                            <ul class="space-y-3 text-sm text-slate-700">
+                            <ul class="space-y-3 text-sm">
                                 <li>
-                                    <span class="font-semibold text-blue-700 block">Campus:</span>
-                                    <span id="eventCampus" class="text-slate-600">{{ $event->campus }}</span>
+                                    <span class="text-slate-500 block">Campus</span>
+                                    <span id="eventCampus" class="text-slate-800 font-medium">{{ $event->campus }}</span>
                                 </li>
                                 <li>
-                                    <span class="font-semibold text-blue-700 block">Bloco:</span>
-                                    <span id="eventBuilding" class="text-slate-600">{{ $event->building }}</span>
+                                    <span class="text-slate-500 block">Bloco</span>
+                                    <span id="eventBuilding" class="text-slate-800 font-medium">{{ $event->building }}</span>
+                                </li>
+                                <li class="min-w-0 overflow-hidden">
+                                    <span class="text-slate-500 block">Endereço</span>
+                                    <span class="text-slate-800 font-medium break-words [overflow-wrap:anywhere]">{{ $event->address }}</span>
                                 </li>
                                 <li>
-                                    <span class="font-semibold text-blue-700 block">Endereço:</span>
-                                    <span id="eventBuilding" class="text-slate-600">{{ $event->address }}</span>
-                                </li>
-                                <li>
-                                    <span class="font-semibold text-blue-700 block">Local:</span>
-                                    <span id="eventLocations" class="text-slate-600">{{ $event->venue }}</span>
+                                    <span class="text-slate-500 block">Local</span>
+                                    <span id="eventLocations" class="text-slate-800 font-medium">{{ $event->venue }}</span>
                                 </li>
                             </ul>
                         </div>
 
-                        <!-- Card: Coordenação -->
-                        <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-6 border border-amber-200 hover:shadow-lg transition-shadow duration-300">
+                        <div class="bg-slate-50/50 rounded-xl p-6 border border-slate-200 min-w-0 overflow-hidden">
                             <div class="flex items-center gap-3 mb-4">
-                                <div class="w-10 h-10 bg-amber-600 rounded-lg flex items-center justify-center">
+                                <div class="w-9 h-9 bg-slate-900 rounded-lg flex items-center justify-center flex-shrink-0">
                                     <ion-icon name="person-circle-outline" class="text-white text-lg"></ion-icon>
                                 </div>
-                                <h3 class="font-bold text-amber-900 text-lg">Coordenação</h3>
+                                <h3 class="font-semibold text-slate-900">Coordenação</h3>
                             </div>
-                            <ul class="space-y-3 text-sm text-slate-700">
+                            <ul class="space-y-3 text-sm">
                                 <li>
-                                    <span class="font-semibold text-amber-700 block">Coordenador:</span>
-                                    <span id="eventCoordinator" class="text-slate-600">{{ $event->coordinator_name }}</span>
+                                    <span class="text-slate-500 block">Coordenador</span>
+                                    <span id="eventCoordinator" class="text-slate-800 font-medium">{{ $event->coordinator_name }}</span>
                                 </li>
                                 <li>
-                                    <span class="font-semibold text-amber-700 block">Contato:</span>
-                                    <span id="eventPhone" class="text-slate-600">{{ $event->coordinator_phone }}</span>
+                                    <span class="text-slate-500 block">Contato</span>
+                                    <span id="eventPhone" class="text-slate-800 font-medium">{{ $event->coordinator_phone }}</span>
                                 </li>
                                 <li>
-                                    <span class="font-semibold text-amber-700 block">E-mail:</span>
-                                    <span id="eventEmail" class="text-slate-600 break-all">{{ $event->coordinator_email }}</span>
+                                    <span class="text-slate-500 block">E-mail</span>
+                                    <a href="mailto:{{ $event->coordinator_email }}" id="eventEmail" class="text-emerald-600 hover:text-emerald-700 font-medium break-all">{{ $event->coordinator_email }}</a>
                                 </li>
-                                <li class="flex flex-col">
-                                    <span class="font-semibold text-amber-700">Ambiente EAD:</span>
-                                    <a href="{{ $event->ead_link }}" id="eventEADLink" target="_blank" class="text-amber-600 hover:text-amber-800 hover:underline font-medium mt-1 inline-flex items-center gap-1">
-                                    Acessar ambiente
-                                    <ion-icon name="open-outline" class="text-sm"></ion-icon>
+                                @if($event->ead_link)
+                                <li>
+                                    <span class="text-slate-500 block">Ambiente EAD</span>
+                                    <a href="{{ $event->ead_link }}" id="eventEADLink" target="_blank" class="text-emerald-600 hover:text-emerald-700 font-medium inline-flex items-center gap-1">
+                                        Acessar <ion-icon name="open-outline" class="text-sm"></ion-icon>
                                     </a>
                                 </li>
+                                @endif
                             </ul>
                         </div>
                     </div>
@@ -264,27 +273,22 @@
             <!-- ===== SEÇÃO: MÓDULOS ===== -->
             @if($event->modules && count($event->modules) > 0)
             <div class="space-y-6">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                        <ion-icon name="book-outline" class="text-white text-2xl"></ion-icon>
-                    </div>
-                    <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900">Módulos</h2>
-                </div>
+                <h2 class="text-xl sm:text-2xl font-bold text-slate-900 border-l-4 border-emerald-500 pl-4">Módulos</h2>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 min-w-0">
                     @foreach($event->modules as $index => $module)
                         @php
                             $m = is_string($module) ? json_decode($module, true) : $module;
                         @endphp
-                        <div class="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-6 border-2 border-purple-200 hover:shadow-lg hover:border-purple-300 transition-all duration-300 group">
-                            <div class="flex items-center gap-3 mb-4">
-                                <div class="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                                    <span class="text-white font-bold text-lg">{{ $index + 1 }}</span>
-                                </div>
-                                <h3 class="font-bold text-purple-900 text-lg">{{ $m['name'] ?? 'Módulo' }}</h3>
+                        <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm hover:border-slate-300 transition-colors min-w-0 overflow-hidden">
+                            <div class="flex items-start gap-3 mb-3 min-w-0">
+                                <span class="w-8 h-8 bg-slate-900 text-white rounded-lg flex items-center justify-center text-sm font-semibold flex-shrink-0">{{ $index + 1 }}</span>
+                                <h3 class="font-semibold text-slate-900 break-words min-w-0">{{ $m['name'] ?? 'Módulo' }}</h3>
                             </div>
-                            <p class="text-slate-700 text-sm mb-3 leading-relaxed">{{ $m['description'] ?? '' }}</p>
-                            <span class="text-purple-600 font-semibold text-sm"> <ion-icon name="time-outline"></ion-icon> {{ $m['hours'] ?? '' }}</span>
+                            <p class="text-slate-600 text-sm leading-relaxed mb-3 break-words [overflow-wrap:anywhere]">{{ $m['description'] ?? '' }}</p>
+                            @if(!empty($m['hours']))
+                            <span class="text-slate-500 text-sm inline-flex items-center gap-1"><ion-icon name="time-outline"></ion-icon> {{ $m['hours'] }}</span>
+                            @endif
                         </div>
                     @endforeach
                 </div>
@@ -293,25 +297,18 @@
 
             <!-- ===== SEÇÃO: PÚBLICO-ALVO ===== -->
             @if($event->target_audience && count($event->target_audience) > 0)
-            <div class="space-y-6">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-teal-600 to-cyan-600 rounded-xl flex items-center justify-center shadow-lg">
-                        <ion-icon name="people-outline" class="text-white text-2xl"></ion-icon>
-                    </div>
-                    <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900">Público-Alvo</h2>
-                </div>
+            <div class="space-y-6 min-w-0 overflow-hidden">
+                <h2 class="text-xl sm:text-2xl font-bold text-slate-900 border-l-4 border-emerald-500 pl-4">Público-Alvo</h2>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="flex flex-wrap gap-3 min-w-0">
                     @foreach($event->target_audience as $audience)
                         @php
                             $a = is_string($audience) ? json_decode($audience, true) : $audience;
                         @endphp
-                        <div class="flex items-start gap-4 p-4 bg-gradient-to-r from-teal-50 to-cyan-50 rounded-xl border border-teal-200 hover:shadow-md hover:border-teal-300 transition-all duration-300">
-                            <div class="w-6 h-6 bg-teal-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <ion-icon name="checkmark" class="text-white text-sm"></ion-icon>
-                            </div>
-                            <span class="text-slate-700 text-sm leading-relaxed">{{ $a['name'] ?? $a ?? '' }}</span>
-                        </div>
+                        <span class="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-slate-200 text-slate-700 text-sm min-w-0 max-w-full overflow-hidden">
+                            <ion-icon name="checkmark" class="text-emerald-500 text-base flex-shrink-0"></ion-icon>
+                            <span class="min-w-0 break-words [overflow-wrap:anywhere]">{{ $a['name'] ?? $a ?? '' }}</span>
+                        </span>
                     @endforeach
                 </div>
             </div>
@@ -319,55 +316,63 @@
 
             <!-- ===== SEÇÃO: PRÉ-REQUISITOS ===== -->
             @if($event->prerequisites && count($event->prerequisites) > 0)
-            <div class="space-y-6">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-rose-600 to-pink-600 rounded-xl flex items-center justify-center shadow-lg">
-                        <ion-icon name="checkmark-circle-outline" class="text-white text-2xl"></ion-icon>
-                    </div>
-                    <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900">Pré-Requisitos</h2>
-                </div>
+            <div class="space-y-6 min-w-0 overflow-hidden">
+                <h2 class="text-xl sm:text-2xl font-bold text-slate-900 border-l-4 border-emerald-500 pl-4">Pré-Requisitos</h2>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <ul class="space-y-3 min-w-0">
                     @foreach($event->prerequisites as $prereq)
                         @php
                             $p = is_string($prereq) ? json_decode($prereq, true) : $prereq;
                         @endphp
-                        <div class="flex items-start gap-4 p-4 bg-gradient-to-r from-rose-50 to-pink-50 rounded-xl border border-rose-200 hover:shadow-md hover:border-rose-300 transition-all duration-300">
-                            <div class="w-6 h-6 bg-rose-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <ion-icon name="star" class="text-white text-sm"></ion-icon>
-                            </div>
-                            <span class="text-slate-700 text-sm leading-relaxed">{{ $p['name'] ?? $p ?? '' }}</span>
-                        </div>
+                        <li class="flex items-start gap-3 p-4 bg-white rounded-xl border border-slate-200 min-w-0 overflow-hidden">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 flex-shrink-0"></span>
+                            <span class="text-slate-700 text-sm leading-relaxed break-words min-w-0">{{ $p['name'] ?? $p ?? '' }}</span>
+                        </li>
                     @endforeach
-                </div>
+                </ul>
             </div>
             @endif
 
             <!-- ===== SEÇÃO: NOVIDADES ===== -->
             <div class="space-y-6">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-orange-600 to-red-600 rounded-xl flex items-center justify-center shadow-lg">
-                        <ion-icon name="newspaper-outline" class="text-white text-2xl"></ion-icon>
-                    </div>
-                    <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900">Novidades</h2>
-                </div>
+                <h2 class="text-xl sm:text-2xl font-bold text-slate-900 border-l-4 border-emerald-500 pl-4">Novidades</h2>
 
-                <div class="bg-gradient-to-r from-orange-50 to-red-50 rounded-xl p-6 sm:p-8 border-l-4 border-orange-600 shadow-lg hover:shadow-xl transition-shadow duration-300">
-                    <div class="flex items-start gap-4">
-                        <div class="w-12 h-12 bg-orange-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <ion-icon name="megaphone-outline" class="text-white text-xl"></ion-icon>
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-orange-900 text-lg mb-2">Inscrições Abertas</h3>
-                            <p class="text-slate-700 leading-relaxed">
-                                As inscrições para este evento estão abertas até o prazo definido. Não perca a oportunidade de participar!
-                            </p>
+                @if($event->eventNews->isNotEmpty())
+                    <div class="space-y-4">
+                        @foreach($event->eventNews as $novidade)
+                            <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm border-l-4 border-l-emerald-500 min-w-0 overflow-hidden">
+                                <div class="flex items-start gap-4 min-w-0">
+                                    <div class="w-10 h-10 bg-slate-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <ion-icon name="megaphone-outline" class="text-white text-lg"></ion-icon>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <h3 class="font-semibold text-slate-900 mb-1 break-words">{{ $novidade->title }}</h3>
+                                        <p class="text-slate-600 leading-relaxed text-sm break-words [overflow-wrap:anywhere]">{{ $novidade->content }}</p>
+                                        <span class="text-slate-400 text-xs mt-2 block">{{ $novidade->created_at->format('d/m/Y') }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm border-l-4 border-l-emerald-500 min-w-0 overflow-hidden">
+                        <div class="flex items-start gap-4 min-w-0">
+                            <div class="w-10 h-10 bg-slate-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <ion-icon name="megaphone-outline" class="text-white text-lg"></ion-icon>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <h3 class="font-semibold text-slate-900 mb-1">Inscrições Abertas</h3>
+                                <p class="text-slate-600 leading-relaxed text-sm break-words [overflow-wrap:anywhere]">
+                                    As inscrições para este evento estão abertas até o prazo definido. Não perca a oportunidade de participar!
+                                </p>
+                            </div>
                         </div>
                     </div>
-                </div>
+                @endif
             </div>
 
         </div>
+    </div>
     </section>
 </div>
 

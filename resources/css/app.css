@@ -27,6 +27,7 @@
 
 .text-primary-custom { color: var(--primary); }
 .bg-primary-custom { background-color: var(--primary); }
+.border-primary-custom { border-color: var(--primary); }
 .bg-card { background-color: var(--card); }
 .text-card-foreground { color: var(--card-foreground); }
 .bg-secondary { background-color: var(--secondary); }

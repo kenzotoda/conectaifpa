@@ -94,7 +94,7 @@
             </div>
             
             <!-- Events Grid -->
-           <div id="events-container-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+           <div id="events-container-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 min-w-0">
                 @include('events.cards', ['events' => $events])
             </div>
 

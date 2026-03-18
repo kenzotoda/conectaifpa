@@ -173,7 +173,7 @@
                             Público Alvo
                         </h2>
                         
-                        <div id="target-audience-list" class="space-y-3 mb-4">
+                        <div id="target-audience-list" class="space-y-3 mb-4 min-w-0 overflow-hidden">
                              <!-- Dynamic target audience items will be added here -->
                         </div>
                         
@@ -200,7 +200,7 @@
                             Pré-Requisitos
                         </h2>
                         
-                        <div id="prerequisites-list" class="space-y-3 mb-4">
+                        <div id="prerequisites-list" class="space-y-3 mb-4 min-w-0 overflow-hidden">
                              <!-- Dynamic prerequisites items will be added here -->
                         </div>
                         
@@ -227,7 +227,7 @@
                             Módulos do Curso
                         </h2>
                         
-                        <div id="modules-list" class="space-y-4 mb-4">
+                        <div id="modules-list" class="space-y-4 mb-4 min-w-0 overflow-hidden">
                              <!-- Dynamic modules will be added here -->
                         </div>
                         
@@ -610,13 +610,15 @@
         // --- Funções genéricas de adicionar/remover ---
         function createItem(containerId, nameAttr, value) {
             const list = document.getElementById(containerId);
+            const displayText = (typeof value === 'object' && value && value.name) ? value.name : (typeof value === 'string' ? value : '');
+            const storeValue = (typeof value === 'object' && value && value.name) ? value : { name: displayText };
             const item = document.createElement('div');
-            item.className = 'dynamic-item flex items-center justify-between bg-gray-50 px-4 py-3 rounded-lg';
+            item.className = 'dynamic-item flex items-center justify-between gap-2 bg-gray-50 px-4 py-3 rounded-lg min-w-0 overflow-hidden';
             item.innerHTML = `
-                <span class="font-open-sans text-gray-700">${value}</span>
-                <input type="hidden" name="${nameAttr}" value='${JSON.stringify(value)}'>
+                <span class="font-open-sans text-gray-700 break-words min-w-0 flex-1" style="overflow-wrap: anywhere;">${displayText}</span>
+                <input type="hidden" name="${nameAttr}" value='${JSON.stringify(storeValue)}'>
                 <button type="button" onclick="this.parentElement.remove()" 
-                        class="text-red-500 hover:text-red-700 font-bold">&times;</button>
+                        class="text-red-500 hover:text-red-700 font-bold flex-shrink-0">&times;</button>
             `;
             list.appendChild(item);
         }
@@ -655,14 +657,14 @@
         function addModule(name = '', hours = '', description = '') {
             const list = document.getElementById('modules-list');
             const item = document.createElement('div');
-            item.className = 'dynamic-item bg-gray-50 px-4 py-3 rounded-lg';
+            item.className = 'dynamic-item bg-gray-50 px-4 py-3 rounded-lg min-w-0 overflow-hidden';
             item.innerHTML = `
-                <div class="flex justify-between mb-2">
-                    <span class="font-open-sans text-gray-700 font-semibold">${name} (${hours})</span>
+                <div class="flex justify-between gap-2 mb-2 min-w-0">
+                    <span class="font-open-sans text-gray-700 font-semibold break-words min-w-0 flex-1" style="overflow-wrap: anywhere;">${name} (${hours})</span>
                     <button type="button" onclick="this.parentElement.parentElement.remove()" 
-                            class="text-red-500 hover:text-red-700 font-bold">&times;</button>
+                            class="text-red-500 hover:text-red-700 font-bold flex-shrink-0">&times;</button>
                 </div>
-                <p class="text-gray-600 mb-2">${description}</p>
+                <p class="text-gray-600 mb-2 break-words min-w-0" style="overflow-wrap: anywhere;">${description}</p>
                 <input type="hidden" name="modules[]" 
                        value='${JSON.stringify({ name, hours, description })}'>
             `;

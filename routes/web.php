@@ -33,6 +33,10 @@ Route::get('/events/registered/{id}', [EventController::class, 'registered'])->m
 Route::get('/events/{id}/export-csv', [EventController::class, 'exportCsv'])->middleware(['auth', 'isCoordinator']);
 
 Route::delete('/events/{eventId}/remove/{userId}', [EventController::class, 'removeParticipant'])->middleware(['auth', 'isCoordinator']);
+
+Route::get('/events/{id}/novidades', [EventController::class, 'novidades'])->middleware(['auth', 'isCoordinator']);
+Route::post('/events/{id}/novidades', [EventController::class, 'storeNovidade'])->middleware(['auth', 'isCoordinator']);
+Route::delete('/events/{eventId}/novidades/{novidadeId}', [EventController::class, 'destroyNovidade'])->middleware(['auth', 'isCoordinator']);
 // Route::get('/event/{id}', [EventController::class, 'newShow']);
 
 Route::post('/events/validate-step', [EventController::class, 'validateStep'])

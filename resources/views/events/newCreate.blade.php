@@ -1,5 +1,13 @@
 @extends('layouts.newMain')
 
+@push('head')
+<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+<style>
+.ql-editor { min-height: 200px; font-size: 15px; line-height: 1.6; }
+.ql-editor.ql-blank::before { color: #9ca3af; }
+</style>
+@endpush
+
 @section('title', 'Criar Evento')
 
 @section('content')
@@ -137,18 +145,14 @@
                             </div>
                         </div>
 
-                        <!-- Description  -->
+                        <!-- Description (editor rico - negrito, listas, centralizar) -->
                         <div class="mb-8">
                             <label class="form-label block text-sm font-montserrat mb-2">
                                 Descrição do Curso *
                             </label>
-                            <textarea
-                                id="description"
-                                name="description"
-                                class="form-input w-full px-4 py-3 rounded-lg font-open-sans h-32 resize-none"
-                                placeholder="Descreva seu curso, objetivos de aprendizado, metodologia e informações importantes para os alunos..."
-                                required
-                            ></textarea>
+                            <input id="description" type="hidden" name="description" value="" required>
+                            <div id="description-editor" class="bg-white rounded-lg border border-slate-200" style="min-height: 200px;"></div>
+                            <p class="text-slate-500 text-sm mt-1">Use negrito, listas e centralizar para organizar o texto.</p>
                         </div>
 
                         <div class="flex justify-end mt-8">
@@ -258,14 +262,18 @@
                                     </div>
                                     <div>
                                         <label class="form-label block text-sm font-montserrat mb-2">
-                                            Carga Horária
+                                            Carga Horária (horas)
                                         </label>
                                         <input 
                                             type="text" 
+                                            inputmode="numeric"
                                             id="module-hours-input"
+                                            maxlength="3"
                                             class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
-                                            placeholder="Ex: 20 horas"
+                                            placeholder="Ex: 20"
+                                            autocomplete="off"
                                         >
+                                        <p id="module-hours-error" class="text-red-600 text-sm mt-1 hidden"></p>
                                     </div>
                                 </div>
                                 <div class="mb-4">
@@ -574,13 +582,14 @@
                                 <!-- Registration Deadline  -->
                                 <div>
                                     <label class="form-label block text-sm font-montserrat mb-2">
-                                        Prazo para Inscrições
+                                        Prazo para Inscrições *
                                     </label>
                                     <input
                                         id="datetime_registration"
                                         name="datetime_registration"
                                         type="datetime-local" 
                                         class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
+                                        required
                                     >
                                 </div>
                             </div>
@@ -722,22 +731,41 @@
         }
 
         // --- Modules ---
+        function formatHours(h) {
+            const num = typeof h === 'number' ? h : parseInt(h);
+            return (!isNaN(num) && num > 0) ? num + ' horas' : (h || '');
+        }
+        document.getElementById('module-hours-input')?.addEventListener('input', function() {
+            this.value = this.value.replace(/\D/g, '');
+            document.getElementById('module-hours-error').classList.add('hidden');
+        });
         function addModule() {
             const name = document.getElementById('module-name-input').value.trim();
-            const hours = document.getElementById('module-hours-input').value.trim();
+            const hoursInput = document.getElementById('module-hours-input').value.trim();
+            const hoursNum = parseInt(hoursInput);
             const description = document.getElementById('module-description-input').value.trim();
+            const errorEl = document.getElementById('module-hours-error');
+            if (errorEl) errorEl.classList.add('hidden');
 
-            if(name && hours && description) {
-                const list = document.getElementById('modules-list');
-                const moduleObj = { name, hours, description };
+            if (!hoursInput || isNaN(hoursNum) || hoursNum < 1 || hoursNum > 999) {
+                if (errorEl) {
+                    errorEl.textContent = 'Informe a carga horária em números (1 a 999).';
+                    errorEl.classList.remove('hidden');
+                }
+                return;
+            }
+            if (!name || !description) return;
 
-                const item = document.createElement('div');
-                item.className = 'dynamic-item bg-gray-50 px-4 py-3 rounded-lg min-w-0 overflow-hidden';
-                item.innerHTML = `
+            const list = document.getElementById('modules-list');
+            const moduleObj = { name, hours: hoursNum, description };
+
+            const item = document.createElement('div');
+            item.className = 'dynamic-item bg-gray-50 px-4 py-3 rounded-lg min-w-0 overflow-hidden';
+            item.innerHTML = `
                     <div class="flex flex-col gap-3 min-w-0">
 
                         <span class="font-open-sans text-gray-700 font-semibold break-words min-w-0" style="overflow-wrap: anywhere;">
-                            ${name} (${hours})
+                            ${name} (${formatHours(hoursNum)})
                         </span>
 
                         <p class="text-gray-600 break-words whitespace-normal min-w-0" style="overflow-wrap: anywhere;">
@@ -756,12 +784,11 @@
                         <input type="hidden" name="modules[]" value='${JSON.stringify(moduleObj)}'>
                     </div>
                 `;
-                list.appendChild(item);
+            list.appendChild(item);
 
-                document.getElementById('module-name-input').value = '';
-                document.getElementById('module-hours-input').value = '';
-                document.getElementById('module-description-input').value = '';
-            }
+            document.getElementById('module-name-input').value = '';
+            document.getElementById('module-hours-input').value = '';
+            document.getElementById('module-description-input').value = '';
         }
 
         // Allow Enter key to add items
@@ -1018,9 +1045,36 @@
     showStep(currentStep);
 </script>
 
-
-
-
+@push('scripts')
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var editorEl = document.getElementById('description-editor');
+    var inputEl = document.getElementById('description');
+    if (editorEl && inputEl) {
+        var quill = new Quill(editorEl, {
+            theme: 'snow',
+            placeholder: 'Descreva seu curso, objetivos de aprendizado, metodologia e informações importantes para os alunos.',
+            modules: {
+                toolbar: [
+                    [{ 'header': [1, 2, 3, false] }],
+                    ['bold', 'italic', 'underline'],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    [{ 'align': [] }],
+                    ['link']
+                ]
+            }
+        });
+        quill.on('text-change', function() {
+            inputEl.value = quill.root.innerHTML;
+        });
+        document.querySelector('form').addEventListener('submit', function() {
+            inputEl.value = quill.root.innerHTML;
+        });
+    }
+});
+</script>
+@endpush
 
 @endsection
 

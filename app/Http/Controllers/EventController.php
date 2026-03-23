@@ -19,6 +19,8 @@ use Illuminate\Support\Facades\Storage;
 
 use Illuminate\Support\Facades\Http;
 
+use Mews\Purifier\Facades\Purifier;
+
 
 class EventController extends Controller
 {
@@ -75,7 +77,15 @@ class EventController extends Controller
                 'url',
             ],
 
-            'description' => 'required|string',
+            'description' => [
+                'required',
+                'string',
+                function ($attribute, $value, $fail) {
+                    if (trim(strip_tags($value)) === '') {
+                        $fail('A descrição do curso é obrigatória.');
+                    }
+                },
+            ],
 
             'target_audience' => 'nullable|array',
             'prerequisites' => 'nullable|array',
@@ -103,7 +113,19 @@ class EventController extends Controller
                 'regex:/^\(\d{2}\)\s\d{4,5}-\d{4}$/'
             ],
 
-            'datetime_registration' => 'nullable|date|before_or_equal:start_date',
+            'datetime_registration' => [
+                'required',
+                'date',
+                function ($attribute, $value, $fail) use ($request) {
+                    $startDate = $request->start_date ?? '';
+                    $startTime = $request->start_time ?? '00:00';
+                    $startTime = strlen($startTime) === 5 ? $startTime . ':00' : $startTime;
+                    $startDateTime = $startDate . ' ' . $startTime;
+                    if (strtotime($value) > strtotime($startDateTime)) {
+                        $fail('O prazo de inscrição não pode ser posterior à data de início do evento.');
+                    }
+                },
+            ],
         ];
     }
     
@@ -163,6 +185,7 @@ class EventController extends Controller
             'coordinator_phone.required' => 'O telefone da coordenação é obrigatório.',
             'coordinator_phone.regex' => 'O telefone deve estar no formato (11) 99999-9999.',
 
+            'datetime_registration.required' => 'O prazo de inscrição é obrigatório.',
             'datetime_registration.before_or_equal' => 'O prazo de inscrição não pode ser posterior à data de início do evento.',
         ];
     }
@@ -245,7 +268,7 @@ class EventController extends Controller
         $event->modality = $request->modality;
         $event->capacity = $request->capacity;
         $event->ead_link = $request->ead_link ?? null;
-        $event->description = $request->description;
+        $event->description = Purifier::clean($request->description ?? '');
 
         $event->modules = $request->modules ?? [];
         $event->target_audience = $request->target_audience ?? [];
@@ -396,7 +419,15 @@ class EventController extends Controller
         // EAD link: obrigatório apenas se modalidade for Online ou Híbrido
         'ead_link' => Rule::requiredIf(in_array($request->modality, ['Online', 'Híbrido'])) . '|nullable|url',
 
-        'description' => 'required|string',
+        'description' => [
+            'required',
+            'string',
+            function ($attribute, $value, $fail) {
+                if (trim(strip_tags($value)) === '') {
+                    $fail('A descrição do curso é obrigatória.');
+                }
+            },
+        ],
 
         'target_audience' => 'nullable|array',
         'prerequisites' => 'nullable|array',
@@ -424,7 +455,19 @@ class EventController extends Controller
             'regex:/^\(\d{2}\)\s\d{4,5}-\d{4}$/'
         ],
 
-        'datetime_registration' => 'nullable|date|before_or_equal:start_date',
+        'datetime_registration' => [
+            'required',
+            'date',
+            function ($attribute, $value, $fail) use ($request) {
+                $startDate = $request->start_date ?? '';
+                $startTime = $request->start_time ?? '00:00';
+                $startTime = strlen($startTime) === 5 ? $startTime . ':00' : $startTime;
+                $startDateTime = $startDate . ' ' . $startTime;
+                if (strtotime($value) > strtotime($startDateTime)) {
+                    $fail('O prazo de inscrição não pode ser posterior à data de início do evento.');
+                }
+            },
+        ],
     ], [
         // Mensagens de erro personalizadas
 
@@ -499,6 +542,7 @@ class EventController extends Controller
         'coordinator_phone.regex' => 'O telefone deve estar no formato (11) 99999-9999.',
 
         // Prazo de Inscrição
+        'datetime_registration.required' => 'O prazo de inscrição é obrigatório.',
         'datetime_registration.before_or_equal' => 'O prazo de inscrição não pode ser posterior à data de início do evento.',
 
     ]);
@@ -511,7 +555,7 @@ class EventController extends Controller
         $event->modality = $request->modality;
         $event->capacity = $request->capacity;
         $event->ead_link = $request->ead_link ?? null;
-        $event->description = $request->description;
+        $event->description = Purifier::clean($request->description ?? '');
         $event->modules = $request->modules ?? [];
         $event->target_audience = $request->target_audience ?? [];
         $event->prerequisites = $request->prerequisites ?? [];

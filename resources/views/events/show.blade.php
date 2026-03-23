@@ -1,5 +1,48 @@
 @extends('layouts.newMain')
 
+@push('head')
+<style>
+/* Alinhamento (Quill) */
+#eventDescription .ql-align-center,
+#eventDescription p.ql-align-center,
+#eventDescription h1.ql-align-center,
+#eventDescription h2.ql-align-center,
+#eventDescription h3.ql-align-center,
+#eventDescription h4.ql-align-center,
+#eventDescription div.ql-align-center { text-align: center; }
+#eventDescription .ql-align-right,
+#eventDescription p.ql-align-right,
+#eventDescription h1.ql-align-right,
+#eventDescription h2.ql-align-right,
+#eventDescription h3.ql-align-right,
+#eventDescription h4.ql-align-right,
+#eventDescription div.ql-align-right { text-align: right; }
+#eventDescription .ql-align-justify,
+#eventDescription p.ql-align-justify,
+#eventDescription h1.ql-align-justify,
+#eventDescription h2.ql-align-justify,
+#eventDescription h3.ql-align-justify,
+#eventDescription h4.ql-align-justify,
+#eventDescription div.ql-align-justify { text-align: justify; }
+#eventDescription .ql-align-left,
+#eventDescription p.ql-align-left,
+#eventDescription h1.ql-align-left,
+#eventDescription h2.ql-align-left,
+#eventDescription h3.ql-align-left,
+#eventDescription h4.ql-align-left,
+#eventDescription div.ql-align-left { text-align: left; }
+#eventDescription align-center { display: block; text-align: center; }
+/* Tamanho de fonte (Quill) */
+#eventDescription .ql-size-small { font-size: 0.75em; }
+#eventDescription .ql-size-large { font-size: 1.5em; }
+#eventDescription .ql-size-huge { font-size: 2.5em; }
+/* Fundo do banner (áreas vazias) */
+.banner-bg {
+    background: linear-gradient(135deg, #f1f5f9 0%, #f8fafc 60%, #ecfdf5 100%);
+}
+</style>
+@endpush
+
 @section('title', $event['title'])
 
 @section('content')
@@ -10,140 +53,94 @@
         $imageUrl = config('services.supabase.url') . '/storage/v1/object/public/' . config('services.supabase.bucket') . '/events/' . $event->image;
     @endphp
 
-    <!-- ===== HERO: IMAGEM COM TÍTULO SOBREPOSTO ===== -->
-    <section class="relative w-full min-h-[320px] sm:min-h-[380px] max-h-[65vh] overflow-hidden">
-        <img 
-            src="{{ $imageUrl }}"
-            alt="{{ $event->title }}"
-            class="absolute inset-0 w-full h-full object-cover object-center"
-        >
-        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20"></div>
-
-        <!-- Botão: Abrir imagem original -->
-        <a href="{{ $imageUrl }}" target="_blank" rel="noopener noreferrer"
-           class="absolute top-4 right-4 z-20 flex items-center gap-2 px-3 py-2 rounded-lg bg-black/50 hover:bg-black/70 text-white text-sm font-medium backdrop-blur-sm transition-colors"
-           title="Abrir imagem em tamanho original">
-            <ion-icon name="expand-outline" class="text-lg"></ion-icon>
-            <span class="hidden sm:inline">Ver imagem</span>
-        </a>
-        
-        <div class="absolute inset-0 z-10 flex flex-col">
-            <div class="flex-1"></div>
-            <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-8 sm:pb-12 lg:pb-16 lg:pr-[calc(28rem+2rem)]">
-                <h1 class="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-white tracking-tight max-w-4xl break-words [overflow-wrap:anywhere]">
-                    {{ $event->title }}
-                </h1>
-                <p class="mt-3 text-emerald-300/90 text-sm sm:text-base font-medium">
-                    {{ $event->category }} · {{ $event->modality }}
-                </p>
+    <!-- ===== HERO: BANNER (1920x1080) ===== -->
+    <section class="pt-6 sm:pt-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="banner-bg relative w-full min-h-[280px] aspect-video max-h-[65vh] overflow-hidden rounded-xl flex items-center justify-center">
+                <img 
+                    src="{{ $imageUrl }}"
+                    alt="{{ $event->title }}"
+                    class="relative z-10 w-full h-full object-contain object-center"
+                >
             </div>
         </div>
     </section>
 
-    <!-- ===== CARD DE INSCRIÇÃO (FLUTUANTE) ===== -->
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-24 sm:-mt-32 lg:-mt-40 relative z-20">
-        <div class="flex justify-center lg:justify-end">
-            <div class="w-full max-w-md">
-                <div class="bg-white rounded-2xl shadow-xl border border-slate-200/80 overflow-hidden backdrop-blur-sm">
-                    <div class="bg-slate-900 p-6 sm:p-8">
-                        <h2 class="text-white text-lg sm:text-xl font-bold mb-6">Inscreva-se</h2>
+    <!-- ===== BOX TÍTULO + INFO + INSCRIÇÃO (estilo Even3) ===== -->
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 relative z-10">
+        <div class="bg-white rounded-lg sm:rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8 lg:p-10">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 lg:gap-8">
+                <!-- Título e informações -->
+                <div class="flex-1 min-w-0">
+                    <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 break-words [overflow-wrap:anywhere] mb-3">
+                        {{ $event->title }}
+                    </h1>
+                    <div class="space-y-1.5 text-slate-600 text-sm sm:text-base">
+                        <p class="flex items-center gap-2">
+                            <ion-icon name="calendar-outline" class="text-slate-500 flex-shrink-0"></ion-icon>
+                            <span>
+                                {{ $event->start_date->format('d/m/Y') }}
+                                @if($event->end_date)
+                                    – {{ $event->end_date->format('d/m/Y') }}
+                                @endif
+                                @if($event->start_time)
+                                    · {{ \Carbon\Carbon::parse($event->start_time)->format('H:i') }}
+                                    @if($event->end_time)
+                                        – {{ \Carbon\Carbon::parse($event->end_time)->format('H:i') }}
+                                    @endif
+                                @endif
+                            </span>
+                        </p>
+                        <p class="flex items-center gap-2">
+                            <ion-icon name="location-outline" class="text-slate-500 flex-shrink-0"></ion-icon>
+                            <span class="break-words [overflow-wrap:anywhere]">{{ $event->venue }} · {{ $event->campus }}{{ $event->building ? ' · ' . $event->building : '' }}</span>
+                        </p>
+                        <p class="flex items-center gap-2 text-slate-500">
+                            <span>{{ $event->category }} · {{ $event->modality }}</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Área de inscrição -->
+                <div id="inscricoes" class="flex-shrink-0 lg:w-auto">
+                    <div class="bg-slate-900 rounded-xl p-6 min-w-[240px] max-w-sm lg:max-w-none">
+                        <h2 class="text-white text-lg font-bold mb-4">Inscreva-se</h2>
                         
-                        <!-- Info Rápida -->
-                        <div class="space-y-3 mb-6 pb-6 border-b border-slate-600">
+                        <div class="space-y-3 mb-4 pb-4 border-b border-slate-600">
                             <div class="flex items-center justify-between text-sm">
-                                <span class="text-slate-400">Vagas Disponíveis:</span>
-                                <span class="font-bold text-white text-lg">{{ $event->capacity - count($event->users) }}/{{ $event->capacity }}</span>
+                                <span class="text-slate-400">Vagas:</span>
+                                <span class="font-bold text-white">{{ $event->capacity - count($event->users) }}/{{ $event->capacity }}</span>
                             </div>
                             <div class="w-full bg-slate-700 rounded-full h-2">
-                                <div class="bg-emerald-500 rounded-full h-2 transition-all" style="width: {{ (count($event->users) / $event->capacity * 100) }}%"></div>
+                                <div class="bg-emerald-500 rounded-full h-2 transition-all" style="width: {{ min(100, ($event->capacity > 0 ? count($event->users) / $event->capacity * 100 : 0)) }}%"></div>
                             </div>
                         </div>
 
                         @if ($event->registrationClosed())
-                            <span class="text-slate-400 font-semibold inline-flex items-center gap-2">
+                            <span class="text-slate-400 font-medium inline-flex items-center gap-2 text-sm">
                                 <ion-icon name="alarm-outline" class="text-lg"></ion-icon>
-                                Prazo de inscrição encerrado
+                                Prazo encerrado
                             </span>
-
                         @elseif ($event->isFull())
-                            <span class="text-slate-400 font-semibold inline-flex items-center gap-2">
+                            <span class="text-slate-400 font-medium inline-flex items-center gap-2 text-sm">
                                 <ion-icon name="close-circle-outline" class="text-lg"></ion-icon>
                                 Vagas esgotadas
                             </span>
-
                         @else
-                            @if(auth()->check() && auth()->user()->isParticipant())
-                                <!-- Botão de Confirmação -->
+                            @php
+                                $podeInscrever = !auth()->check() || auth()->user()->isParticipant() || auth()->user()->isCoordinator();
+                            @endphp
+                            @if($podeInscrever)
                                 <form action="/events/join/{{ $event['id'] }}" method="POST">
                                     @csrf
-                                    <button 
-                                        type="submit"
-                                        id="event-submit"
-                                        class="w-full flex items-center justify-center gap-2
-                                            bg-emerald-500 text-white font-semibold
-                                            px-6 py-3 rounded-xl
-                                            hover:bg-emerald-600
-                                            transition-all duration-200
-                                            text-sm sm:text-base"
-                                    >
+                                    <button type="submit" id="event-submit"
+                                        class="w-full flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-6 py-3 rounded-[32px] transition-all duration-200 text-sm sm:text-base">
                                         <ion-icon name="checkmark-circle" class="text-xl"></ion-icon>
                                         <span>Confirmar Presença</span>
                                     </button>
                                 </form>
                             @endif
-
-                            @guest
-                                <!-- Botão de Confirmação -->
-                                <form action="/events/join/{{ $event['id'] }}" method="POST" class="space-y-3">
-                                    @csrf
-                                    <button 
-                                        type="submit"
-                                        id="event-submit"
-                                        class="w-full flex items-center justify-center gap-2
-                                            bg-emerald-500 text-white font-semibold
-                                            px-6 py-3 rounded-xl
-                                            hover:bg-emerald-600
-                                            transition-all duration-200
-                                            text-sm sm:text-base"
-                                    >
-                                        <ion-icon name="checkmark-circle" class="text-xl"></ion-icon>
-                                        <span>Confirmar Presença</span>
-                                    </button>
-                                </form>
-                            @endguest
                         @endif
-
-                    </div>
-
-                    <!-- Info Adicional -->
-                    <div class="p-6 space-y-4">
-                        <div class="flex items-center gap-3 text-sm">
-                            <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <ion-icon name="calendar-outline" class="text-emerald-600 text-lg"></ion-icon>
-                            </div>
-                            <div>
-                                <span class="text-slate-600 text-xs">Início:</span>
-                                <span class="font-semibold text-slate-900">{{ $event->start_date->format('d/m/Y') }}</span>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-3 text-sm">
-                            <div class="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <ion-icon name="time-outline" class="text-teal-600 text-lg"></ion-icon>
-                            </div>
-                            <div>
-                                @if($event->start_time)
-                                    <span class="text-slate-600 text-xs">Horário:</span>
-                                    <span class="font-semibold text-slate-900">
-                                        {{ \Carbon\Carbon::parse($event->start_time)->format('H:i') }}
-                                        @if($event->end_time)
-                                            – {{ \Carbon\Carbon::parse($event->end_time)->format('H:i') }}
-                                        @endif
-                                    </span>
-                                @else
-                                    <span class="text-slate-500 italic">Horário não informado</span>
-                                @endif
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -160,10 +157,17 @@
                 <h2 class="text-xl sm:text-2xl font-bold text-slate-900 border-l-4 border-emerald-500 pl-4">Sobre o Evento</h2>
                 
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 lg:p-10 overflow-hidden">
-                    <p id="eventDescription" class="text-slate-600 leading-relaxed text-base lg:text-lg mb-10 break-words [overflow-wrap:anywhere]">
-                        {{ $event->description }}
-                    </p>
+                    <div id="eventDescription" class="text-slate-600 leading-relaxed break-words [overflow-wrap:anywhere] text-[15px] [&_p]:mb-4 [&_p:last-child]:mb-0 [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:mb-3 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-4 [&_li]:mb-1 [&_a]:text-emerald-600 [&_a]:hover:text-emerald-700">
+                        {!! \Mews\Purifier\Facades\Purifier::clean($event->description) !!}
+                    </div>
+                </div>
+            </div>
 
+            <!-- ===== SEÇÃO: INFORMAÇÕES ===== -->
+            <div class="space-y-6">
+                <h2 class="text-xl sm:text-2xl font-bold text-slate-900 border-l-4 border-emerald-500 pl-4">Informações</h2>
+                
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 lg:p-10 overflow-hidden">
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 min-w-0">
                         
                         <div class="bg-slate-50/50 rounded-xl p-6 border border-slate-200 min-w-0 overflow-hidden">
@@ -287,7 +291,13 @@
                             </div>
                             <p class="text-slate-600 text-sm leading-relaxed mb-3 break-words [overflow-wrap:anywhere]">{{ $m['description'] ?? '' }}</p>
                             @if(!empty($m['hours']))
-                            <span class="text-slate-500 text-sm inline-flex items-center gap-1"><ion-icon name="time-outline"></ion-icon> {{ $m['hours'] }}</span>
+                            <span class="text-slate-500 text-sm inline-flex items-center gap-1"><ion-icon name="time-outline"></ion-icon>
+                                @if(is_numeric($m['hours']))
+                                    {{ (int) $m['hours'] }} horas
+                                @else
+                                    {{ $m['hours'] }}
+                                @endif
+                            </span>
                             @endif
                         </div>
                     @endforeach
@@ -355,19 +365,7 @@
                         @endforeach
                     </div>
                 @else
-                    <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm border-l-4 border-l-emerald-500 min-w-0 overflow-hidden">
-                        <div class="flex items-start gap-4 min-w-0">
-                            <div class="w-10 h-10 bg-slate-900 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <ion-icon name="megaphone-outline" class="text-white text-lg"></ion-icon>
-                            </div>
-                            <div class="min-w-0 flex-1">
-                                <h3 class="font-semibold text-slate-900 mb-1">Inscrições Abertas</h3>
-                                <p class="text-slate-600 leading-relaxed text-sm break-words [overflow-wrap:anywhere]">
-                                    As inscrições para este evento estão abertas até o prazo definido. Não perca a oportunidade de participar!
-                                </p>
-                            </div>
-                        </div>
-                    </div>
+                    <p class="text-slate-600 text-sm">Este evento ainda não possui novidades.</p>
                 @endif
             </div>
 

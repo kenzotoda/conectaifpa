@@ -114,8 +114,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 document.addEventListener('DOMContentLoaded', function () {
+    const participantsTable = document.getElementById('participantsTable')
+    if (!participantsTable) return
 
-    let table = new DataTable('#participantsTable', {
+    new DataTable(participantsTable, {
         responsive: true,
         pageLength: 10,
         lengthMenu: [10, 25, 50, 100],
@@ -145,6 +147,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 sortDescending: ": ativar para ordenar a coluna de forma decrescente"
             }
         }
-    });
-});
+    })
+})
 

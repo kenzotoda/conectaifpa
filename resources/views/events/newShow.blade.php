@@ -249,5 +249,6 @@
         scrollbar-width: none;
       }
     </style>
+    @include('partials.vlibras')
 </body>
 </html>

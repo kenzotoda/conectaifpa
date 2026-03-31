@@ -22,10 +22,11 @@
 
     {{-- Formulário para adicionar novidade --}}
     <div class="card shadow-sm mb-4">
-        <div class="card-header bg-primary-custom text-white">
-            <h5 class="mb-0 fw-bold">
-                <ion-icon name="add-circle-outline"></ion-icon> Adicionar nova novidade
-            </h5>
+        <div class="card-header bg-white border-bottom py-2">
+            <div class="d-flex align-items-center gap-2 text-start">
+                <ion-icon name="add-circle-outline" class="fs-4 text-dark flex-shrink-0" aria-hidden="true"></ion-icon>
+                <h5 class="mb-0 fw-bold text-dark">Adicionar nova novidade</h5>
+            </div>
         </div>
         <div class="card-body">
             <form action="/events/{{ $event->id }}/novidades" method="POST">
@@ -66,11 +67,14 @@
 
     {{-- Lista de novidades existentes --}}
     <div class="card shadow-sm">
-        <div class="card-header bg-light">
-            <h5 class="mb-0 fw-bold">
-                <ion-icon name="newspaper-outline"></ion-icon> Novidades publicadas
-                <span class="badge bg-secondary ms-2">{{ $novidades->count() }}</span>
-            </h5>
+        <div class="card-header bg-light border-bottom py-2">
+            <div class="d-flex align-items-center gap-2 text-start">
+                <ion-icon name="newspaper-outline" class="fs-4 text-dark flex-shrink-0" aria-hidden="true"></ion-icon>
+                <h5 class="mb-0 fw-bold text-dark">
+                    Novidades publicadas
+                    <span class="badge bg-secondary ms-2">{{ $novidades->count() }}</span>
+                </h5>
+            </div>
         </div>
         <div class="card-body">
             @if ($novidades->isEmpty())

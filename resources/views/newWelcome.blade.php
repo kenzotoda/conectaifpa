@@ -10,15 +10,17 @@
         radial-gradient(at 80% 0%, rgba(255,255,255,0.08) 0px, transparent 50%),
         linear-gradient(135deg, #0f766e 0%, #0d9488 35%, #0f766e 70%, #134e4a 100%);
 }
+/* Forma orgânica igual ao login (.blob em auth) — aplicar em TODOS os blobs */
 .home-hero-blob { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
 @keyframes float-hero {
     0%, 100% { transform: translate(0, 0) scale(1); }
     33% { transform: translate(20px, -15px) scale(1.02); }
     66% { transform: translate(-10px, 10px) scale(0.98); }
 }
-.home-hero-blob { animation: float-hero 8s ease-in-out infinite; }
-.home-hero-blob-2 { animation: float-hero 12s ease-in-out infinite 1s; }
-.home-hero-blob-3 { animation: float-hero 10s ease-in-out infinite 0.5s reverse; }
+/* Animações distintas (mesma ideia do login: float-slow / float-slower / float-reverse) */
+.home-hero-blob--1 { animation: float-hero 8s ease-in-out infinite; }
+.home-hero-blob--2 { animation: float-hero 12s ease-in-out infinite 1s; }
+.home-hero-blob--3 { animation: float-hero 10s ease-in-out infinite 0.5s reverse; }
 </style>
 @endpush
 
@@ -30,9 +32,9 @@
 <section class="home-hero relative overflow-hidden min-h-[70vh] flex flex-col justify-center px-4 sm:px-6 lg:px-8 py-20 sm:py-24 lg:py-32">
     {{-- Blobs decorativos --}}
     <div class="absolute inset-0 pointer-events-none overflow-hidden">
-        <div class="absolute top-1/4 left-1/4 w-48 h-48 sm:w-64 sm:h-64 lg:w-80 lg:h-80 bg-white/10 home-hero-blob"></div>
-        <div class="absolute bottom-1/4 right-1/4 w-40 h-40 sm:w-52 sm:h-52 lg:w-64 lg:h-64 bg-white/12 home-hero-blob-2"></div>
-        <div class="absolute top-1/2 right-1/3 w-28 h-28 sm:w-36 sm:h-36 lg:w-44 lg:h-44 bg-white/6 home-hero-blob-3"></div>
+        <div class="absolute top-1/4 left-1/4 w-48 h-48 sm:w-64 sm:h-64 lg:w-80 lg:h-80 bg-white/10 home-hero-blob home-hero-blob--1"></div>
+        <div class="absolute bottom-1/4 right-1/4 w-40 h-40 sm:w-52 sm:h-52 lg:w-64 lg:h-64 bg-white/15 home-hero-blob home-hero-blob--2"></div>
+        <div class="absolute top-1/2 right-1/3 w-28 h-28 sm:w-36 sm:h-36 lg:w-44 lg:h-44 bg-white/5 home-hero-blob home-hero-blob--3"></div>
     </div>
 
     <div class="relative z-10 max-w-7xl mx-auto w-full text-center">

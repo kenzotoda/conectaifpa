@@ -47,9 +47,22 @@
         }
     </style>
 </head>
-<body class="font-dm-sans antialiased min-h-screen overflow-x-hidden overflow-y-auto bg-slate-100">
-    <div class="min-h-screen flex flex-col lg:flex-row">
+<body class="layout-auth font-dm-sans antialiased min-h-screen overflow-x-hidden overflow-y-auto bg-slate-100 flex flex-col">
+    <header class="auth-top-bar sticky top-0 z-50 shrink-0 bg-white/95 backdrop-blur-sm border-b border-slate-200/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3 sm:gap-4 min-h-[3.5rem] min-w-0">
+            <a href="{{ url('/') }}" class="flex items-center gap-2 sm:gap-2.5 no-underline group min-w-0 flex-shrink">
+                <div class="w-8 h-8 sm:w-9 sm:h-9 bg-primary-custom rounded-lg flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow flex-shrink-0">
+                    <span class="text-white font-outfit font-black text-base sm:text-lg">C</span>
+                </div>
+                <span class="font-outfit font-bold text-slate-800 text-sm sm:text-base truncate">ConectaIFPA</span>
+            </a>
+            @include('partials.nav-a11y-toolbar')
+        </div>
+    </header>
+
+    <main class="flex-1 flex flex-col lg:flex-row min-h-0 min-h-[calc(100dvh-3.5rem)] lg:min-h-[calc(100vh-3.5rem)]">
         @yield('content')
-    </div>
+    </main>
+    @include('partials.vlibras')
 </body>
 </html>

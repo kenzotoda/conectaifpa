@@ -23,5 +23,6 @@
         </div>
 
         @livewireScripts
+        @include('partials.vlibras')
     </body>
 </html>

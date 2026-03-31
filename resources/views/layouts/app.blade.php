@@ -41,5 +41,6 @@
         @stack('modals')
 
         @livewireScripts
+        @include('partials.vlibras')
     </body>
 </html>

@@ -134,7 +134,326 @@
   body {
     @apply flex flex-col;
   }
+  /* Largura total (como o footer); páginas usam max-w-* / container no conteúdo quando precisam */
   main {
-    @apply flex-1 container mx-auto px-4 py-6;
+    @apply flex-1 w-full min-w-0;
   }
+}
+
+/* ========== Acessibilidade: tamanho da fonte (escala na raiz) ========== */
+html[data-a11y-font="-2"] {
+  font-size: 87.5%;
+}
+html[data-a11y-font="-1"] {
+  font-size: 93.75%;
+}
+html[data-a11y-font="0"] {
+  font-size: 100%;
+}
+html[data-a11y-font="1"] {
+  font-size: 112.5%;
+}
+html[data-a11y-font="2"] {
+  font-size: 125%;
+}
+
+/* ========== Acessibilidade: alto contraste (site inteiro) ==========
+   Objetivo: texto preto em fundo claro no conteúdo; cabeçalho/rodapé escuros;
+   exceções para blocos promocionais (hero) que permanecem escuros com texto claro. */
+
+html.a11y-high-contrast body {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+html.a11y-high-contrast main {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+html.a11y-high-contrast main [class*="min-h-screen"],
+html.a11y-high-contrast main section {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+/* Fundos claros e gradientes comuns → branco legível (evita match em bg-slate-900) */
+html.a11y-high-contrast main [class*="bg-gradient"]:not(.home-hero),
+html.a11y-high-contrast main .bg-slate-50,
+html.a11y-high-contrast main .bg-slate-100,
+html.a11y-high-contrast main .bg-slate-200,
+html.a11y-high-contrast main .bg-gray-50,
+html.a11y-high-contrast main .bg-gray-100,
+html.a11y-high-contrast main .bg-zinc-50,
+html.a11y-high-contrast main .bg-zinc-100 {
+  background-image: none !important;
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+/* Hero da home: mantém bloco escuro com texto claro */
+html.a11y-high-contrast .home-hero {
+  background: #000000 !important;
+  background-image: none !important;
+  color: #ffffff !important;
+}
+
+html.a11y-high-contrast .home-hero h1,
+html.a11y-high-contrast .home-hero p,
+html.a11y-high-contrast .home-hero span,
+html.a11y-high-contrast .home-hero ion-icon {
+  color: #ffffff !important;
+}
+
+html.a11y-high-contrast .home-hero a {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border: 3px solid #000000 !important;
+}
+
+/* Ícones dentro dos botões do hero: mesmo contraste do texto (evita branco sobre branco) */
+html.a11y-high-contrast .home-hero a ion-icon {
+  color: #000000 !important;
+}
+
+html.a11y-high-contrast .home-hero .inline-flex.items-center.gap-2.px-4 {
+  border: 2px solid #ffffff !important;
+}
+
+/* Tipografia comum no main → preto */
+html.a11y-high-contrast main [class*="text-slate-"],
+html.a11y-high-contrast main [class*="text-gray-"],
+html.a11y-high-contrast main .text-muted-foreground,
+html.a11y-high-contrast main .text-card-foreground {
+  color: #000000 !important;
+}
+
+/* Texto branco no conteúdo → preto (hero sobrescreve abaixo) */
+html.a11y-high-contrast main .text-white {
+  color: #000000 !important;
+}
+
+/* Não aplicar em <a>: senão anula .home-hero a e fica texto branco sobre fundo branco */
+html.a11y-high-contrast .home-hero .text-white:not(a) {
+  color: #ffffff !important;
+}
+
+/* Links no conteúdo */
+html.a11y-high-contrast main a:not(header a):not(footer a) {
+  color: #0000cc !important;
+  text-decoration: underline !important;
+}
+
+html.a11y-high-contrast main a.text-emerald-600,
+html.a11y-high-contrast main .text-emerald-600,
+html.a11y-high-contrast main .text-emerald-700 {
+  color: #0000cc !important;
+}
+
+/* Botões de ação sólidos */
+html.a11y-high-contrast main .bg-primary-custom,
+html.a11y-high-contrast main .bg-emerald-500,
+html.a11y-high-contrast main .bg-emerald-600,
+html.a11y-high-contrast main button[class*="bg-slate-9"],
+html.a11y-high-contrast main .bg-slate-900 {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: 2px solid #000000 !important;
+  text-decoration: none !important;
+}
+
+html.a11y-high-contrast main .border-primary-custom,
+html.a11y-high-contrast main .border-emerald-600,
+html.a11y-high-contrast main .border-slate-200,
+html.a11y-high-contrast main .border-slate-300 {
+  border-color: #000000 !important;
+}
+
+/* Cards e superfícies brancas */
+html.a11y-high-contrast main .bg-white,
+html.a11y-high-contrast main .group.bg-white,
+html.a11y-high-contrast .max-w-7xl .bg-white {
+  background-color: #ffffff !important;
+  border: 2px solid #000000 !important;
+  color: #000000 !important;
+  box-shadow: none !important;
+}
+
+html.a11y-high-contrast .group.bg-white h3,
+html.a11y-high-contrast .group.bg-white p,
+html.a11y-high-contrast .group.bg-white span:not(.bg-primary-custom) {
+  color: #000000 !important;
+}
+
+/* Formulários */
+html.a11y-high-contrast main input,
+html.a11y-high-contrast main textarea,
+html.a11y-high-contrast main select {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border: 2px solid #000000 !important;
+}
+
+html.a11y-high-contrast main input::placeholder,
+html.a11y-high-contrast main textarea::placeholder {
+  color: #333333 !important;
+  opacity: 1 !important;
+}
+
+/* Cabeçalho e rodapé */
+html.a11y-high-contrast header {
+  background-color: #000000 !important;
+  border-bottom: 2px solid #ffffff !important;
+  color: #ffffff !important;
+}
+
+html.a11y-high-contrast header a,
+html.a11y-high-contrast header span:not(.a11y-font-label),
+html.a11y-high-contrast header button {
+  color: #ffff00 !important;
+  text-decoration: underline !important;
+}
+
+html.a11y-high-contrast header .bg-primary-custom {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border: 2px solid #ffffff !important;
+  text-decoration: none !important;
+}
+
+html.a11y-high-contrast footer {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-color: #ffffff !important;
+}
+
+html.a11y-high-contrast footer a {
+  color: #ffff00 !important;
+  text-decoration: underline !important;
+}
+
+html.a11y-high-contrast footer span,
+html.a11y-high-contrast footer .text-slate-400,
+html.a11y-high-contrast footer .text-slate-500 {
+  color: #ffffff !important;
+}
+
+/* Imagens e mídia */
+html.a11y-high-contrast img,
+html.a11y-high-contrast video {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+/* Botão carregar mais */
+html.a11y-high-contrast #loadMoreBtn {
+  border: 3px solid #000000 !important;
+  color: #000000 !important;
+  background-color: #ffffff !important;
+}
+
+/* Toolbar acessibilidade na navbar (pode haver duas instâncias: header + menu mobile) */
+html.a11y-high-contrast .nav-a11y-toolbar {
+  background-color: #ffffff !important;
+  border: 2px solid #000000 !important;
+}
+
+html.a11y-high-contrast .nav-a11y-toolbar span:not(.sr-only) {
+  color: #000000 !important;
+}
+
+html.a11y-high-contrast .nav-a11y-toolbar [data-a11y-action="contrast"] {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-color: #000000 !important;
+}
+
+html.a11y-high-contrast .nav-a11y-toolbar [data-a11y-action="font-dec"],
+html.a11y-high-contrast .nav-a11y-toolbar [data-a11y-action="font-inc"] {
+  color: #000000 !important;
+}
+
+/* Sobrescreve header button/link amarelo nos controles da toolbar */
+html.a11y-high-contrast header .nav-a11y-toolbar button {
+  text-decoration: none !important;
+}
+
+/* Tabelas (dashboard, listagens) */
+html.a11y-high-contrast main table,
+html.a11y-high-contrast main .table {
+  border: 2px solid #000000 !important;
+  color: #000000 !important;
+}
+
+html.a11y-high-contrast main th,
+html.a11y-high-contrast main td {
+  border-color: #000000 !important;
+  color: #000000 !important;
+}
+
+/* Layout auth (login, registro, esqueceu senha): painel verde + card de formulário */
+html.a11y-high-contrast body.layout-auth {
+  background-color: #ffffff !important;
+}
+
+html.a11y-high-contrast main .auth-panel {
+  background-color: #000000 !important;
+  background-image: none !important;
+}
+
+html.a11y-high-contrast main .auth-panel h1,
+html.a11y-high-contrast main .auth-panel p,
+html.a11y-high-contrast main .auth-panel .font-outfit,
+html.a11y-high-contrast main .auth-panel .text-white,
+html.a11y-high-contrast main .auth-panel [class*="text-white"] {
+  color: #ffffff !important;
+}
+
+html.a11y-high-contrast main .auth-panel a {
+  color: #ffff00 !important;
+  text-decoration: underline !important;
+}
+
+html.a11y-high-contrast main .auth-panel ion-icon {
+  color: #ffffff !important;
+}
+
+html.a11y-high-contrast main .glass-card {
+  background-color: #ffffff !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 2px solid #000000 !important;
+  color: #000000 !important;
+  box-shadow: none !important;
+}
+
+html.a11y-high-contrast main .glass-card h2,
+html.a11y-high-contrast main .glass-card label,
+html.a11y-high-contrast main .glass-card p,
+html.a11y-high-contrast main .glass-card .text-slate-800,
+html.a11y-high-contrast main .glass-card .text-slate-600,
+html.a11y-high-contrast main .glass-card .text-slate-500 {
+  color: #000000 !important;
+}
+
+html.a11y-high-contrast main .glass-card a:not(.bg-primary-custom) {
+  color: #0000cc !important;
+}
+
+html.a11y-high-contrast main .glass-card .bg-primary-custom,
+html.a11y-high-contrast main .glass-card button[type="submit"] {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: 2px solid #000000 !important;
+}
+
+html.a11y-high-contrast main .glass-card input,
+html.a11y-high-contrast main .glass-card select {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border: 2px solid #000000 !important;
+}
+
+html.a11y-high-contrast main [class*="auth-safe"] {
+  background-color: #ffffff !important;
 }

@@ -22,17 +22,22 @@
     <!-- Header -->
     <header class="bg-white/95 backdrop-blur-sm border-b border-slate-200/80 sticky top-0 z-50">
         <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <!-- Logo -->
-                <a href="/" class="flex items-center gap-2.5 no-underline group">
-                    <div class="w-9 h-9 sm:w-10 sm:h-10 bg-primary-custom rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
-                        <span class="text-white font-montserrat font-black text-lg sm:text-xl">C</span>
+            {{-- Mobile: logo + hambúrguer. Acessibilidade no painel #mobile-menu. --}}
+            <div class="flex items-center justify-between gap-3 min-w-0 w-full min-h-16">
+                <div class="flex items-center gap-3 sm:gap-5 min-w-0 flex-1 md:flex-initial">
+                    <a href="/" class="flex items-center gap-2 sm:gap-2.5 no-underline group min-w-0 shrink-0">
+                        <div class="w-9 h-9 sm:w-10 sm:h-10 bg-primary-custom rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow shrink-0">
+                            <span class="text-white font-montserrat font-black text-lg sm:text-xl">C</span>
+                        </div>
+                        <span class="font-montserrat font-bold text-slate-800 text-base sm:text-lg md:text-xl truncate min-w-0 max-w-[11rem] sm:max-w-none">ConectaIFPA</span>
+                    </a>
+                    <div class="hidden md:block min-w-0">
+                        @include('partials.nav-a11y-toolbar', ['placement' => 'header'])
                     </div>
-                    <span class="font-montserrat font-bold text-slate-800 text-lg sm:text-xl">ConectaIFPA</span>
-                </a>
+                </div>
 
                 <!-- Desktop Navigation -->
-                <div class="hidden md:flex items-center gap-1 lg:gap-2">
+                <div class="hidden md:flex items-center gap-1 lg:gap-2 flex-shrink-0 min-w-0">
                     <a href="/#eventos"
                        class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 no-underline transition-colors">
                         Eventos
@@ -83,18 +88,26 @@
                     @endguest
                 </div>
 
-                <!-- Mobile Menu Button -->
                 <button id="menu-toggle" type="button"
-                        class="md:hidden p-2.5 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors"
-                        aria-label="Menu">
-                    <ion-icon name="menu-outline" class="text-2xl"></ion-icon>
+                        class="md:hidden shrink-0 p-2.5 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors touch-manipulation"
+                        aria-label="Menu"
+                        aria-expanded="false"
+                        aria-controls="mobile-menu">
+                    <ion-icon name="menu-outline" class="text-2xl pointer-events-none"></ion-icon>
                 </button>
             </div>
 
             <!-- Mobile Navigation -->
             <div id="mobile-menu"
                  class="md:hidden hidden overflow-hidden transition-all duration-300 ease-out">
-                <div class="py-4 space-y-1 border-t border-slate-200">
+                <div class="border-t border-slate-200">
+                    <div class="px-4 pt-4 pb-3 bg-slate-50/80" aria-labelledby="mobile-a11y-section-label">
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3 m-0" id="mobile-a11y-section-label">
+                            Acessibilidade
+                        </p>
+                        @include('partials.nav-a11y-toolbar', ['placement' => 'drawer'])
+                    </div>
+                    <div class="py-4 space-y-1">
                     <a href="/#eventos"
                        class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 font-medium hover:bg-slate-100 no-underline transition-colors">
                         <ion-icon name="calendar-outline" class="text-xl text-slate-400"></ion-icon>
@@ -154,6 +167,7 @@
                             </form>
                         </div>
                     @endauth
+                    </div>
                 </div>
             </div>
         </nav>
@@ -207,5 +221,6 @@
     <!-- ionicons -->
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    @include('partials.vlibras')
 </body>
 </html>

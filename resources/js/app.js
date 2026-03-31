@@ -1,4 +1,5 @@
 import '../css/app.css'
+import './a11y.js'
 
 /* Bootstrap */
 import 'bootstrap/dist/css/bootstrap.min.css'
@@ -63,7 +64,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!toggle || !menu) return
 
     toggle.addEventListener('click', () => {
-        menu.classList.toggle('hidden')
+        const hiddenNow = menu.classList.toggle('hidden')
+        toggle.setAttribute('aria-expanded', String(!hiddenNow))
     })
 })
 

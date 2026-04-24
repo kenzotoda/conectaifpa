@@ -116,19 +116,37 @@
                             </div>
                         </div>
 
-                        @if ($event->registrationClosed())
+                        @php
+                            $bloqueio = $event->registrationsBlockedReason();
+                        @endphp
+                        @if ($bloqueio === 'finalized')
+                            <span class="text-slate-400 font-medium inline-flex items-center gap-2 text-sm">
+                                <ion-icon name="lock-closed-outline" class="text-lg"></ion-icon>
+                                Este evento foi finalizado pelo coordenador.
+                            </span>
+                        @elseif ($bloqueio === 'ended')
+                            <span class="text-slate-400 font-medium inline-flex items-center gap-2 text-sm">
+                                <ion-icon name="flag-outline" class="text-lg"></ion-icon>
+                                O período deste evento foi encerrado.
+                            </span>
+                        @elseif ($bloqueio === 'started')
+                            <span class="text-slate-400 font-medium inline-flex items-center gap-2 text-sm">
+                                <ion-icon name="play-circle-outline" class="text-lg"></ion-icon>
+                                Este evento está em andamento. As inscrições estão encerradas.
+                            </span>
+                        @elseif ($bloqueio === 'deadline')
                             <span class="text-slate-400 font-medium inline-flex items-center gap-2 text-sm">
                                 <ion-icon name="alarm-outline" class="text-lg"></ion-icon>
-                                Prazo encerrado
+                                Prazo de inscrições encerrado
                             </span>
-                        @elseif ($event->isFull())
+                        @elseif ($bloqueio === 'full')
                             <span class="text-slate-400 font-medium inline-flex items-center gap-2 text-sm">
                                 <ion-icon name="close-circle-outline" class="text-lg"></ion-icon>
                                 Vagas esgotadas
                             </span>
                         @else
                             @php
-                                $podeInscrever = !auth()->check() || auth()->user()->isParticipant() || auth()->user()->isCoordinator();
+                                $podeInscrever = !auth()->check() || auth()->user()->isParticipant();
                             @endphp
                             @if($podeInscrever)
                                 <form action="/events/join/{{ $event['id'] }}" method="POST">
@@ -139,11 +157,45 @@
                                         <span>Confirmar Presença</span>
                                     </button>
                                 </form>
+                            @elseif(auth()->check() && auth()->user()->isCoordinator())
+                                <p class="text-slate-300 text-sm leading-relaxed">
+                                    Contas de coordenação não podem se inscrever em eventos. Use uma conta de participante para se inscrever.
+                                </p>
                             @endif
                         @endif
                     </div>
                 </div>
             </div>
+
+            @auth
+                @if(auth()->user()->isCoordinator() && auth()->id() === $event->user_id)
+                    <div class="mt-6 pt-6 border-t border-slate-200">
+                        <h3 class="text-sm font-semibold text-slate-900 mb-3">Coordenação</h3>
+                        @if($event->isFinalized())
+                            <p class="text-sm text-slate-600 max-w-2xl">
+                                Evento finalizado: não é possível editar, gerenciar inscritos ou novidades. A página permanece visível ao público e você pode excluir o evento no painel.
+                            </p>
+                        @elseif($event->calendarEnded())
+                            <p class="text-sm text-slate-600 mb-3 max-w-2xl">
+                                O período do evento já terminou conforme data e horário de fim. Para encerrar de forma definitiva (sem edição nem gestão), finalize abaixo.
+                            </p>
+                            <form action="{{ url('/events/'.$event->id.'/finalize') }}" method="POST" class="inline"
+                                  onsubmit="return confirm('Finalizar definitivamente? Você não poderá mais editar o evento, novidades ou inscritos.');">
+                                @csrf
+                                <button type="submit"
+                                    class="inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition-colors">
+                                    <ion-icon name="checkmark-done-outline" class="text-lg"></ion-icon>
+                                    Finalizar evento
+                                </button>
+                            </form>
+                        @else
+                            <p class="text-sm text-slate-500 max-w-2xl">
+                                As datas e horários da página são informativos. O sistema usa data/hora de início para liberar o andamento e encerrar inscrições, e data/hora de fim para exibir o evento como encerrado. Você pode editar o evento a qualquer momento antes de finalizá-lo após o término do período.
+                            </p>
+                        @endif
+                    </div>
+                @endif
+            @endauth
         </div>
     </section>
 

@@ -56,14 +56,24 @@
                                     <a href="/events/{{ $event['id'] }}" class="font-semibold text-slate-900 hover:text-emerald-600 transition-colors line-clamp-2 break-words no-underline block">
                                         {{ $event['title'] }}
                                     </a>
-                                    <div class="flex items-center gap-3 mt-2">
+                                    <div class="flex items-center gap-3 mt-2 flex-wrap">
                                         <span class="inline-flex items-center gap-1 text-slate-500 text-sm">
                                             <ion-icon name="people-outline"></ion-icon>
                                             {{ count($event->users) }} participantes
                                         </span>
+                                        @if($event->isFinalized())
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-800 text-white">Finalizado</span>
+                                        @elseif($event->calendarEnded())
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-violet-100 text-violet-900">Período encerrado</span>
+                                        @elseif($event->calendarStarted())
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-sky-100 text-sky-800">Em andamento</span>
+                                        @else
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">Antes do início</span>
+                                        @endif
                                     </div>
                                 </div>
                                 <div class="flex flex-wrap gap-2 sm:gap-3">
+                                    @unless($event->isFinalized())
                                     <a href="/events/{{ $event['id'] }}/novidades"
                                        class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-sky-100 text-sky-700 hover:bg-sky-200 transition-colors"
                                        title="Configurar novidades">
@@ -74,16 +84,19 @@
                                        title="Gerenciar inscritos">
                                         <ion-icon name="people-outline" class="text-lg"></ion-icon>
                                     </a>
+                                    @endunless
                                     <a href="/events/{{ $event['id'] }}"
                                        class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors"
                                        title="Ver detalhes">
                                         <ion-icon name="eye-outline" class="text-lg"></ion-icon>
                                     </a>
+                                    @unless($event->isFinalized())
                                     <a href="/events/edit/{{ $event['id'] }}"
                                        class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
                                        title="Editar">
                                         <ion-icon name="create-outline" class="text-lg"></ion-icon>
                                     </a>
+                                    @endunless
                                     <form action="/events/{{ $event['id'] }}" method="POST" class="inline"
                                           onsubmit="return confirm('Excluir este evento?');">
                                         @csrf

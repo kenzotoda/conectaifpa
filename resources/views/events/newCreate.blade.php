@@ -382,17 +382,17 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <!-- Campus  -->
                                 <div>
-                                    <label class="form-label block text-sm font-montserrat mb-2">
+                                    <label class="form-label block text-sm font-montserrat mb-2" for="campus">
                                         Campus *
                                     </label>
-                                    <input
+                                    <select
                                         id="campus"
                                         name="campus"
-                                        type="text" 
                                         class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
-                                        placeholder="Ex: Campus Central"
                                         required
                                     >
+                                        <option value="Campus Belém" selected>Campus Belém</option>
+                                    </select>
                                 </div>
                                 
                                 <!-- Building/Block  -->

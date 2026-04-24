@@ -24,6 +24,7 @@ class Event extends Model
         'start_date' => 'date',
         'end_date' => 'date',
         'datetime_registration' => 'datetime',
+        'finalized_at' => 'datetime',
     ];
 
     // Tudo que foi enviado pelo POST pode ser atualizado, sem restrição.
@@ -76,13 +77,106 @@ class Event extends Model
     }
 
     // REGRAS DE NEGÓCIO
-    public function registrationClosed()
+    public function isFinalized(): bool
     {
+        return $this->finalized_at !== null;
+    }
+
+    /** Apenas prazo de inscrição (campo datetime_registration), ignorando calendário do evento. */
+    public function registrationDeadlinePassed(): bool
+    {
+        if ($this->datetime_registration === null) {
+            return false;
+        }
+
         return Carbon::now()->greaterThan(Carbon::parse($this->datetime_registration));
     }
 
-    public function isFull()
+    /** Alias histórico: “prazo de inscrição encerrado”. */
+    public function registrationClosed(): bool
+    {
+        return $this->registrationDeadlinePassed();
+    }
+
+    public function isFull(): bool
     {
         return $this->users()->count() >= $this->capacity;
+    }
+
+    public function calendarStartAt(): Carbon
+    {
+        $d = $this->start_date->format('Y-m-d');
+        $t = $this->normalizeTimeString($this->start_time, '00:00:00');
+
+        return Carbon::parse($d.' '.$t);
+    }
+
+    public function calendarEndAt(): Carbon
+    {
+        $day = $this->end_date ?? $this->start_date;
+        $d = $day->format('Y-m-d');
+        $t = $this->normalizeTimeString($this->end_time, '23:59:59');
+
+        return Carbon::parse($d.' '.$t);
+    }
+
+    /** Após data/hora de início do evento (inscrições fecham e evento aparece como iniciado). */
+    public function calendarStarted(): bool
+    {
+        return Carbon::now()->greaterThanOrEqualTo($this->calendarStartAt());
+    }
+
+    /** Após data/hora de término do evento (aparece encerrado na tela). */
+    public function calendarEnded(): bool
+    {
+        return Carbon::now()->greaterThanOrEqualTo($this->calendarEndAt());
+    }
+
+    /**
+     * Ordem: finalizado → período encerrado → em andamento (inscrições fechadas) → prazo de inscrição → lotação.
+     */
+    public function registrationsBlockedReason(): ?string
+    {
+        if ($this->isFinalized()) {
+            return 'finalized';
+        }
+        if ($this->calendarEnded()) {
+            return 'ended';
+        }
+        if ($this->calendarStarted()) {
+            return 'started';
+        }
+        if ($this->registrationDeadlinePassed()) {
+            return 'deadline';
+        }
+        if ($this->isFull()) {
+            return 'full';
+        }
+
+        return null;
+    }
+
+    public function acceptsNewRegistrations(): bool
+    {
+        return $this->registrationsBlockedReason() === null;
+    }
+
+    private function normalizeTimeString(mixed $time, string $default): string
+    {
+        if ($time === null || $time === '') {
+            return $default;
+        }
+        if ($time instanceof \DateTimeInterface) {
+            return $time->format('H:i:s');
+        }
+        $s = (string) $time;
+        if (strlen($s) === 5) {
+            return $s.':00';
+        }
+        if (strlen($s) >= 8) {
+            return substr($s, 0, 8);
+        }
+
+        return $default;
     }
 }

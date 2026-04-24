@@ -17,6 +17,7 @@ Route::get('/dashboard', [EventController::class, 'dashboard'])->middleware('aut
 Route::delete('/events/{id}', [EventController::class, 'destroy'])->middleware(['auth', 'isCoordinator']);
 Route::get('/events/edit/{id}', [EventController::class, 'edit'])->middleware(['auth', 'isCoordinator']);
 Route::put('/events/update/{id}', [EventController::class, 'update'])->middleware(['auth', 'isCoordinator']);
+Route::post('/events/{id}/finalize', [EventController::class, 'finalizeEvent'])->middleware(['auth', 'isCoordinator']);
 Route::post('/events/join/{id}', [EventController::class, 'joinEvent'])->middleware('auth');
 Route::delete('/events/leave/{id}', [EventController::class, 'leaveEvent'])->middleware('auth');
 

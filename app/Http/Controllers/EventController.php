@@ -96,7 +96,7 @@ class EventController extends Controller
             'start_time' => 'nullable|date_format:H:i',
             'end_time' => 'nullable|date_format:H:i|after:start_time',
 
-            'campus' => 'required|string|max:255',
+            'campus' => ['required', Rule::in(['Campus Belém'])],
             'building' => 'required|string|max:255',
             'venue' => 'required|string|max:255',
             'address' => 'required|string|max:255',
@@ -166,6 +166,7 @@ class EventController extends Controller
             'end_time.after' => 'O horário de término deve ser posterior ao horário de início.',
 
             'campus.required' => 'O campus é obrigatório.',
+            'campus.in' => 'O campus selecionado não é válido.',
             'building.required' => 'O bloco/prédio é obrigatório.',
             'venue.required' => 'O local/sala é obrigatório.',
 
@@ -384,6 +385,10 @@ class EventController extends Controller
     public function destroy($id) {
         $event = Event::findOrFail($id);
 
+        if (auth()->id() != $event->user_id) {
+            return redirect('/dashboard')->with('msg', 'Acesso negado.');
+        }
+
         // Remove todos os participantes relacionados
         $event->users()->detach();
 
@@ -405,11 +410,24 @@ class EventController extends Controller
             return redirect('/dashboard');
         }
 
+        if ($event->isFinalized()) {
+            return redirect('/dashboard')->with('msg', 'Este evento foi finalizado e não pode mais ser editado.');
+        }
+
         return view('events.newEdit', ['event' => $event]);
     }
 
     public function update(Request $request, $id) {
-        
+        $event = Event::findOrFail($id);
+
+        if (auth()->id() != $event->user_id) {
+            return redirect('/dashboard');
+        }
+
+        if ($event->isFinalized()) {
+            return redirect('/dashboard')->with('msg', 'Este evento foi finalizado e não pode mais ser alterado.');
+        }
+
         // Validação
         $request->validate([
         'title' => 'required|string|max:255',
@@ -438,7 +456,7 @@ class EventController extends Controller
         'start_time' => 'nullable|date_format:H:i',
         'end_time' => 'nullable|date_format:H:i|after:start_time',
 
-        'campus' => 'required|string|max:255',
+        'campus' => ['required', Rule::in(['Campus Belém'])],
         'building' => 'required|string|max:255',
         'venue' => 'required|string|max:255',
         'address' => 'required|string|max:255',
@@ -518,6 +536,7 @@ class EventController extends Controller
 
         // Localização
         'campus.required' => 'O campus é obrigatório.',
+        'campus.in' => 'O campus selecionado não é válido.',
         'building.required' => 'O bloco/prédio é obrigatório.',
         'venue.required' => 'O local/sala é obrigatório.',
 
@@ -546,8 +565,6 @@ class EventController extends Controller
         'datetime_registration.before_or_equal' => 'O prazo de inscrição não pode ser posterior à data de início do evento.',
 
     ]);
-
-        $event = Event::findOrFail($id);
 
         // Atualiza campos comuns
         $event->title = $request->title;
@@ -632,6 +649,15 @@ class EventController extends Controller
         
         $user = auth()->user();
 
+        if ($user->isCoordinator()) {
+            return redirect()->back()->with(
+                'msg',
+                'Contas de coordenação não podem se inscrever em eventos.'
+            );
+        }
+
+        $event = Event::findOrFail($id);
+
         //LÓGICA QUE NÃO PERMITE O USUÁRIO CONFIRMAR PRESENÇA MAIS DE UMA VEZ NO MESMO EVENTO.
         $userEvents = $user->eventsAsParticipant;
 
@@ -641,17 +667,51 @@ class EventController extends Controller
             }
         }
 
-        // Adiciona um registro na tabela pivô (event_user), ligando o usuário autenticado ao evento com ID $id.
-        // Isso cria a relação de participação do usuário no evento, ou seja, registra que o usuário está "confirmando presença".
-        // O método eventsAsParticipant() é uma relação belongsToMany entre User e Event.
-        // Internamente, o Laravel insere na tabela pivô os dois IDs: user_id e event_id.
+        $reason = $event->registrationsBlockedReason();
+        if ($reason !== null) {
+            $messages = [
+                'finalized' => 'Este evento foi finalizado. As inscrições não estão mais disponíveis.',
+                'ended' => 'O período deste evento foi encerrado.',
+                'started' => 'Este evento já está em andamento. As inscrições estão encerradas.',
+                'deadline' => 'O prazo de inscrições encerrou.',
+                'full' => 'Não há mais vagas para este evento.',
+            ];
+
+            return redirect()->back()->with('msg', $messages[$reason] ?? 'Não é possível se inscrever neste evento.');
+        }
+
         $user->eventsAsParticipant()->attach($id);
-
-
-        $event = Event::findOrFail($id);
 
         return redirect('/dashboard')->with('msg', 'Sua presença está confirmada no evento: ' . $event->title);
 
+    }
+
+    public function finalizeEvent($id)
+    {
+        $event = Event::findOrFail($id);
+
+        if (auth()->id() != $event->user_id) {
+            abort(403, 'Acesso negado.');
+        }
+
+        if ($event->isFinalized()) {
+            return redirect()->back()->with('msg', 'Este evento já foi finalizado.');
+        }
+
+        if (! $event->calendarEnded()) {
+            return redirect()->back()->with(
+                'msg',
+                'Só é possível finalizar o evento após o término da data e horário de fim informados.'
+            );
+        }
+
+        $event->finalized_at = now();
+        $event->save();
+
+        return redirect()->back()->with(
+            'msg',
+            'Evento finalizado. Não será mais possível editar, gerenciar inscritos ou novidades; você ainda pode excluir o evento se precisar.'
+        );
     }
 
     public function leaveEvent($id) {
@@ -669,16 +729,31 @@ class EventController extends Controller
     public function registered($id) {
         $event = Event::findOrFail($id);
 
-        
+        if (auth()->id() != $event->user_id) {
+            return redirect('/dashboard');
+        }
+
+        if ($event->isFinalized()) {
+            return redirect('/dashboard')->with('msg', 'Este evento foi finalizado. A gestão de inscritos não está mais disponível.');
+        }
+
         $users = $event->users;
 
-        
         return view('events.registered', ['event' => $event, 'users' => $users]);
     }
 
     public function exportCsv($id) {
 
         $event = Event::findOrFail($id);
+
+        if (auth()->id() != $event->user_id) {
+            return redirect('/dashboard');
+        }
+
+        if ($event->isFinalized()) {
+            return redirect('/dashboard')->with('msg', 'Este evento foi finalizado. A exportação não está mais disponível.');
+        }
+
         $users = $event->users;
 
         $fileName = 'inscritos_' . $event->title . '.csv';
@@ -720,6 +795,14 @@ class EventController extends Controller
         
         $event = Event::findOrFail($eventId);
 
+        if (auth()->id() != $event->user_id) {
+            return redirect('/dashboard')->with('msg', 'Acesso negado.');
+        }
+
+        if ($event->isFinalized()) {
+            return back()->with('msg', 'Este evento foi finalizado. Não é possível alterar a lista de inscritos.');
+        }
+
         // garante que o user está inscrito
         if ($event->users()->where('users.id', $userId)->exists()) {
             $event->users()->detach($userId);
@@ -739,6 +822,10 @@ class EventController extends Controller
             return redirect('/dashboard');
         }
 
+        if ($event->isFinalized()) {
+            return redirect('/dashboard')->with('msg', 'Este evento foi finalizado. Novidades não podem mais ser alteradas.');
+        }
+
         $novidades = $event->eventNews()->orderBy('created_at', 'desc')->get();
 
         return view('events.novidades', ['event' => $event, 'novidades' => $novidades]);
@@ -751,6 +838,10 @@ class EventController extends Controller
 
         if (auth()->id() != $event->user_id) {
             return redirect('/dashboard');
+        }
+
+        if ($event->isFinalized()) {
+            return redirect('/dashboard')->with('msg', 'Este evento foi finalizado. Não é possível adicionar novidades.');
         }
 
         $request->validate([
@@ -777,6 +868,10 @@ class EventController extends Controller
 
         if (auth()->id() != $event->user_id) {
             return redirect('/dashboard');
+        }
+
+        if ($event->isFinalized()) {
+            return redirect('/dashboard')->with('msg', 'Este evento foi finalizado. Não é possível remover novidades.');
         }
 
         $novidade = EventNews::where('event_id', $eventId)->where('id', $novidadeId)->firstOrFail();

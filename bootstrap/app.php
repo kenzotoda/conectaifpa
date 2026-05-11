@@ -1,10 +1,11 @@
 <?php
 
+use App\Http\Middleware\IsCoordinator;
+use App\Http\Middleware\IsReviewer;
+use App\Http\Middleware\TrustProxies;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
-use Illuminate\Foundation\Configuration\Middleware;
-use App\Http\Middleware\IsCoordinator;
-use App\Http\Middleware\TrustProxies; // 👈 IMPORTANTE
+use Illuminate\Foundation\Configuration\Middleware; // 👈 IMPORTANTE
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -21,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // 👇 seus aliases continuam intactos
         $middleware->alias([
             'isCoordinator' => IsCoordinator::class,
+            'isReviewer' => IsReviewer::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

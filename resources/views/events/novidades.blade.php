@@ -12,7 +12,7 @@
             <div class="min-w-0">
                 <a href="/dashboard" class="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 no-underline mb-2">
                     <ion-icon name="arrow-back-outline" class="text-lg shrink-0"></ion-icon>
-                    Voltar ao Dashboard
+                    Voltar ao painel
                 </a>
                 <h1 class="font-montserrat font-bold text-2xl sm:text-3xl text-slate-900 mb-1">Configurar Novidades</h1>
                 <p class="text-slate-600 text-sm sm:text-base m-0">Evento: <strong class="text-slate-800">{{ $event->title }}</strong></p>

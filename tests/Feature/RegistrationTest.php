@@ -44,10 +44,43 @@ class RegistrationTest extends TestCase
             'email' => 'test@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
+            'role' => 'participant',
+            'is_external_participant' => '0',
+            'matricula' => '123456789012',
+            'curso' => 'Licenciatura em Computacao',
             'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature(),
         ]);
 
         $this->assertAuthenticated();
         $response->assertRedirect(route('dashboard', absolute: false));
+    }
+
+    public function test_external_participant_can_register_without_matricula(): void
+    {
+        if (! Features::enabled(Features::registration())) {
+            $this->markTestSkipped('Registration support is not enabled.');
+        }
+
+        $response = $this->post('/register', [
+            'name' => 'External User',
+            'email' => 'external@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'role' => 'participant',
+            'is_external_participant' => '1',
+            'institution' => 'Universidade Federal de Exemplo',
+            'curso' => 'Medicina',
+            'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature(),
+        ]);
+
+        $this->assertAuthenticated();
+        $response->assertRedirect(route('dashboard', absolute: false));
+
+        $user = \App\Models\User::where('email', 'external@example.com')->first();
+        $this->assertNotNull($user);
+        $this->assertTrue($user->is_external_participant);
+        $this->assertNull($user->matricula);
+        $this->assertSame('Universidade Federal de Exemplo', $user->institution);
+        $this->assertSame('Medicina', $user->curso);
     }
 }

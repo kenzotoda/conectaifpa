@@ -2,8 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\User;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -12,22 +13,31 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $password = env('ADMIN_INITIAL_PASSWORD');
+        $password = (string) (env('ADMIN_INITIAL_PASSWORD') ?: '12345678');
 
-        if (!$password) {
-            throw new \RuntimeException(
-                'ADMIN_INITIAL_PASSWORD não está definido no .env'
-            );
-        }
+        User::updateOrCreate([
+            'email' => 'admin@conectaifpa.com',
+        ], [
+            'name' => 'Administrador Inicial',
+            'password' => Hash::make($password),
+            'role' => User::ROLE_COORDINATOR,
+        ]);
 
-        User::updateOrCreate(
-            ['email' => 'admin@conectaifpa.com'],
-            [
-                'name'     => 'Administrador Inicial',
-                'password' => bcrypt($password),
-                'role'     => User::ROLE_COORDINATOR,
-            ]
-        );
+        User::updateOrCreate([
+            'email' => 'reviewer@conectaifpa.com',
+        ], [
+            'name' => 'Avaliador Inicial',
+            'password' => Hash::make($password),
+            'role' => User::ROLE_REVIEWER,
+        ]);
+
+        User::updateOrCreate([
+            'email' => 'aluno@conectaifpa.com',
+        ], [
+            'name' => 'Aluno Inicial',
+            'password' => Hash::make($password),
+            'role' => User::ROLE_PARTICIPANT,
+        ]);
+
     }
-
 }

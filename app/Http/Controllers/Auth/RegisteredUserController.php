@@ -43,7 +43,7 @@ class RegisteredUserController extends Controller
 
     public function storeCoordinator(Request $request, CreatesNewUsers $creator)
     {
-        if (!auth()->user()->isCoordinator()) {
+        if (! auth()->user()->isCoordinator()) {
             abort(403, 'Acesso negado');
         }
 
@@ -58,5 +58,26 @@ class RegisteredUserController extends Controller
         event(new Registered($user));
 
         return redirect('/dashboard')->with('msg', 'Novo coordenador criado com sucesso!');
+    }
+
+    public function storeReviewer(Request $request, CreatesNewUsers $creator)
+    {
+        if (! auth()->user()->isCoordinator()) {
+            abort(403, 'Acesso negado');
+        }
+
+        if (config('fortify.lowercase_usernames') && $request->has(Fortify::username())) {
+            $request->merge([
+                Fortify::username() => Str::lower($request->{Fortify::username()}),
+            ]);
+        }
+
+        $payload = $request->all();
+        $payload['role'] = 'reviewer';
+        $user = $creator->create($payload);
+
+        event(new Registered($user));
+
+        return redirect('/dashboard')->with('msg', 'Novo avaliador criado com sucesso!');
     }
 }

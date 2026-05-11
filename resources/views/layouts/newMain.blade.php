@@ -3,6 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="csrf-token" content="{{ csrf_token() }}">
 
         <title>@yield('title')</title>
 
@@ -47,13 +48,35 @@
                         @if(auth()->user()->isCoordinator())
                             <a href="/dashboard"
                                class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 no-underline transition-colors">
-                                Dashboard
+                                Painel
                             </a>
                         @endif
                         @if(auth()->user()->isParticipant())
                             <a href="/dashboard"
                                class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 no-underline transition-colors">
                                 Minha Área
+                            </a>
+                            <a href="{{ route('works.my') }}"
+                               class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 no-underline transition-colors">
+                                Trabalhos
+                            </a>
+                            <a href="{{ route('works.my-presentation') }}"
+                               class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 no-underline transition-colors">
+                                Minha apresentação
+                            </a>
+                            <a href="{{ route('certificates.my') }}"
+                               class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 no-underline transition-colors">
+                                Certificados
+                            </a>
+                        @endif
+                        @if(auth()->user()->isReviewer())
+                            <a href="/dashboard"
+                               class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 no-underline transition-colors">
+                                Painel
+                            </a>
+                            <a href="{{ route('reviews.assigned') }}"
+                               class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 no-underline transition-colors">
+                                Avaliações
                             </a>
                         @endif
                     @endauth
@@ -66,11 +89,11 @@
                     @endif
 
                     @auth
-                        <form action="/logout" method="POST" class="ml-2">
+                        <form method="POST" action="{{ route('logout') }}" class="ml-2">
                             @csrf
                             <button type="submit"
                                     class="px-4 py-2 rounded-lg text-sm font-medium text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors"
-                                    id="sair">
+                                    id="sair-desktop">
                                 Sair
                             </button>
                         </form>
@@ -119,7 +142,7 @@
                             <a href="/dashboard"
                                class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 font-medium hover:bg-slate-100 no-underline transition-colors">
                                 <ion-icon name="grid-outline" class="text-xl text-slate-400"></ion-icon>
-                                Dashboard
+                                Painel
                             </a>
                         @endif
                         @if(auth()->user()->isParticipant())
@@ -127,6 +150,33 @@
                                class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 font-medium hover:bg-slate-100 no-underline transition-colors">
                                 <ion-icon name="person-outline" class="text-xl text-slate-400"></ion-icon>
                                 Minha Área
+                            </a>
+                            <a href="{{ route('works.my') }}"
+                               class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 font-medium hover:bg-slate-100 no-underline transition-colors">
+                                <ion-icon name="document-text-outline" class="text-xl text-slate-400"></ion-icon>
+                                Trabalhos
+                            </a>
+                            <a href="{{ route('works.my-presentation') }}"
+                               class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 font-medium hover:bg-slate-100 no-underline transition-colors">
+                                <ion-icon name="mic-outline" class="text-xl text-slate-400"></ion-icon>
+                                Minha apresentação
+                            </a>
+                            <a href="{{ route('certificates.my') }}"
+                               class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 font-medium hover:bg-slate-100 no-underline transition-colors">
+                                <ion-icon name="ribbon-outline" class="text-xl text-slate-400"></ion-icon>
+                                Certificados
+                            </a>
+                        @endif
+                        @if(auth()->user()->isReviewer())
+                            <a href="/dashboard"
+                               class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 font-medium hover:bg-slate-100 no-underline transition-colors">
+                                <ion-icon name="grid-outline" class="text-xl text-slate-400"></ion-icon>
+                                Painel
+                            </a>
+                            <a href="{{ route('reviews.assigned') }}"
+                               class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 font-medium hover:bg-slate-100 no-underline transition-colors">
+                                <ion-icon name="clipboard-outline" class="text-xl text-slate-400"></ion-icon>
+                                Avaliações
                             </a>
                         @endif
                     @endauth
@@ -156,11 +206,11 @@
 
                     @auth
                         <div class="pt-3 mt-3 border-t border-slate-200">
-                            <form action="/logout" method="POST">
+                            <form method="POST" action="{{ route('logout') }}">
                                 @csrf
                                 <button type="submit"
                                         class="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-slate-500 font-medium hover:bg-red-50 hover:text-red-600 transition-colors text-left"
-                                        id="sair">
+                                        id="sair-mobile">
                                     <ion-icon name="log-out-outline" class="text-xl"></ion-icon>
                                     Sair
                                 </button>

@@ -16,13 +16,19 @@ class User extends Authenticatable
 
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory;
+
     use HasProfilePhoto;
     use Notifiable;
     use TwoFactorAuthenticatable;
 
     // Constantes para papéis de usuário
     const ROLE_COORDINATOR = 'coordinator';
+
     const ROLE_PARTICIPANT = 'participant';
+
+    const ROLE_STUDENT = self::ROLE_PARTICIPANT;
+
+    const ROLE_REVIEWER = 'reviewer';
 
     /**
      * The attributes that are mass assignable.
@@ -36,6 +42,8 @@ class User extends Authenticatable
         'role',
         'matricula',
         'curso',
+        'is_external_participant',
+        'institution',
     ];
 
     /**
@@ -69,6 +77,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_external_participant' => 'boolean',
         ];
     }
 
@@ -95,5 +104,59 @@ class User extends Authenticatable
     public function isParticipant()
     {
         return $this->role === self::ROLE_PARTICIPANT;
+    }
+
+    public function isStudent()
+    {
+        return $this->isParticipant();
+    }
+
+    public function isReviewer()
+    {
+        return $this->role === self::ROLE_REVIEWER;
+    }
+
+    public function submittedWorks()
+    {
+        return $this->hasMany(Work::class, 'submitter_user_id');
+    }
+
+    public function certificates()
+    {
+        return $this->hasMany(Certificate::class);
+    }
+
+    public function assignedWorksForReview()
+    {
+        return $this->belongsToMany(Work::class, 'work_reviewers', 'reviewer_user_id', 'work_id')
+            ->withPivot(['status', 'assigned_by', 'assigned_at'])
+            ->withTimestamps();
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class, 'reviewer_user_id');
+    }
+
+    /**
+     * Texto de vínculo (instituição / curso) para autoria principal em trabalhos.
+     */
+    public function participantAffiliationForWorks(): ?string
+    {
+        if (! $this->isParticipant()) {
+            return null;
+        }
+
+        if ($this->is_external_participant) {
+            $inst = trim((string) ($this->institution ?? ''));
+            $course = trim((string) ($this->curso ?? ''));
+            if ($inst !== '' && $course !== '') {
+                return $inst.' — '.$course;
+            }
+
+            return $inst !== '' ? $inst : ($course !== '' ? $course : null);
+        }
+
+        return $this->curso ?: null;
     }
 }

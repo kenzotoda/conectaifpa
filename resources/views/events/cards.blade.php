@@ -3,7 +3,7 @@
     <div class="group bg-white rounded-xl sm:rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-slate-200/80 transition-all duration-300 min-w-0 w-full max-w-full hover:-translate-y-1">
         <div class="w-full aspect-[16/10] sm:h-52 overflow-hidden bg-slate-100">
             <img 
-                src="{{ config('services.supabase.url') }}/storage/v1/object/public/{{ config('services.supabase.bucket') }}/events/{{ $event->image }}" 
+                src="{{ config('services.supabase.url') }}/storage/v1/object/public/{{ config('services.supabase.bucket_events') }}/events/{{ $event->image }}" 
                 alt="{{ $event->title }}" 
                 class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
         </div>
@@ -26,9 +26,14 @@
                 {{ \Illuminate\Support\Str::limit(strip_tags($event->description), 120) }}
             </p>
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 min-w-0">
-                <div class="flex items-center gap-1.5 text-slate-500 text-xs sm:text-sm min-w-0 shrink-0">
-                    <ion-icon name="location-outline" class="text-sm sm:text-base flex-shrink-0"></ion-icon>
-                    <span class="truncate">{{ $event->campus }}</span>
+                <div class="flex items-start gap-1.5 text-slate-500 text-xs sm:text-sm min-w-0 flex-1">
+                    @if(($event->modality ?? '') === 'Online')
+                        <ion-icon name="globe-outline" class="text-sm sm:text-base shrink-0 mt-0.5" aria-hidden="true"></ion-icon>
+                        <span class="break-words min-w-0 text-pretty [overflow-wrap:anywhere]">Evento online</span>
+                    @else
+                        <ion-icon name="location-outline" class="text-sm sm:text-base shrink-0 mt-0.5" aria-hidden="true"></ion-icon>
+                        <span class="break-words min-w-0 text-pretty [overflow-wrap:anywhere]">{{ $event->campus }}@if(($event->modality ?? '') === 'Híbrido') <span class="text-slate-400">· híbrido</span>@endif</span>
+                    @endif
                 </div>
                 <a href="/events/{{ $event['id'] }}" class="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary-custom hover:bg-[#0d5a1a] text-white font-outfit font-semibold text-sm transition-all no-underline w-full sm:w-auto shrink-0">
                     Ver detalhes

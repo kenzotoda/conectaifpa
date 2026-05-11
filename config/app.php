@@ -78,11 +78,11 @@ return [
     |
     */
 
-    'locale' => env('APP_LOCALE', 'en'),
+    'locale' => env('APP_LOCALE', 'pt_BR'),
 
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 
-    'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
+    'faker_locale' => env('APP_FAKER_LOCALE', 'pt_BR'),
 
     /*
     |--------------------------------------------------------------------------
@@ -122,5 +122,17 @@ return [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Finalização antecipada do evento (testes)
+    |--------------------------------------------------------------------------
+    |
+    | Quando true, o dono do evento pode finalizar antes do fim do período no
+    | calendário (ex.: testar emissão de certificados). Mantenha false em produção.
+    |
+    */
+
+    'allow_early_event_finalize' => (bool) env('EVENT_ALLOW_EARLY_FINALIZE', false),
 
 ];

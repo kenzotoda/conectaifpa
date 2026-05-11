@@ -60,7 +60,8 @@
         </div>
     </header>
 
-    <main class="flex-1 flex flex-col lg:flex-row min-h-0 min-h-[calc(100dvh-3.5rem)] lg:min-h-[calc(100vh-3.5rem)]">
+    {{-- Sem altura mínima fixa: evita cortar conteúdo alto (ex.: registro); a página rola naturalmente. --}}
+    <main class="flex-1 flex flex-col min-w-0 lg:flex-row lg:items-start">
         @yield('content')
     </main>
     @include('partials.vlibras')

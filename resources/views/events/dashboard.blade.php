@@ -1,20 +1,20 @@
 @extends('layouts.newMain')
 
-@section('title', 'Dashboard')
+@section('title', 'Painel')
 
 @section('content')
 
-<div class="min-h-screen bg-slate-50/50">
+<div class="min-h-screen bg-slate-50">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
 
         {{-- Card do usuário --}}
         @if(auth()->check())
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6 mb-6 sm:mb-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 sm:p-6 mb-8">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div class="flex items-center gap-4">
-                    <div class="w-14 h-14 sm:w-16 sm:h-16 bg-slate-900 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <ion-icon 
-                            name="{{ auth()->user()->isCoordinator() ? 'school-outline' : 'person-circle-outline' }}" 
+                    <div class="w-14 h-14 sm:w-16 sm:h-16 bg-slate-800 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <ion-icon
+                            name="{{ auth()->user()->isCoordinator() ? 'school-outline' : 'person-circle-outline' }}"
                             class="text-2xl sm:text-3xl text-white">
                         </ion-icon>
                     </div>
@@ -23,9 +23,8 @@
                         <p class="text-slate-500 text-xs sm:text-sm break-all mt-0.5">{{ auth()->user()->email }}</p>
                     </div>
                 </div>
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold
-                    {{ auth()->user()->isCoordinator() ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700' }}">
-                    {{ auth()->user()->isCoordinator() ? 'Coordenador' : 'Aluno' }}
+                <span class="inline-flex items-center self-start sm:self-center px-3 py-1 rounded-lg text-sm font-medium border border-slate-200 bg-slate-50 text-slate-700">
+                    {{ auth()->user()->isCoordinator() ? 'Coordenador' : (auth()->user()->isReviewer() ? 'Avaliador' : 'Aluno') }}
                 </span>
             </div>
         </div>
@@ -35,76 +34,143 @@
         {{-- ===== COORDENADOR: Meus Eventos ===== --}}
         @if(auth()->check() && auth()->user()->isCoordinator())
 
-        <div class="mb-8">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-                <h1 class="font-montserrat font-bold text-2xl sm:text-3xl text-slate-900">Meus Eventos</h1>
-                <a href="{{ route('register.coordinator') }}"
-                   class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors no-underline">
-                    <ion-icon name="person-add-outline" class="text-lg"></ion-icon>
-                    Novo Coordenador
-                </a>
+        <div class="mb-10">
+            <div class="flex flex-col gap-6 mb-6">
+                <div>
+                    <h1 class="font-montserrat font-bold text-2xl sm:text-3xl text-slate-900">Meus eventos</h1>
+                    <p class="text-slate-600 text-sm mt-1 max-w-2xl">Gerencie inscrições, trabalhos e a página pública de cada evento.</p>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-white p-4 sm:p-5">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-3">Cadastros de equipe</p>
+                    <div class="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
+                        <a href="{{ route('register.coordinator') }}"
+                           class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-800 text-sm font-medium hover:bg-slate-100 transition-colors no-underline">
+                            <ion-icon name="person-add-outline" class="text-lg shrink-0" aria-hidden="true"></ion-icon>
+                            Novo coordenador
+                        </a>
+                        <a href="{{ route('register.reviewer') }}"
+                           class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-800 text-sm font-medium hover:bg-slate-100 transition-colors no-underline">
+                            <ion-icon name="school-outline" class="text-lg shrink-0" aria-hidden="true"></ion-icon>
+                            Novo avaliador
+                        </a>
+                    </div>
+                </div>
             </div>
 
             @if (count($events) > 0)
 
-                <div class="grid gap-4 sm:gap-6">
+                <div class="grid gap-4 sm:gap-5">
                     @foreach ($events as $event)
-                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden hover:border-slate-300 transition-colors">
                         <div class="p-4 sm:p-6">
-                            <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                            <div class="flex flex-col lg:flex-row lg:items-start gap-5 lg:gap-8">
                                 <div class="flex-1 min-w-0">
-                                    <a href="/events/{{ $event['id'] }}" class="font-semibold text-slate-900 hover:text-emerald-600 transition-colors line-clamp-2 break-words no-underline block">
+                                    <a href="/events/{{ $event['id'] }}" class="font-semibold text-lg text-slate-900 hover:text-emerald-700 transition-colors line-clamp-2 break-words no-underline block">
                                         {{ $event['title'] }}
                                     </a>
-                                    <div class="flex items-center gap-3 mt-2 flex-wrap">
-                                        <span class="inline-flex items-center gap-1 text-slate-500 text-sm">
-                                            <ion-icon name="people-outline"></ion-icon>
+                                    <div class="flex items-center gap-2 mt-3 flex-wrap">
+                                        <span class="inline-flex items-center gap-1.5 text-slate-600 text-sm">
+                                            <ion-icon name="people-outline" class="text-base shrink-0" aria-hidden="true"></ion-icon>
                                             {{ count($event->users) }} participantes
                                         </span>
-                                        @if($event->isFinalized())
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-800 text-white">Finalizado</span>
-                                        @elseif($event->calendarEnded())
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-violet-100 text-violet-900">Período encerrado</span>
-                                        @elseif($event->calendarStarted())
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-sky-100 text-sky-800">Em andamento</span>
+                                        @if($event->acceptsSubmissions())
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border border-emerald-200 bg-emerald-50 text-emerald-900">Aceita submissões</span>
                                         @else
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">Antes do início</span>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border border-slate-200 bg-slate-50 text-slate-700">Sem submissão</span>
+                                        @endif
+                                        @if($event->isFinalized())
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border border-slate-300 bg-slate-100 text-slate-800">Finalizado</span>
+                                        @elseif($event->calendarEnded())
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border border-slate-200 bg-slate-50 text-slate-700">Período encerrado</span>
+                                        @elseif($event->calendarStarted())
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border border-amber-200 bg-amber-50 text-amber-900">Em andamento</span>
+                                        @else
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border border-slate-200 bg-white text-slate-700">Antes do início</span>
                                         @endif
                                     </div>
                                 </div>
-                                <div class="flex flex-wrap gap-2 sm:gap-3">
-                                    @unless($event->isFinalized())
-                                    <a href="/events/{{ $event['id'] }}/novidades"
-                                       class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-sky-100 text-sky-700 hover:bg-sky-200 transition-colors"
-                                       title="Configurar novidades">
-                                        <ion-icon name="newspaper-outline" class="text-lg"></ion-icon>
-                                    </a>
-                                    <a href="/events/registered/{{ $event['id'] }}"
-                                       class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors"
-                                       title="Gerenciar inscritos">
-                                        <ion-icon name="people-outline" class="text-lg"></ion-icon>
-                                    </a>
-                                    @endunless
+
+                                <div class="flex flex-col gap-4 w-full lg:w-[26rem] xl:w-[28rem] shrink-0 lg:sticky lg:top-24 lg:self-start">
                                     <a href="/events/{{ $event['id'] }}"
-                                       class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors"
-                                       title="Ver detalhes">
-                                        <ion-icon name="eye-outline" class="text-lg"></ion-icon>
+                                       class="inline-flex flex-wrap items-center justify-center gap-2 w-full px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold no-underline transition-colors shadow-sm ring-1 ring-emerald-700/25 text-center [overflow-wrap:anywhere]">
+                                        <ion-icon name="arrow-forward-outline" class="text-lg shrink-0" aria-hidden="true"></ion-icon>
+                                        Abrir página do evento
                                     </a>
+
                                     @unless($event->isFinalized())
-                                    <a href="/events/edit/{{ $event['id'] }}"
-                                       class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
-                                       title="Editar">
-                                        <ion-icon name="create-outline" class="text-lg"></ion-icon>
-                                    </a>
+                                    <div class="rounded-xl border border-slate-200/90 bg-white p-4 shadow-[0_1px_4px_rgba(15,23,42,0.07)]">
+                                        <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-3">Gestão</p>
+                                        {{-- Largura da coluna: evita quebrar rótulos longos em demasia; textos usam quebra de linha, sem truncar. --}}
+                                        <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-x-3 sm:gap-y-3 min-w-0">
+                                            <a href="/events/{{ $event['id'] }}/novidades"
+                                               class="group relative inline-flex flex-row items-center justify-start gap-2 px-3 py-2.5 sm:py-3 min-h-[44px] rounded-xl border border-slate-200/90 bg-gradient-to-br from-white to-slate-50 text-slate-800 text-sm font-medium hover:border-emerald-200 hover:shadow-sm hover:to-emerald-50/60 transition-all no-underline min-w-0">
+                                                <ion-icon name="newspaper-outline" class="text-xl text-emerald-600 shrink-0 opacity-90" aria-hidden="true"></ion-icon>
+                                                <span class="flex-1 min-w-0 text-left leading-snug break-words [overflow-wrap:anywhere]">Novidades</span>
+                                            </a>
+                                            <a href="{{ route('events.works.index', $event->id) }}"
+                                               class="group relative inline-flex flex-row items-center justify-start gap-2 px-3 py-2.5 sm:py-3 min-h-[44px] rounded-xl border border-slate-200/90 bg-gradient-to-br from-white to-slate-50 text-slate-800 text-sm font-medium hover:border-emerald-200 hover:shadow-sm hover:to-emerald-50/60 transition-all no-underline min-w-0">
+                                                <ion-icon name="documents-outline" class="text-xl text-emerald-600 shrink-0 opacity-90" aria-hidden="true"></ion-icon>
+                                                <span class="flex-1 min-w-0 text-left leading-snug break-words [overflow-wrap:anywhere]">Trabalhos</span>
+                                            </a>
+                                            @if($event->acceptsSubmissions())
+                                                <a href="{{ route('events.presentations.manage', $event->id) }}"
+                                                   class="group relative inline-flex flex-row items-center justify-start gap-2 px-3 py-2.5 sm:py-3 min-h-[44px] rounded-xl border border-slate-200/90 bg-gradient-to-br from-white to-slate-50 text-slate-800 text-sm font-medium hover:border-emerald-200 hover:shadow-sm hover:to-emerald-50/60 transition-all no-underline min-w-0">
+                                                    <ion-icon name="videocam-outline" class="text-xl text-emerald-600 shrink-0 opacity-90" aria-hidden="true"></ion-icon>
+                                                    <span class="flex-1 min-w-0 text-left leading-snug break-words [overflow-wrap:anywhere]">Apresentações</span>
+                                                </a>
+                                                <a href="{{ route('events.annals.manage', $event->id) }}"
+                                                   class="group relative inline-flex flex-row items-center justify-start gap-2 px-3 py-2.5 sm:py-3 min-h-[44px] rounded-xl border border-slate-200/90 bg-gradient-to-br from-white to-slate-50 text-slate-800 text-sm font-medium hover:border-emerald-200 hover:shadow-sm hover:to-emerald-50/60 transition-all no-underline min-w-0">
+                                                    <ion-icon name="book-outline" class="text-xl text-emerald-600 shrink-0 opacity-90" aria-hidden="true"></ion-icon>
+                                                    <span class="flex-1 min-w-0 text-left leading-snug break-words [overflow-wrap:anywhere]">Anais</span>
+                                                </a>
+                                            @endif
+                                            <a href="/events/registered/{{ $event['id'] }}"
+                                               class="group relative inline-flex flex-row items-center justify-start gap-2 px-3 py-2.5 sm:py-3 min-h-[44px] rounded-xl border border-slate-200/90 bg-gradient-to-br from-white to-slate-50 text-slate-800 text-sm font-medium hover:border-emerald-200 hover:shadow-sm hover:to-emerald-50/60 transition-all no-underline min-w-0 {{ $event->acceptsSubmissions() ? '' : 'sm:col-span-2' }}">
+                                                <ion-icon name="people-outline" class="text-xl text-emerald-600 shrink-0 opacity-90" aria-hidden="true"></ion-icon>
+                                                <span class="flex-1 min-w-0 text-left leading-snug break-words [overflow-wrap:anywhere]">Inscritos</span>
+                                            </a>
+                                            <a href="{{ route('events.certificates.index', $event->id) }}"
+                                               class="group relative inline-flex flex-row items-center justify-start gap-2 px-3 py-2.5 sm:py-3 min-h-[44px] rounded-xl border border-slate-200/90 bg-gradient-to-br from-white to-slate-50 text-slate-800 text-sm font-medium hover:border-emerald-200 hover:shadow-sm hover:to-emerald-50/60 transition-all no-underline min-w-0">
+                                                <ion-icon name="ribbon-outline" class="text-xl text-emerald-600 shrink-0 opacity-90" aria-hidden="true"></ion-icon>
+                                                <span class="flex-1 min-w-0 text-left leading-snug break-words [overflow-wrap:anywhere]">Certificados e presença</span>
+                                            </a>
+                                            <a href="/events/edit/{{ $event['id'] }}"
+                                               class="inline-flex flex-wrap items-center justify-center gap-2 px-4 py-2.5 sm:py-3 rounded-xl border border-slate-200 bg-white text-slate-900 text-sm font-semibold hover:border-emerald-300 hover:bg-emerald-50/70 hover:text-emerald-950 transition-all no-underline sm:col-span-2 text-center [overflow-wrap:anywhere]">
+                                                <ion-icon name="create-outline" class="text-xl text-emerald-700 shrink-0" aria-hidden="true"></ion-icon>
+                                                Editar evento
+                                            </a>
+                                        </div>
+                                    </div>
                                     @endunless
-                                    <form action="/events/{{ $event['id'] }}" method="POST" class="inline"
-                                          onsubmit="return confirm('Excluir este evento?');">
+
+                                    @if($event->isFinalized())
+                                        <a href="{{ route('events.works.index', $event->id) }}"
+                                           class="inline-flex flex-wrap items-center justify-center gap-2 w-full px-4 py-3 rounded-xl border border-indigo-200 bg-white text-indigo-900 text-sm font-semibold no-underline hover:bg-indigo-50 hover:border-indigo-300 transition-colors text-center [overflow-wrap:anywhere]">
+                                            <ion-icon name="documents-outline" class="text-lg shrink-0" aria-hidden="true"></ion-icon>
+                                            Trabalhos
+                                        </a>
+                                        @if($event->acceptsSubmissions())
+                                            <a href="{{ route('events.annals.manage', $event->id) }}"
+                                               class="inline-flex flex-wrap items-center justify-center gap-2 w-full px-4 py-3 rounded-xl border border-indigo-200 bg-white text-indigo-900 text-sm font-semibold no-underline hover:bg-indigo-50 hover:border-indigo-300 transition-colors text-center [overflow-wrap:anywhere]">
+                                                <ion-icon name="book-outline" class="text-lg shrink-0" aria-hidden="true"></ion-icon>
+                                                Anais da submissão
+                                            </a>
+                                        @endif
+                                        <a href="{{ route('events.certificates.index', $event->id) }}"
+                                           class="inline-flex flex-wrap items-center justify-center gap-2 w-full px-4 py-3 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-900 text-sm font-semibold no-underline hover:bg-indigo-100 hover:border-indigo-300 transition-colors text-center [overflow-wrap:anywhere]">
+                                            <ion-icon name="ribbon-outline" class="text-lg shrink-0" aria-hidden="true"></ion-icon>
+                                            Certificados e presença
+                                        </a>
+                                    @endif
+
+                                    <form action="/events/{{ $event['id'] }}" method="POST"
+                                          onsubmit="return confirm('Excluir este evento? Esta ação não pode ser desfeita.');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit"
-                                                class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-                                                title="Excluir">
-                                            <ion-icon name="trash-outline" class="text-lg"></ion-icon>
+                                                class="inline-flex flex-wrap items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl border border-red-100 bg-white text-red-700 text-sm font-medium hover:bg-red-50 hover:border-red-200 transition-colors text-center [overflow-wrap:anywhere]">
+                                            <ion-icon name="trash-outline" class="text-lg shrink-0" aria-hidden="true"></ion-icon>
+                                            Excluir evento
                                         </button>
                                     </form>
                                 </div>
@@ -117,12 +183,12 @@
             @else
                 <div class="bg-white rounded-2xl border border-slate-200 p-8 sm:p-12 text-center">
                     <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <ion-icon name="calendar-outline" class="text-3xl text-slate-400"></ion-icon>
+                        <ion-icon name="calendar-outline" class="text-3xl text-slate-400" aria-hidden="true"></ion-icon>
                     </div>
                     <h3 class="font-semibold text-slate-900 text-lg mb-2">Você ainda não tem eventos</h3>
                     <p class="text-slate-500 mb-6 max-w-sm mx-auto">Crie seu primeiro evento e comece a conectar pessoas.</p>
                     <a href="/events/create" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold no-underline transition-colors">
-                        <ion-icon name="add-circle-outline"></ion-icon>
+                        <ion-icon name="add-circle-outline" aria-hidden="true"></ion-icon>
                         Criar evento
                     </a>
                 </div>
@@ -135,43 +201,84 @@
         {{-- ===== PARTICIPANTE: Eventos que estou participando ===== --}}
         @if(auth()->check() && auth()->user()->isParticipant())
 
-        <div class="mb-8">
-            <h1 class="font-montserrat font-bold text-2xl sm:text-3xl text-slate-900 mb-6">Eventos que estou participando</h1>
+        <div class="mb-10">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                <div>
+                    <h1 class="font-montserrat font-bold text-2xl sm:text-3xl text-slate-900">Eventos que estou participando</h1>
+                    <p class="text-slate-600 text-sm mt-1">Submeta trabalhos e acompanhe os prazos.</p>
+                </div>
+                <a href="{{ route('works.my') }}"
+                   class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-800 text-sm font-semibold hover:bg-slate-50 transition-colors no-underline shrink-0">
+                    <ion-icon name="document-text-outline" class="text-lg shrink-0" aria-hidden="true"></ion-icon>
+                    Meus trabalhos
+                </a>
+            </div>
 
             @if (count($eventsAsParticipant) > 0)
 
-                <div class="grid gap-4 sm:gap-6">
+                <div class="grid gap-4 sm:gap-5">
                     @foreach ($eventsAsParticipant as $event)
-                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hover:shadow-md transition-shadow">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden hover:border-slate-300 transition-colors">
                         <div class="p-4 sm:p-6">
                             <div class="flex flex-col sm:flex-row sm:items-center gap-4">
                                 <div class="flex-1 min-w-0">
-                                    <a href="/events/{{ $event['id'] }}" class="font-semibold text-slate-900 hover:text-emerald-600 transition-colors line-clamp-2 break-words no-underline block">
+                                    <a href="/events/{{ $event['id'] }}" class="font-semibold text-slate-900 hover:text-emerald-700 transition-colors line-clamp-2 break-words no-underline block">
                                         {{ $event['title'] }}
                                     </a>
                                     <div class="flex items-center gap-3 mt-2">
-                                        <span class="inline-flex items-center gap-1 text-slate-500 text-sm">
-                                            <ion-icon name="people-outline"></ion-icon>
+                                        <span class="inline-flex items-center gap-1 text-slate-600 text-sm">
+                                            <ion-icon name="people-outline" class="text-base shrink-0" aria-hidden="true"></ion-icon>
                                             {{ count($event->users) }} participantes
                                         </span>
                                     </div>
                                 </div>
-                                <div class="flex flex-wrap gap-2 sm:gap-3">
+                                <div class="flex flex-col sm:flex-row flex-wrap gap-2 w-full sm:w-auto">
+                                    @php
+                                        $submissionWindowOpen = $event->acceptsSubmissions()
+                                            && !$event->isFinalized()
+                                            && !$event->calendarEnded()
+                                            && $event->workSubmissionWindowOpen();
+                                        $hasUnusedWorkType = \App\Models\Work::submitterCanSubmitAnotherWork($event, auth()->id());
+                                        $canSubmitWork = $submissionWindowOpen && $hasUnusedWorkType;
+                                    @endphp
+
+                                    @if($canSubmitWork)
+                                        <a href="{{ route('events.works.create', $event->id) }}"
+                                           class="inline-flex flex-wrap items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold no-underline transition-colors text-center break-words [overflow-wrap:anywhere]">
+                                            <ion-icon name="cloud-upload-outline" aria-hidden="true"></ion-icon>
+                                            Submeter trabalho
+                                        </a>
+                                    @elseif(!$event->acceptsSubmissions())
+                                        <span class="inline-flex flex-wrap items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 text-sm font-medium text-center break-words [overflow-wrap:anywhere]">
+                                            <ion-icon name="ban-outline" aria-hidden="true"></ion-icon>
+                                            Sem submissão
+                                        </span>
+                                    @elseif($submissionWindowOpen && !$hasUnusedWorkType)
+                                        <span class="inline-flex flex-wrap items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 text-sm font-medium text-center break-words [overflow-wrap:anywhere]">
+                                            <ion-icon name="checkmark-done-outline" aria-hidden="true"></ion-icon>
+                                            Tipos de trabalho já submetidos
+                                        </span>
+                                    @else
+                                        <span class="inline-flex flex-wrap items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 text-sm font-medium text-center break-words [overflow-wrap:anywhere]">
+                                            <ion-icon name="time-outline" aria-hidden="true"></ion-icon>
+                                            Submissão encerrada
+                                        </span>
+                                    @endif
+                                    <a href="/events/{{ $event['id'] }}"
+                                       class="inline-flex flex-wrap items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-800 text-sm font-semibold hover:bg-slate-50 no-underline transition-colors text-center break-words [overflow-wrap:anywhere]">
+                                        <ion-icon name="eye-outline" aria-hidden="true"></ion-icon>
+                                        Ver evento
+                                    </a>
                                     <form action="/events/leave/{{ $event->id }}" method="POST" class="inline"
                                           onsubmit="return confirm('Sair deste evento?');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit"
-                                                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 text-sm font-medium transition-colors">
-                                            <ion-icon name="log-out-outline"></ion-icon>
-                                            Sair
+                                                class="inline-flex flex-wrap items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-red-200 bg-white text-red-700 text-sm font-medium hover:bg-red-50 transition-colors w-full sm:w-auto text-center break-words [overflow-wrap:anywhere]">
+                                            <ion-icon name="log-out-outline" aria-hidden="true"></ion-icon>
+                                            Sair do evento
                                         </button>
                                     </form>
-                                    <a href="/events/{{ $event['id'] }}"
-                                       class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium no-underline transition-colors">
-                                        <ion-icon name="eye-outline"></ion-icon>
-                                        Ver detalhes
-                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -182,18 +289,36 @@
             @else
                 <div class="bg-white rounded-2xl border border-slate-200 p-8 sm:p-12 text-center">
                     <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <ion-icon name="calendar-outline" class="text-3xl text-slate-400"></ion-icon>
+                        <ion-icon name="calendar-outline" class="text-3xl text-slate-400" aria-hidden="true"></ion-icon>
                     </div>
                     <h3 class="font-semibold text-slate-900 text-lg mb-2">Nenhum evento ainda</h3>
                     <p class="text-slate-500 mb-6 max-w-sm mx-auto">Explore os eventos disponíveis e inscreva-se nos que mais te interessam.</p>
                     <a href="/#eventos" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold no-underline transition-colors">
-                        <ion-icon name="search-outline"></ion-icon>
+                        <ion-icon name="search-outline" aria-hidden="true"></ion-icon>
                         Ver eventos
                     </a>
                 </div>
             @endif
         </div>
 
+        @endif
+
+        {{-- ===== AVALIADOR: Trabalhos designados ===== --}}
+        @if(auth()->check() && auth()->user()->isReviewer())
+        <div class="mb-8">
+            <div class="bg-white rounded-2xl border border-slate-200 p-8 sm:p-10 text-center">
+                <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <ion-icon name="clipboard-outline" class="text-3xl text-slate-600" aria-hidden="true"></ion-icon>
+                </div>
+                <h3 class="font-semibold text-slate-900 text-lg mb-2">Painel do avaliador</h3>
+                <p class="text-slate-600 mb-6 max-w-md mx-auto text-sm">Acesse os trabalhos designados e envie suas avaliações por critério.</p>
+                <a href="{{ route('reviews.assigned') }}"
+                   class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold no-underline transition-colors">
+                    <ion-icon name="arrow-forward-outline" aria-hidden="true"></ion-icon>
+                    Ir para avaliações
+                </a>
+            </div>
+        </div>
         @endif
 
     </div>

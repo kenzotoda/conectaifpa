@@ -14,4 +14,17 @@ class TrustProxies extends Middleware
         Request::HEADER_X_FORWARDED_HOST |
         Request::HEADER_X_FORWARDED_PORT |
         Request::HEADER_X_FORWARDED_PROTO;
+
+    /**
+     * Em local/testing, não confiar em proxy implícito ('*'), para que cabeçalhos
+     * X-Forwarded-* falsos não forcem cookie Secure em HTTP (sessão perdida → 419).
+     */
+    protected function proxies(): array|string|null
+    {
+        if (app()->environment(['local', 'testing'])) {
+            return [];
+        }
+
+        return parent::proxies();
+    }
 }

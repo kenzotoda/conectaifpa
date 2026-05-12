@@ -393,7 +393,7 @@
                                 <!-- Contact Phone -->
                                 <div>
                                     <label class="form-label block text-sm font-montserrat mb-2">
-                                        Telefone para contato *
+                                        Telefone para contato (opcional)
                                     </label>
                                     <input
                                         id="coordinator_phone"
@@ -405,7 +405,6 @@
                                         class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
                                         placeholder="(11) 99999-9999"
                                         value="{{ old('coordinator_phone') }}"
-                                        required
                                     >
                                 </div>
                             </div>
@@ -413,6 +412,10 @@
 
                         <!-- Registration Settings  -->
                         <div class="mb-8">
+                            @php
+                                /** Mostra campo de submissão só quando o formulário marca aceite (ou erro de validação com checkbox marcado). */
+                                $acceptSubsCreateUi = filled(old('accepts_submissions'));
+                            @endphp
                             <h2 class="font-montserrat font-bold text-2xl text-gray-800 mb-6 flex items-center">
                                 <div class="w-8 h-8 bg-primary-custom rounded-full flex items-center justify-center mr-3">
                                     <span class="text-white font-bold text-sm">6</span>
@@ -448,7 +451,7 @@
                                 </div>
 
                                 <!-- Registration Deadline  -->
-                                <div>
+                                <div id="registration-deadline-cell" class="{{ $acceptSubsCreateUi ? '' : 'md:col-span-2' }}">
                                     <label class="form-label block text-sm font-montserrat mb-2">
                                         Prazo para Inscrições *
                                     </label>
@@ -461,9 +464,9 @@
                                         required
                                     >
                                 </div>
-                                <div>
+                                <div id="submission-deadline-field-wrap" class="{{ $acceptSubsCreateUi ? '' : 'hidden' }}">
                                     <label class="form-label block text-sm font-montserrat mb-2">
-                                        Prazo para Submissão de Trabalhos
+                                        Prazo para Submissão de Trabalhos <span class="text-red-500">*</span>
                                     </label>
                                     <input
                                         id="submission_deadline_at"
@@ -472,6 +475,7 @@
                                         class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
                                         value="{{ old('submission_deadline_at') }}"
                                     >
+                                    <p class="text-[11px] text-slate-500 mt-1.5 m-0">Exibido e obrigatório apenas quando há submissão de trabalhos.</p>
                                 </div>
                             </div>
                         </div>
@@ -770,9 +774,21 @@
             }
             const enabled = acceptsSubmissionsCheckbox.checked;
             const submissionDeadlineInput = document.getElementById('submission_deadline_at');
+            const submissionDeadlineWrap = document.getElementById('submission-deadline-field-wrap');
+            const registrationDeadlineCell = document.getElementById('registration-deadline-cell');
+
+            if (submissionDeadlineWrap) {
+                submissionDeadlineWrap.classList.toggle('hidden', !enabled);
+            }
+            if (registrationDeadlineCell) {
+                registrationDeadlineCell.classList.toggle('md:col-span-2', !enabled);
+            }
+
             if (submissionDeadlineInput) {
+                submissionDeadlineInput.disabled = !enabled;
                 submissionDeadlineInput.required = enabled;
             }
+
             scientificConfigSection.style.opacity = enabled ? '1' : '0.5';
             scientificConfigSection.querySelectorAll('input, select, textarea').forEach((input) => {
                 if (input.name === 'accepts_submissions') {

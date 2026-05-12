@@ -114,7 +114,7 @@ class EventController extends Controller
             'coordinator_name' => 'required|string|max:255',
             'coordinator_email' => 'required|email|max:255',
             'coordinator_phone' => [
-                'required',
+                'nullable',
                 'string',
                 'max:20',
                 'regex:/^\(\d{2}\)\s\d{4,5}-\d{4}$/',
@@ -517,6 +517,10 @@ class EventController extends Controller
 
     public function store(Request $request)
     {
+        if (! $request->boolean('accepts_submissions')) {
+            $request->merge(['submission_deadline_at' => null]);
+        }
+
         $request->validate(
             $this->validationRules($request),
             $this->validationMessages()
@@ -548,7 +552,7 @@ class EventController extends Controller
 
         $event->coordinator_name = $request->coordinator_name;
         $event->coordinator_email = $request->coordinator_email;
-        $event->coordinator_phone = $request->coordinator_phone;
+        $event->coordinator_phone = $request->filled('coordinator_phone') ? trim($request->coordinator_phone) : null;
 
         $event->datetime_registration = $request->datetime_registration ?? null;
         $event->submission_deadline_at = $request->submission_deadline_at ?? null;
@@ -735,8 +739,13 @@ class EventController extends Controller
             return redirect('/dashboard')->with('msg', 'Este evento foi finalizado e não pode mais ser alterado.');
         }
 
-        // Prazos e agenda do evento não podem ser alterados na edição (valores sempre os do cadastro original).
+        // Prazos/agenda já definidos são fixados antes da validação; prazo de submissão só se já existir valor salvo (senão permite preencher).
         $this->mergeLockedEventScheduleFromModelIntoRequest($request, $event);
+
+        // Sem trabalhos/submissões: não persiste data de encerramento de submissões.
+        if (! $request->boolean('accepts_submissions')) {
+            $request->merge(['submission_deadline_at' => null]);
+        }
 
         // Validação
         $request->validate([
@@ -776,7 +785,7 @@ class EventController extends Controller
             'coordinator_name' => 'required|string|max:255',
             'coordinator_email' => 'required|email|max:255',
             'coordinator_phone' => [
-                'required',
+                'nullable',
                 'string',
                 'max:20',
                 'regex:/^\(\d{2}\)\s\d{4,5}-\d{4}$/',
@@ -1130,7 +1139,7 @@ class EventController extends Controller
         $event->location_details = Event::FIXED_LOCATION_DETAILS;
         $event->coordinator_name = $request->coordinator_name;
         $event->coordinator_email = $request->coordinator_email;
-        $event->coordinator_phone = $request->coordinator_phone;
+        $event->coordinator_phone = $request->filled('coordinator_phone') ? trim($request->coordinator_phone) : null;
         $event->datetime_registration = $request->datetime_registration ?? null;
         $event->submission_deadline_at = $request->submission_deadline_at ?? null;
         $event->accepts_submissions = $request->boolean('accepts_submissions');
@@ -1202,8 +1211,8 @@ class EventController extends Controller
     }
 
     /**
-     * Substitui no request os campos de datas, horários e prazos pelos valores já persistidos,
-     * impedindo alteração na edição mesmo com manipulação do formulário.
+     * Substitui no request datas, horários e prazo de inscrição pelos valores já persistidos
+     * (bloqueados na edição). O prazo de submissão de trabalhos só é bloqueado se já foi salvo antes.
      */
     private function mergeLockedEventScheduleFromModelIntoRequest(Request $request, Event $event): void
     {
@@ -1219,10 +1228,12 @@ class EventController extends Controller
             'datetime_registration' => $event->datetime_registration
                 ? $event->datetime_registration->format('Y-m-d\TH:i')
                 : null,
-            'submission_deadline_at' => $event->submission_deadline_at
-                ? $event->submission_deadline_at->format('Y-m-d\TH:i')
-                : null,
         ];
+
+        // Só impedir alteração do prazo de submissões se já tiver sido definido antes (como datas de início/fim e inscrição).
+        if ($event->submission_deadline_at !== null) {
+            $payload['submission_deadline_at'] = $event->submission_deadline_at->format('Y-m-d\TH:i');
+        }
 
         $request->merge($payload);
     }

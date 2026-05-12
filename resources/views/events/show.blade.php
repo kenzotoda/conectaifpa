@@ -149,11 +149,13 @@
 
                 <!-- Área de inscrição -->
                 <div id="inscricoes" class="flex-shrink-0 w-full lg:w-auto lg:min-w-[280px] flex flex-col items-stretch lg:items-end justify-center gap-3">
+                    @if($event->accepts_submissions)
                     <a href="{{ route('events.annals', $event->id) }}"
                        class="w-full lg:w-auto text-center lg:text-right inline-flex items-center justify-center gap-2 text-indigo-700 hover:text-indigo-900 font-semibold text-sm no-underline order-first lg:order-none">
                         <ion-icon name="book-outline" class="text-lg"></ion-icon>
                         Anais do evento
                     </a>
+                    @endif
                     @php
                         $bloqueio = $event->registrationsBlockedReason();
                     @endphp
@@ -235,7 +237,7 @@
                             </div>
                         @else
                             <p class="text-sm text-slate-500 max-w-2xl">
-                                Na edição, <span class="text-slate-700 font-medium">datas e horários do evento</span> e <span class="text-slate-700 font-medium">prazos de inscrição e de submissão</span> não podem ser alterados e permanecem como no cadastro original, para evitar conflitos com inscrições, submissões e certificados. Se precisar mudar datas ou prazos, é melhor <span class="text-slate-700 font-medium">criar outro evento</span>. O que você pode mudar são os <span class="text-slate-700 font-medium">dados não sensíveis</span> que o formulário ainda libera (por exemplo, título, descrição, imagem de capa, capacidade, modalidade, contatos da coordenação e itens equivalentes). Após a data e hora de início, novas inscrições de participantes encerram. Quando o período do evento terminar, esta área mostrará a opção de <span class="text-slate-700 font-medium">finalizar</span> o evento de forma definitiva.
+                                Na edição, <span class="text-slate-700 font-medium">datas e horários do evento</span> e <span class="text-slate-700 font-medium">prazo de inscrição</span> não podem ser alterados como no cadastro original, para evitar conflitos com inscrições e certificados. O <span class="text-slate-700 font-medium">prazo de submissão de trabalhos</span> só permite preenchimento até ser definido pela primeira vez; depois também fica fixo. Se precisar mudar calendários ou outros prazos já bloqueados, é mais seguro <span class="text-slate-700 font-medium">criar outro evento</span>. O que você pode mudar são os <span class="text-slate-700 font-medium">dados liberados pelo formulário de edição</span> (por exemplo título, descrição, imagem de capa, capacidade, modalidade, contatos da coordenação). Após a data e hora de início, novas inscrições de participantes encerram. Quando o período do evento terminar, esta área mostrará a opção de <span class="text-slate-700 font-medium">finalizar</span> o evento de forma definitiva.
                             </p>
                         @endif
                     </div>
@@ -331,10 +333,12 @@
                             <span class="text-slate-500 block">Organizado por</span>
                             <span id="eventCoordinator" class="text-slate-800 font-medium">{{ $event->coordinator_name }}</span>
                         </li>
+                        @if(filled($event->coordinator_phone))
                         <li>
                             <span class="text-slate-500 block">Contato</span>
                             <span id="eventPhone" class="text-slate-800 font-medium">{{ $event->coordinator_phone }}</span>
                         </li>
+                        @endif
                         <li class="md:col-span-2">
                             <span class="text-slate-500 block">Entrar em contato</span>
                             <a href="mailto:{{ $event->coordinator_email }}" id="eventEmail" class="text-emerald-600 hover:text-emerald-700 font-medium break-all">{{ $event->coordinator_email }}</a>

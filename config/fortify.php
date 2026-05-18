@@ -152,7 +152,8 @@ return [
         Features::twoFactorAuthentication([
             'confirm' => true,
             'confirmPassword' => true,
-            // 'window' => 0,
+            // Tolerant clock skew (Authenticator vs server): ~±2 minutes at window 4.
+            'window' => 4,
         ]),
     ],
 

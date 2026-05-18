@@ -1394,6 +1394,12 @@ class EventController extends Controller
                 'Contas de coordenação não podem se inscrever em eventos.'
             );
         }
+        if ($user->isReviewer()) {
+            return redirect()->back()->with(
+                'msg',
+                'Contas de avaliador não podem se inscrever em eventos.'
+            );
+        }
 
         $event = Event::findOrFail($id);
 

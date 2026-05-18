@@ -136,6 +136,11 @@ Route::middleware(['auth', 'isReviewer'])->group(function () {
         ->name('reviews.my-feedback.download');
 });
 
+Route::get('/validar-certificado', [CertificateVerificationController::class, 'lookupForm'])
+    ->name('certificates.lookup');
+Route::post('/validar-certificado', [CertificateVerificationController::class, 'lookupSubmit'])
+    ->name('certificates.lookup.submit');
+
 Route::get('/certificado/{codigo}', [CertificateVerificationController::class, 'show'])
     ->name('certificates.verify');
 

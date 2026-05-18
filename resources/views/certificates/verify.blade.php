@@ -22,6 +22,11 @@
             @endif
             <div><dt class="text-slate-500 inline">Emitido em:</dt> <dd class="inline text-slate-800">{{ $certificate->data_emissao->format('d/m/Y') }}</dd></div>
         </dl>
+        <p class="m-0 pt-4 border-t border-slate-100">
+            <a href="{{ route('certificates.lookup') }}" class="text-sm font-semibold text-emerald-700 hover:text-emerald-800 no-underline">
+                Validar outro certificado
+            </a>
+        </p>
     </div>
 </div>
 @endsection

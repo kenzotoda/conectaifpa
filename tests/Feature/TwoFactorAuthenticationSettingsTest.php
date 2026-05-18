@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Livewire\Profile\TwoFactorAuthenticationForm;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Fortify\Features;
-use Laravel\Jetstream\Http\Livewire\TwoFactorAuthenticationForm;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -72,5 +72,31 @@ class TwoFactorAuthenticationSettingsTest extends TestCase
         $component->call('disableTwoFactorAuthentication');
 
         $this->assertNull($user->fresh()->two_factor_secret);
+    }
+
+    public function test_two_factor_secret_is_not_cleared_on_component_remount_when_unconfirmed(): void
+    {
+        if (! Features::canManageTwoFactorAuthentication()) {
+            $this->markTestSkipped('Two factor authentication is not enabled.');
+        }
+
+        if (! Features::optionEnabled(Features::twoFactorAuthentication(), 'confirm')) {
+            $this->markTestSkipped('Two factor confirmation flow is disabled.');
+        }
+
+        $this->actingAs($user = User::factory()->create());
+
+        $this->withSession(['auth.password_confirmed_at' => time()]);
+
+        Livewire::test(TwoFactorAuthenticationForm::class)
+            ->call('enableTwoFactorAuthentication');
+
+        $secret = $user->fresh()->two_factor_secret;
+        $this->assertNotNull($secret);
+
+        Livewire::test(TwoFactorAuthenticationForm::class);
+
+        $this->assertSame($secret, $user->fresh()->two_factor_secret);
+        $this->assertNull($user->fresh()->two_factor_confirmed_at);
     }
 }

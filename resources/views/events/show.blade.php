@@ -201,6 +201,10 @@
                             <p class="text-slate-500 text-sm leading-relaxed m-0 max-w-sm lg:text-right border border-slate-200 rounded-xl px-4 py-3 bg-slate-50">
                                 Coordenadores não fazem inscrição em evento. Para se inscrever, entre com uma conta de participante.
                             </p>
+                        @elseif(auth()->check() && auth()->user()->isReviewer())
+                            <p class="text-slate-500 text-sm leading-relaxed m-0 max-w-sm lg:text-right border border-slate-200 rounded-xl px-4 py-3 bg-slate-50">
+                                Avaliadores não fazem inscrição em evento. Para se inscrever, entre com uma conta de participante.
+                            </p>
                         @endif
                     @endif
                 </div>

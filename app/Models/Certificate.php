@@ -51,6 +51,14 @@ class Certificate extends Model
         return $this->belongsTo(Work::class);
     }
 
+    /**
+     * Normaliza o texto digitado pelo visitante (maiúsculas, só letras/números).
+     */
+    public static function normalizeValidationInput(?string $value): string
+    {
+        return strtoupper(preg_replace('/[^A-Za-z0-9]/', '', (string) $value));
+    }
+
     public static function typeLabel(string $tipo): string
     {
         return match ($tipo) {

@@ -59,6 +59,12 @@
                 Explorar eventos
             </a>
 
+            <a href="{{ route('certificates.lookup') }}"
+                class="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl border-2 border-white/80 text-white font-outfit font-semibold text-base sm:text-lg hover:bg-white/15 backdrop-blur-sm transition-all duration-200 no-underline">
+                <ion-icon name="shield-checkmark-outline" class="text-xl"></ion-icon>
+                Validar certificado
+            </a>
+
             @auth
                 @if(auth()->user()->isCoordinator())
                     <a href="/events/create"

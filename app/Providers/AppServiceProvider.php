@@ -2,10 +2,12 @@
 
 namespace App\Providers;
 
+use App\Livewire\Profile\TwoFactorAuthenticationForm as ProfileTwoFactorAuthenticationForm;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use Livewire\Livewire;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -30,5 +32,10 @@ class AppServiceProvider extends ServiceProvider
         if (app()->environment('production')) {
             URL::forceScheme('https');
         }
+
+        Livewire::component(
+            'profile.two-factor-authentication-form',
+            ProfileTwoFactorAuthenticationForm::class
+        );
     }
 }

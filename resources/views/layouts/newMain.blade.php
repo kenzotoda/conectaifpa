@@ -43,8 +43,16 @@
                        class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 no-underline transition-colors">
                         Eventos
                     </a>
+                    <a href="{{ route('certificates.lookup') }}"
+                       class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 no-underline transition-colors">
+                        Validar certificado
+                    </a>
 
                     @auth
+                        <a href="{{ route('profile.show') }}"
+                           class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 no-underline transition-colors">
+                            Minha conta
+                        </a>
                         @if(auth()->user()->isCoordinator())
                             <a href="/dashboard"
                                class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 no-underline transition-colors">
@@ -55,10 +63,6 @@
                             <a href="/dashboard"
                                class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 no-underline transition-colors">
                                 Minha Área
-                            </a>
-                            <a href="{{ route('works.my') }}"
-                               class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 no-underline transition-colors">
-                                Trabalhos
                             </a>
                             <a href="{{ route('works.my-presentation') }}"
                                class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 no-underline transition-colors">
@@ -136,8 +140,18 @@
                         <ion-icon name="calendar-outline" class="text-xl text-slate-400"></ion-icon>
                         Eventos
                     </a>
+                    <a href="{{ route('certificates.lookup') }}"
+                       class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 font-medium hover:bg-slate-100 no-underline transition-colors">
+                        <ion-icon name="shield-checkmark-outline" class="text-xl text-slate-400"></ion-icon>
+                        Validar certificado
+                    </a>
 
                     @auth
+                        <a href="{{ route('profile.show') }}"
+                           class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 font-medium hover:bg-slate-100 no-underline transition-colors">
+                            <ion-icon name="person-circle-outline" class="text-xl text-slate-400"></ion-icon>
+                            Minha conta
+                        </a>
                         @if(auth()->user()->isCoordinator())
                             <a href="/dashboard"
                                class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 font-medium hover:bg-slate-100 no-underline transition-colors">
@@ -150,11 +164,6 @@
                                class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 font-medium hover:bg-slate-100 no-underline transition-colors">
                                 <ion-icon name="person-outline" class="text-xl text-slate-400"></ion-icon>
                                 Minha Área
-                            </a>
-                            <a href="{{ route('works.my') }}"
-                               class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 font-medium hover:bg-slate-100 no-underline transition-colors">
-                                <ion-icon name="document-text-outline" class="text-xl text-slate-400"></ion-icon>
-                                Trabalhos
                             </a>
                             <a href="{{ route('works.my-presentation') }}"
                                class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 font-medium hover:bg-slate-100 no-underline transition-colors">
@@ -253,6 +262,9 @@
                 <div class="flex flex-wrap gap-6 text-sm">
                     <a href="/#eventos" class="text-slate-400 hover:text-white transition-colors no-underline">
                         Eventos
+                    </a>
+                    <a href="{{ route('certificates.lookup') }}" class="text-slate-400 hover:text-white transition-colors no-underline">
+                        Validar certificado
                     </a>
                     <a href="/" class="text-slate-400 hover:text-white transition-colors no-underline">
                         Início

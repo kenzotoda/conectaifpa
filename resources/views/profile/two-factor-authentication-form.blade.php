@@ -38,11 +38,13 @@
                     </p>
                 </div>
 
-                <div class="mt-4 p-2 inline-block bg-white">
+                <div class="mt-4 max-w-full overflow-x-auto p-2 inline-block bg-white rounded-lg">
+                    <div class="max-w-full [&_svg]:max-w-full [&_svg]:h-auto">
                     {!! $this->user->twoFactorQrCodeSvg() !!}
+                    </div>
                 </div>
 
-                <div class="mt-4 max-w-xl text-sm text-gray-600">
+                <div class="mt-4 max-w-xl text-sm text-gray-600 break-all">
                     <p class="font-semibold">
                         {{ __('Setup Key') }}: {{ decrypt($this->user->two_factor_secret) }}
                     </p>
@@ -52,7 +54,7 @@
                     <div class="mt-4">
                         <x-label for="code" value="{{ __('Code') }}" />
 
-                        <x-input id="code" type="text" name="code" class="block mt-1 w-1/2" inputmode="numeric" autofocus autocomplete="one-time-code"
+                        <x-input id="code" type="text" name="code" class="block mt-1 w-full max-w-xs" inputmode="numeric" autofocus autocomplete="one-time-code"
                             wire:model="code"
                             wire:keydown.enter="confirmTwoFactorAuthentication" />
 
@@ -76,7 +78,7 @@
             @endif
         @endif
 
-        <div class="mt-5">
+        <div class="mt-5 flex flex-wrap gap-2 items-center">
             @if (! $this->enabled)
                 <x-confirms-password wire:then="enableTwoFactorAuthentication">
                     <x-button type="button" wire:loading.attr="disabled">

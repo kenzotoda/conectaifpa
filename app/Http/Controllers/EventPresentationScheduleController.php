@@ -15,7 +15,7 @@ class EventPresentationScheduleController extends Controller
         $works = Work::with(['authors.user', 'event', 'presentation'])
             ->where('event_id', $event->id)
             ->eligibleForCoordinatorPresentationScheduling()
-            ->orderByRaw('CASE WHEN title IS NOT NULL AND title <> "" THEN 0 ELSE 1 END')
+            ->orderByRaw("CASE WHEN title IS NOT NULL AND title <> '' THEN 0 ELSE 1 END")
             ->orderBy('title')
             ->get();
 

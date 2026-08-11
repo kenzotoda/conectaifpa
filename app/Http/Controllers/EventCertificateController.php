@@ -602,7 +602,7 @@ class EventCertificateController extends Controller
             ])
             ->whereHas('presentation')
             ->with(['presentation', 'submitter'])
-            ->orderByRaw('CASE WHEN title IS NOT NULL AND title <> "" THEN 0 ELSE 1 END')
+            ->orderByRaw("CASE WHEN title IS NOT NULL AND title <> '' THEN 0 ELSE 1 END")
             ->orderBy('title')
             ->get();
     }

@@ -2124,7 +2124,7 @@ class EventController extends Controller
         $works = Work::with(['submitter', 'authors'])
             ->where('event_id', $event->id)
             ->whereIn('status', [Work::STATUS_PRESENTED, Work::STATUS_PUBLISHED_ANNALS])
-            ->orderByRaw('CASE WHEN title IS NOT NULL AND title <> "" THEN 0 ELSE 1 END')
+            ->orderByRaw("CASE WHEN title IS NOT NULL AND title <> '' THEN 0 ELSE 1 END")
             ->orderBy('title')
             ->get();
 

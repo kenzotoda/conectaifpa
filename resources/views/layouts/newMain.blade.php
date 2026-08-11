@@ -60,18 +60,26 @@
                             </a>
                         @endif
                         @if(auth()->user()->isParticipant())
-                            <a href="/dashboard"
-                               class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 no-underline transition-colors">
-                                Minha Área
-                            </a>
-                            <a href="{{ route('works.my-presentation') }}"
-                               class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 no-underline transition-colors">
-                                Minha apresentação
-                            </a>
-                            <a href="{{ route('certificates.my') }}"
-                               class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 no-underline transition-colors">
-                                Certificados
-                            </a>
+                            <details class="relative">
+                                <summary class="list-none px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer inline-flex items-center gap-1.5">
+                                    Área do participante
+                                    <ion-icon name="chevron-down-outline" class="text-base"></ion-icon>
+                                </summary>
+                                <div class="absolute right-0 mt-2 w-56 rounded-xl border border-slate-200 bg-white shadow-lg p-1 z-50">
+                                    <a href="/dashboard"
+                                       class="block px-3 py-2 rounded-lg text-sm text-slate-700 hover:bg-slate-100 no-underline transition-colors">
+                                        Minha Área
+                                    </a>
+                                    <a href="{{ route('works.my-presentation') }}"
+                                       class="block px-3 py-2 rounded-lg text-sm text-slate-700 hover:bg-slate-100 no-underline transition-colors">
+                                        Minha apresentação
+                                    </a>
+                                    <a href="{{ route('certificates.my') }}"
+                                       class="block px-3 py-2 rounded-lg text-sm text-slate-700 hover:bg-slate-100 no-underline transition-colors">
+                                        Certificados
+                                    </a>
+                                </div>
+                            </details>
                         @endif
                         @if(auth()->user()->isReviewer())
                             <a href="/dashboard"

@@ -31,7 +31,7 @@ Route::post('/events/{id}/finalize', [EventController::class, 'finalizeEvent'])-
 Route::post('/events/join/{id}', [EventController::class, 'joinEvent'])->middleware('auth');
 Route::delete('/events/leave/{id}', [EventController::class, 'leaveEvent'])->middleware('auth');
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'isCoordinator'])->group(function () {
     Route::get('/register/coordinator', [RegisteredUserController::class, 'create'])
         ->name('register.coordinator');
     Route::get('/register/reviewer', [RegisteredUserController::class, 'create'])

@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\IsCoordinator;
 use App\Http\Middleware\IsReviewer;
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\TrustProxies;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -18,6 +19,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // 👇 ATIVA O TRUST PROXIES
         $middleware->trustProxies(at: TrustProxies::class);
+
+        // 👇 cabeçalhos de segurança em todas as respostas
+        $middleware->append(SecurityHeaders::class);
 
         // 👇 seus aliases continuam intactos
         $middleware->alias([

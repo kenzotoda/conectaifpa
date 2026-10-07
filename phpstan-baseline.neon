@@ -1,0 +1,469 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$user_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/CertificateDownloadController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Http/Controllers/CertificateDownload"Controller.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Event\:\:\$certificateSignatures\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/EventCertificateController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Work\:\:\$presentation\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/EventCertificateController.php
+
+		-
+			message: '#^Relation ''certificateSignatures'' is not found in App\\Models\\Event model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/EventCertificateController.php
+
+		-
+			message: '#^Relation ''presentation'' is not found in App\\Models\\Work model\.$#'
+			identifier: larastan.relationExistence
+			count: 3
+			path: app/Http/Controllers/EventCertificateController.php
+
+		-
+			message: '#^Relation ''submitter'' is not found in App\\Models\\Work model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/EventCertificateController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Event\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Event\>\:\:\$activities\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/EventController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Event\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Event\>\:\:\$users\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/EventController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$events\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/EventController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$eventsAsParticipant\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/EventController.php
+
+		-
+			message: '#^Method Illuminate\\Http\\Client\\Response\:\:header\(\) invoked with 2 parameters, 1 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: app/Http/Controllers/EventController.php
+
+		-
+			message: '#^Relation ''activities'' is not found in App\\Models\\Event model\.$#'
+			identifier: larastan.relationExistence
+			count: 4
+			path: app/Http/Controllers/EventController.php
+
+		-
+			message: '#^Relation ''authors'' is not found in App\\Models\\Work model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/EventController.php
+
+		-
+			message: '#^Relation ''documents'' is not found in App\\Models\\Event model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/EventController.php
+
+		-
+			message: '#^Relation ''eventNews'' is not found in App\\Models\\Event model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/EventController.php
+
+		-
+			message: '#^Relation ''guests'' is not found in App\\Models\\Event model\.$#'
+			identifier: larastan.relationExistence
+			count: 3
+			path: app/Http/Controllers/EventController.php
+
+		-
+			message: '#^Relation ''submitter'' is not found in App\\Models\\Work model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/EventController.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Carbon\\Carbon\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/EventController.php
+
+		-
+			message: '#^Relation ''authors'' is not found in App\\Models\\Work model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/EventPresentationScheduleController.php
+
+		-
+			message: '#^Relation ''event'' is not found in App\\Models\\Work model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/EventPresentationScheduleController.php
+
+		-
+			message: '#^Relation ''presentation'' is not found in App\\Models\\Work model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/EventPresentationScheduleController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Work\:\:\$event\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/PostEvaluationController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Work\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Work\>\:\:\$presentation\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/PostEvaluationController.php
+
+		-
+			message: '#^Relation ''event'' is not found in App\\Models\\Work model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/PostEvaluationController.php
+
+		-
+			message: '#^Relation ''presentation'' is not found in App\\Models\\Work model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/PostEvaluationController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Work\:\:\$authors\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/PresentationController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Work\:\:\$event\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/PresentationController.php
+
+		-
+			message: '#^Relation ''authors'' is not found in App\\Models\\Work model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/PresentationController.php
+
+		-
+			message: '#^Relation ''event'' is not found in App\\Models\\Work model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/PresentationController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Work\:\:\$event\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/ReviewController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Work\:\:\$reviewerAssignments\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ReviewController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Work\:\:\$reviews\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/ReviewController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Work\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Work\>\:\:\$event\.$#'
+			identifier: property.notFound
+			count: 7
+			path: app/Http/Controllers/ReviewController.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: app/Http/Controllers/ReviewController.php
+
+		-
+			message: '#^Relation ''event'' is not found in App\\Models\\Work model\.$#'
+			identifier: larastan.relationExistence
+			count: 10
+			path: app/Http/Controllers/ReviewController.php
+
+		-
+			message: '#^Relation ''presentation'' is not found in App\\Models\\Work model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/ReviewController.php
+
+		-
+			message: '#^Relation ''reviewerAssignments'' is not found in App\\Models\\Work model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/ReviewController.php
+
+		-
+			message: '#^Relation ''reviews'' is not found in App\\Models\\Work model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/ReviewController.php
+
+		-
+			message: '#^Relation ''submitter'' is not found in App\\Models\\Work model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/ReviewController.php
+
+		-
+			message: '#^Relation ''work'' is not found in App\\Models\\WorkReviewer model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/ReviewController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Http/Controllers/ReviewController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/ReviewController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>presentation_type" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/ReviewController.php
+
+		-
+			message: '#^Parameter \#1 \$boolean of function abort_unless expects bool, string\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/SignatureController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Review\:\:\$scores\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/WorkController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Work\:\:\$event\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/WorkController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Work\:\:\$reviewerAssignments\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/WorkController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Work\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Work\>\:\:\$authors\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/WorkController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Work\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Work\>\:\:\$event\.$#'
+			identifier: property.notFound
+			count: 8
+			path: app/Http/Controllers/WorkController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Work\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Work\>\:\:\$reviewerAssignments\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/WorkController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Work\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Work\>\:\:\$reviews\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/WorkController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Work\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Work\>\:\:\$submitter\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/WorkController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Work\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Work\>\:\:\$versions\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/WorkController.php
+
+		-
+			message: '#^Call to function is_numeric\(\) with numeric\-string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Http/Controllers/WorkController.php
+
+		-
+			message: '#^Relation ''authors'' is not found in App\\Models\\Work model\.$#'
+			identifier: larastan.relationExistence
+			count: 5
+			path: app/Http/Controllers/WorkController.php
+
+		-
+			message: '#^Relation ''decisionByUser'' is not found in App\\Models\\Work model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/WorkController.php
+
+		-
+			message: '#^Relation ''event'' is not found in App\\Models\\Work model\.$#'
+			identifier: larastan.relationExistence
+			count: 8
+			path: app/Http/Controllers/WorkController.php
+
+		-
+			message: '#^Relation ''presentation'' is not found in App\\Models\\Work model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/WorkController.php
+
+		-
+			message: '#^Relation ''reviewerAssignments'' is not found in App\\Models\\Work model\.$#'
+			identifier: larastan.relationExistence
+			count: 4
+			path: app/Http/Controllers/WorkController.php
+
+		-
+			message: '#^Relation ''reviews'' is not found in App\\Models\\Work model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/WorkController.php
+
+		-
+			message: '#^Relation ''scores'' is not found in App\\Models\\Review model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/WorkController.php
+
+		-
+			message: '#^Relation ''submitter'' is not found in App\\Models\\Work model\.$#'
+			identifier: larastan.relationExistence
+			count: 5
+			path: app/Http/Controllers/WorkController.php
+
+		-
+			message: '#^Relation ''versions'' is not found in App\\Models\\Work model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/WorkController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between numeric\-string and '''' will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Http/Controllers/WorkController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Http/Controllers/WorkController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between Carbon\\Carbon and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Models/Activity.php
+
+		-
+			message: '#^PHPDoc type array\<int, string\> of property App\\Models\\User\:\:\$appends is not covariant with PHPDoc type list\<string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$appends\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^PHPDoc type array\<int, string\> of property App\\Models\\User\:\:\$fillable is not covariant with PHPDoc type list\<string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$fillable\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^PHPDoc type array\<int, string\> of property App\\Models\\User\:\:\$hidden is not covariant with PHPDoc type list\<string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$hidden\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Activity\:\:\$event\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/CertificateIssuer.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Event\:\:\$certificateSignatures\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Services/CertificateIssuer.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Work\:\:\$presentation\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/CertificateIssuer.php
+
+		-
+			message: '#^Relation ''authors'' is not found in App\\Models\\Work model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Services/CertificateIssuer.php
+
+		-
+			message: '#^Relation ''certificateSignatures'' is not found in App\\Models\\Event model\.$#'
+			identifier: larastan.relationExistence
+			count: 3
+			path: app/Services/CertificateIssuer.php
+
+		-
+			message: '#^Relation ''presentation'' is not found in App\\Models\\Work model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Services/CertificateIssuer.php
+
+		-
+			message: '#^Relation ''works'' is not found in App\\Models\\Event model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Services/CertificateIssuer.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/CertificateIssuer.php

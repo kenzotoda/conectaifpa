@@ -5,6 +5,24 @@
     Require all denied
 </Files>
 
+# ==============================
+# CABEÇALHOS DE SEGURANÇA (Apache)
+# PHP/HTML: o middleware SecurityHeaders define os cabeçalhos.
+# Aqui só se limpa X-Powered-By e se protege arquivo estático
+# (Apache entrega CSS/JS sem passar pelo Laravel).
+# ServerTokens Prod e expose_php=Off ficam no httpd.conf / php.ini.
+# ==============================
+<IfModule mod_headers.c>
+    Header always unset X-Powered-By
+    Header unset X-Powered-By
+
+    <FilesMatch "\.(css|js|mjs|map|png|jpe?g|gif|svg|webp|ico|woff2?|ttf|eot|txt|pdf)$">
+        Header always set X-Content-Type-Options "nosniff"
+        Header always set X-Frame-Options "SAMEORIGIN"
+        Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    </FilesMatch>
+</IfModule>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes

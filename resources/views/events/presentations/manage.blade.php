@@ -23,7 +23,7 @@
         </p>
         <h1 class="text-2xl font-bold text-slate-900 m-0">Cronograma de apresentações</h1>
         <p class="text-slate-600 text-sm mt-2 m-0 max-w-3xl">
-            Esta página lista somente <strong class="text-slate-800">trabalhos já aceitos na decisão final</strong>, com versão válida definida — incluindo os aprovados após correção. Cada bloco abaixo é um trabalho distinto. Para salvar, é <strong class="text-slate-800">obrigatório</strong> informar <strong class="text-slate-800">início e fim</strong> da apresentação (dentro do período do evento), o <strong class="text-slate-800">tipo</strong> e o <strong class="text-slate-800">local ou link</strong>; apenas o nome da sessão permanece opcional.
+            Esta página lista somente <strong class="text-slate-800">trabalhos já aceitos na decisão final</strong>, com versão válida definida — incluindo os aprovados após correção. Cada bloco abaixo é um trabalho distinto. Para salvar, é <strong class="text-slate-800">obrigatório</strong> informar <strong class="text-slate-800">início e fim</strong> da apresentação (dentro do período do evento), o <strong class="text-slate-800">tipo</strong> e o <strong class="text-slate-800">local ou link</strong>; apenas o nome da sessão permanece opcional. O agendamento só fica disponível depois que o evento tiver horário de início e de fim.
             <span class="block mt-2 text-slate-600">A <strong class="text-slate-800">presença na apresentação</strong> (apresentado/ausente), carga horária e título no certificado ficam na página <a href="{{ route('events.certificates.index', $event) }}" class="font-semibold text-emerald-800 underline underline-offset-2">Certificados e presença</a> do evento — não nesta tela.</span>
         </p>
         @if ($totalWorks > 0)
@@ -48,6 +48,13 @@
     @if (session('msg'))
         <div class="rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-900 px-4 py-3 text-sm">{{ session('msg') }}</div>
     @endif
+
+    @unless($event->scheduleIsComplete())
+        <div class="rounded-xl border border-amber-200 bg-amber-50 text-amber-950 px-4 py-3 text-sm">
+            O horário de início e de fim do evento ainda não foi definido. Apresentações só podem ser agendadas depois disso.
+            <a href="/events/edit/{{ $event->id }}" class="font-semibold text-amber-950 underline underline-offset-2">Definir horário na edição do evento</a>.
+        </div>
+    @endunless
 
     @if($works->isEmpty())
         <div class="rounded-2xl border border-slate-200 bg-white p-8 text-center text-slate-600 text-sm">
@@ -233,7 +240,7 @@
                                 </div>
                                 <p class="md:col-span-2 text-[11px] text-slate-500 m-0 -mt-1">Obrigatórios. O período deve estar dentro das datas oficiais do evento; o fim não pode ser anterior ao início.</p>
                                 <div class="md:col-span-2 flex flex-wrap gap-3 pt-1">
-                                    <button type="submit" class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 border-0">
+                                    <button type="submit" @disabled(! $event->scheduleIsComplete()) class="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 border-0 disabled:cursor-not-allowed disabled:bg-slate-300">
                                         Salvar este trabalho
                                     </button>
                                 </div>

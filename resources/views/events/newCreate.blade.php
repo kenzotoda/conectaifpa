@@ -235,7 +235,7 @@
                                 <!-- Start Time  -->
                                 <div>
                                     <label class="form-label block text-sm font-montserrat mb-2">
-                                        Horário de Início *
+                                        Horário de Início
                                     </label>
                                     <input
                                         id="start_time"
@@ -243,14 +243,14 @@
                                         type="time" 
                                         class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
                                         value="{{ old('start_time') }}"
-                                        required
                                     >
+                                    <p class="text-[11px] text-slate-500 mt-1.5 m-0">Opcional. Pode ser definido depois, na edição do evento.</p>
                                 </div>
                                 
                                 <!-- End Time  -->
                                 <div>
                                     <label class="form-label block text-sm font-montserrat mb-2">
-                                        Horário de Término *
+                                        Horário de Término
                                     </label>
                                     <input
                                         id="end_time"
@@ -258,8 +258,8 @@
                                         type="time" 
                                         class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
                                         value="{{ old('end_time') }}"
-                                        required
                                     >
+                                    <p class="text-[11px] text-slate-500 mt-1.5 m-0">Opcional. Com os dois horários, o término precisa ser igual ou posterior ao início.</p>
                                 </div>
                             </div>
                         </div>
@@ -1565,7 +1565,6 @@
             if (startDate && startDate.value) {
                 formData.append('start_date', startDate.value);
             }
-            // Necessário para a regra de datetime_registration no backend (sem isso assume 00:00).
             if (startTime && startTime.value !== '') {
                 formData.append('start_time', startTime.value);
             }

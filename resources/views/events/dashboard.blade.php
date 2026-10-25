@@ -80,6 +80,8 @@
                                         @endif
                                         @if($event->isFinalized())
                                             <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border border-slate-300 bg-slate-100 text-slate-800">Finalizado</span>
+                                        @elseif(! $event->scheduleIsComplete())
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border border-amber-200 bg-amber-50 text-amber-900">Horário a definir</span>
                                         @elseif($event->calendarEnded())
                                             <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border border-slate-200 bg-slate-50 text-slate-700">Período encerrado</span>
                                         @elseif($event->calendarStarted())

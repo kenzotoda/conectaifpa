@@ -284,6 +284,14 @@ class Event extends Model
         return $this->users()->count() >= $this->capacity;
     }
 
+    /** Horário de início e de fim definidos. Sem isso o evento não inicia, não encerra e não finaliza. */
+    public function scheduleIsComplete(): bool
+    {
+        return $this->start_date !== null
+            && filled($this->start_time)
+            && filled($this->end_time);
+    }
+
     public function calendarStartAt(): Carbon
     {
         $d = $this->start_date->format('Y-m-d');
@@ -299,6 +307,43 @@ class Event extends Model
         $t = self::normalizeTimeForSchedule($this->end_time, '23:59:59');
 
         return Carbon::parse($d.' '.$t, config('app.timezone'));
+    }
+
+    /**
+     * Limite dos prazos de inscrição e submissão.
+     * Com hora de início, o limite é esse instante. Sem hora, é o fim do dia da data de início.
+     */
+    public static function deadlineLimitFromSchedule(string $startDate, mixed $startTime): Carbon
+    {
+        $tz = config('app.timezone');
+        $startTime = trim((string) ($startTime ?? ''));
+        if ($startTime === '') {
+            return Carbon::parse($startDate.' 23:59:59', $tz);
+        }
+
+        return Carbon::parse(
+            $startDate.' '.self::normalizeTimeForSchedule($startTime, '00:00:00'),
+            $tz
+        );
+    }
+
+    /** Verdadeiro quando os dois horários existem e o fim (data + hora) é anterior ao início. */
+    public static function eventEndIsBeforeStart(
+        string $startDate,
+        mixed $startTime,
+        ?string $endDate,
+        mixed $endTime
+    ): bool {
+        $startTime = trim((string) ($startTime ?? ''));
+        $endTime = trim((string) ($endTime ?? ''));
+        if ($startDate === '' || $startTime === '' || $endTime === '') {
+            return false;
+        }
+
+        $endDay = ($endDate !== null && trim($endDate) !== '') ? trim($endDate) : $startDate;
+        [$start, $end] = self::calendarBoundsFromSchedule($startDate, $startTime, $endDay, $endTime);
+
+        return $end->lessThan($start);
     }
 
     /**
@@ -362,12 +407,20 @@ class Event extends Model
     /** Após data/hora de início do evento (inscrições fecham e evento aparece como iniciado). */
     public function calendarStarted(): bool
     {
+        if (! $this->scheduleIsComplete()) {
+            return false;
+        }
+
         return Carbon::now()->greaterThanOrEqualTo($this->calendarStartAt());
     }
 
     /** Após data/hora de término do evento (aparece encerrado na tela). */
     public function calendarEnded(): bool
     {
+        if (! $this->scheduleIsComplete()) {
+            return false;
+        }
+
         return Carbon::now()->greaterThanOrEqualTo($this->calendarEndAt());
     }
 

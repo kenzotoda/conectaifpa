@@ -6,6 +6,7 @@ use App\Models\Activity;
 use App\Models\Event;
 use App\Models\EventDocument;
 use App\Models\EventGuest;
+use App\Models\WorkPresentation;
 // Acesso ao Model de eventos
 use App\Models\EventNews;
 use App\Models\User;
@@ -100,8 +101,14 @@ class EventController extends Controller
 
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
+            'start_time' => 'nullable|date_format:H:i',
+            'end_time' => [
+                'nullable',
+                'date_format:H:i',
+                function ($attribute, $value, $fail) use ($request) {
+                    $this->failIfEventEndBeforeStart($request, $fail);
+                },
+            ],
 
             'campus' => ['required', Rule::in([Event::FIXED_CAMPUS])],
             'building' => ['required', Rule::in([Event::FIXED_BUILDING])],
@@ -128,7 +135,8 @@ class EventController extends Controller
                         $request,
                         $value,
                         $fail,
-                        'O prazo de inscrição não pode ser posterior à data e hora de início do evento.'
+                        'O prazo de inscrição não pode ser posterior à data e hora de início do evento.',
+                        'Enquanto o horário de início não estiver definido, o prazo de inscrição não pode passar do fim do dia da data de início.'
                     );
                 },
             ],
@@ -144,7 +152,8 @@ class EventController extends Controller
                         $request,
                         $value,
                         $fail,
-                        'O prazo de submissão não pode ser posterior à data e hora de início do evento.'
+                        'O prazo de submissão não pode ser posterior à data e hora de início do evento.',
+                        'Enquanto o horário de início não estiver definido, o prazo de submissão não pode passar do fim do dia da data de início.'
                     );
                 },
             ],
@@ -311,11 +320,8 @@ class EventController extends Controller
             'end_date.required' => 'A data de término é obrigatória.',
             'end_date.date' => 'A data de término deve ser uma data válida.',
             'end_date.after_or_equal' => 'A data de término deve ser igual ou posterior à data de início.',
-            'start_time.required' => 'O horário de início é obrigatório.',
             'start_time.date_format' => 'O horário de início deve estar no formato HH:MM.',
-            'end_time.required' => 'O horário de término é obrigatório.',
             'end_time.date_format' => 'O horário de término deve estar no formato HH:MM.',
-            'end_time.after' => 'O horário de término deve ser posterior ao horário de início.',
 
             'campus.required' => 'O campus é obrigatório.',
             'campus.in' => 'O campus selecionado não é válido.',
@@ -419,30 +425,52 @@ class EventController extends Controller
     }
 
     /**
-     * Falha se o prazo (inscrição/submissão) for estritamente após o início do evento (data + hora).
-     * Sem start_date ou start_time no request, não compara (validação por etapa); o submit completo revalida.
+     * Falha se o prazo (inscrição/submissão) passar do início do evento.
+     * Com hora de início, o limite é esse instante. Sem hora, é o fim do dia da data de início.
+     * Sem start_date no request, não compara (validação por etapa); o submit completo revalida.
      */
-    private function failIfDeadlineAfterEventStart(Request $request, mixed $value, \Closure $fail, string $message): void
-    {
+    private function failIfDeadlineAfterEventStart(
+        Request $request,
+        mixed $value,
+        \Closure $fail,
+        string $withTimeMessage,
+        string $withoutTimeMessage
+    ): void {
         $startDate = trim((string) $request->input('start_date', ''));
-        $startTime = trim((string) $request->input('start_time', ''));
-        if ($startDate === '' || $startTime === '') {
+        if ($startDate === '' || $value === null || $value === '') {
             return;
         }
 
-        $startTimeNorm = strlen($startTime) === 5 ? $startTime.':00' : $startTime;
-        $tz = config('app.timezone');
-
         try {
-            $startAt = Carbon::parse($startDate.' '.$startTimeNorm, $tz);
-            $deadlineAt = Carbon::parse($value, $tz);
+            $limit = Event::deadlineLimitFromSchedule($startDate, $request->input('start_time'));
+            $deadlineAt = Carbon::parse($value, config('app.timezone'));
         } catch (\Throwable) {
             return;
         }
 
-        if ($deadlineAt->greaterThan($startAt)) {
-            $fail($message);
+        if ($deadlineAt->greaterThan($limit)) {
+            $startTime = trim((string) $request->input('start_time', ''));
+            $fail($startTime === '' ? $withoutTimeMessage : $withTimeMessage);
         }
+    }
+
+    /** Falha quando os dois horários existem e o fim (data + hora) é anterior ao início. */
+    private function failIfEventEndBeforeStart(Request $request, \Closure $fail): void
+    {
+        $startDate = trim((string) $request->input('start_date', ''));
+        $endRaw = $request->input('end_date');
+        $endDate = ($endRaw !== null && trim((string) $endRaw) !== '') ? trim((string) $endRaw) : null;
+
+        if (Event::eventEndIsBeforeStart($startDate, $request->input('start_time'), $endDate, $request->input('end_time'))) {
+            $fail('O término do evento deve ser igual ou posterior ao início, considerando data e horário.');
+        }
+    }
+
+    private function requestScheduleIsComplete(Request $request): bool
+    {
+        return trim((string) $request->input('start_date', '')) !== ''
+            && trim((string) $request->input('start_time', '')) !== ''
+            && trim((string) $request->input('end_time', '')) !== '';
     }
 
     private function resolvedCategoryFromRequest(Request $request): string
@@ -465,14 +493,15 @@ class EventController extends Controller
 
     /**
      * Verdadeiro se a atividade estiver fora do período do evento conforme datas/horários do request.
-     * Se não houver start_date no request, não restringe (outras regras tratam o formulário completo).
+     * Sem data de início ou sem os dois horários, não restringe: a atividade é conferida quando o período oficial for gravado.
      */
     private function activityOutsideEventRequestWindow(Request $request, Carbon $activityStart, Carbon $activityEnd): bool
     {
-        $startDate = trim((string) $request->input('start_date', ''));
-        if ($startDate === '') {
+        if (! $this->requestScheduleIsComplete($request)) {
             return false;
         }
+
+        $startDate = trim((string) $request->input('start_date', ''));
 
         try {
             $endRaw = $request->input('end_date');
@@ -541,8 +570,8 @@ class EventController extends Controller
 
         $event->start_date = $request->start_date;
         $event->end_date = $request->end_date ?? null;
-        $event->start_time = $request->start_time ?? null;
-        $event->end_time = $request->end_time ?? null;
+        $event->start_time = $request->filled('start_time') ? $request->input('start_time') : null;
+        $event->end_time = $request->filled('end_time') ? $request->input('end_time') : null;
 
         $event->campus = Event::FIXED_CAMPUS;
         $event->building = Event::FIXED_BUILDING;
@@ -739,9 +768,6 @@ class EventController extends Controller
             return redirect('/dashboard')->with('msg', 'Este evento foi finalizado e não pode mais ser alterado.');
         }
 
-        // Prazos/agenda já definidos são fixados antes da validação; prazo de submissão só se já existir valor salvo (senão permite preencher).
-        $this->mergeLockedEventScheduleFromModelIntoRequest($request, $event);
-
         // Sem trabalhos/submissões: não persiste data de encerramento de submissões.
         if (! $request->boolean('accepts_submissions')) {
             $request->merge(['submission_deadline_at' => null]);
@@ -770,9 +796,22 @@ class EventController extends Controller
             ],
 
             'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
+            'end_date' => [
+                'required',
+                'date',
+                'after_or_equal:start_date',
+                function ($attribute, $value, $fail) use ($request, $event) {
+                    $this->failIfScheduleChangeBreaksDependents($request, $event, $fail);
+                },
+            ],
+            'start_time' => 'nullable|date_format:H:i',
+            'end_time' => [
+                'nullable',
+                'date_format:H:i',
+                function ($attribute, $value, $fail) use ($request) {
+                    $this->failIfEventEndBeforeStart($request, $fail);
+                },
+            ],
 
             'campus' => ['required', Rule::in([Event::FIXED_CAMPUS])],
             'building' => ['required', Rule::in([Event::FIXED_BUILDING])],
@@ -799,7 +838,8 @@ class EventController extends Controller
                         $request,
                         $value,
                         $fail,
-                        'O prazo de inscrição não pode ser posterior à data e hora de início do evento.'
+                        'O prazo de inscrição não pode ser posterior à data e hora de início do evento.',
+                        'Enquanto o horário de início não estiver definido, o prazo de inscrição não pode passar do fim do dia da data de início.'
                     );
                 },
             ],
@@ -815,7 +855,8 @@ class EventController extends Controller
                         $request,
                         $value,
                         $fail,
-                        'O prazo de submissão não pode ser posterior à data e hora de início do evento.'
+                        'O prazo de submissão não pode ser posterior à data e hora de início do evento.',
+                        'Enquanto o horário de início não estiver definido, o prazo de submissão não pode passar do fim do dia da data de início.'
                     );
                 },
             ],
@@ -993,11 +1034,6 @@ class EventController extends Controller
 
                                 return;
                             }
-                            if ($this->activityOutsideEventRequestWindow($request, $startAt, $endAt)) {
-                                $fail('Cada atividade cadastrada deve ocorrer inteiramente entre a data e hora de início e a data e hora de término do evento (é permitido coincidir com o início ou o fim do evento, mas não ultrapassar esse intervalo).');
-
-                                return;
-                            }
                         } catch (\Throwable $e) {
                             $fail('Data ou horário inválido em uma das atividades cadastradas.');
 
@@ -1061,11 +1097,8 @@ class EventController extends Controller
             'end_date.required' => 'A data de término é obrigatória.',
             'end_date.date' => 'A data de término deve ser uma data válida.',
             'end_date.after_or_equal' => 'A data de término deve ser igual ou posterior à data de início.',
-            'start_time.required' => 'O horário de início é obrigatório.',
             'start_time.date_format' => 'O horário de início deve estar no formato HH:MM.',
-            'end_time.required' => 'O horário de término é obrigatório.',
             'end_time.date_format' => 'O horário de término deve estar no formato HH:MM.',
-            'end_time.after' => 'O horário de término deve ser posterior ao horário de início.',
 
             // Localização
             'campus.required' => 'O campus é obrigatório.',
@@ -1130,8 +1163,8 @@ class EventController extends Controller
         $event->description = Purifier::clean($request->description ?? '');
         $event->start_date = $request->start_date;
         $event->end_date = $request->end_date ?? null;
-        $event->start_time = $request->start_time ?? null;
-        $event->end_time = $request->end_time ?? null;
+        $event->start_time = $request->filled('start_time') ? $request->input('start_time') : null;
+        $event->end_time = $request->filled('end_time') ? $request->input('end_time') : null;
         $event->campus = Event::FIXED_CAMPUS;
         $event->building = Event::FIXED_BUILDING;
         $event->venue = Event::FIXED_VENUE;
@@ -1211,31 +1244,115 @@ class EventController extends Controller
     }
 
     /**
-     * Substitui no request datas, horários e prazo de inscrição pelos valores já persistidos
-     * (bloqueados na edição). O prazo de submissão de trabalhos só é bloqueado se já foi salvo antes.
+     * Recusa a edição quando o novo período deixa atividade ou apresentação de fora,
+     * ou quando o horário some e ainda há apresentação agendada.
      */
-    private function mergeLockedEventScheduleFromModelIntoRequest(Request $request, Event $event): void
+    private function failIfScheduleChangeBreaksDependents(Request $request, Event $event, \Closure $fail): void
     {
-        $payload = [
-            'start_date' => $event->start_date?->format('Y-m-d'),
-            'end_date' => $event->end_date?->format('Y-m-d'),
-            'start_time' => $event->start_time
-                ? Carbon::parse($event->start_time)->format('H:i')
-                : null,
-            'end_time' => $event->end_time
-                ? Carbon::parse($event->end_time)->format('H:i')
-                : null,
-            'datetime_registration' => $event->datetime_registration
-                ? $event->datetime_registration->format('Y-m-d\TH:i')
-                : null,
-        ];
+        $message = $this->scheduleChangeConflictMessage($request, $event);
+        if ($message !== null) {
+            $fail($message);
+        }
+    }
 
-        // Só impedir alteração do prazo de submissões se já tiver sido definido antes (como datas de início/fim e inscrição).
-        if ($event->submission_deadline_at !== null) {
-            $payload['submission_deadline_at'] = $event->submission_deadline_at->format('Y-m-d\TH:i');
+    private function scheduleChangeConflictMessage(Request $request, Event $event): ?string
+    {
+        $removedIds = collect($request->input('activities_remove', []))
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->all();
+
+        $presentations = WorkPresentation::query()
+            ->whereNotNull('scheduled_start')
+            ->whereNotNull('scheduled_end')
+            ->whereHas('work', fn ($query) => $query->where('event_id', $event->id))
+            ->with('work:id,event_id,title')
+            ->get();
+
+        if (! $this->requestScheduleIsComplete($request)) {
+            if ($presentations->isEmpty()) {
+                return null;
+            }
+
+            $titles = $presentations
+                ->map(fn (WorkPresentation $presentation) => $presentation->work?->title ?? ('Trabalho #'.$presentation->work_id))
+                ->unique()
+                ->values()
+                ->all();
+
+            return 'Defina o horário de início e de fim do evento. Estas apresentações já estão agendadas e precisam do período oficial: '.implode('; ', $titles).'.';
         }
 
-        $request->merge($payload);
+        try {
+            $endRaw = $request->input('end_date');
+            $endDate = ($endRaw !== null && trim((string) $endRaw) !== '')
+                ? trim((string) $endRaw)
+                : trim((string) $request->input('start_date'));
+            [$eventStart, $eventEnd] = Event::calendarBoundsFromSchedule(
+                trim((string) $request->input('start_date')),
+                $request->input('start_time'),
+                $endDate,
+                $request->input('end_time'),
+            );
+        } catch (\Throwable) {
+            return null;
+        }
+
+        $submitted = (array) $request->input('activities_existing', []);
+        $activityTitles = [];
+        $activities = Activity::query()->where('event_id', $event->id)->get();
+        foreach ($activities as $activity) {
+            if (in_array((int) $activity->id, $removedIds, true)) {
+                continue;
+            }
+
+            $row = $submitted[$activity->id] ?? $submitted[(string) $activity->id] ?? null;
+            if (is_array($row)) {
+                $activityDate = trim((string) ($row['activity_date'] ?? ''));
+                $startTime = trim((string) ($row['start_time'] ?? ''));
+                $endTime = trim((string) ($row['end_time'] ?? ''));
+                $title = trim((string) ($row['title'] ?? '')) ?: (string) $activity->title;
+                if ($activityDate === '' || $startTime === '' || $endTime === '') {
+                    continue;
+                }
+                try {
+                    $startAt = $this->carbonFromActivityWizardDateAndTime($activityDate, $startTime);
+                    $endAt = $this->carbonFromActivityWizardDateAndTime($activityDate, $endTime);
+                } catch (\Throwable) {
+                    continue;
+                }
+            } else {
+                $title = (string) $activity->title;
+                $startAt = Carbon::parse($activity->start_at);
+                $endAt = Carbon::parse($activity->end_at ?? $activity->start_at);
+            }
+
+            if (! Event::activityFitsEventWindow($startAt, $endAt, $eventStart, $eventEnd)) {
+                $activityTitles[] = $title;
+            }
+        }
+
+        $presentationTitles = [];
+        foreach ($presentations as $presentation) {
+            $slotStart = Carbon::parse($presentation->scheduled_start);
+            $slotEnd = Carbon::parse($presentation->scheduled_end);
+            if ($slotStart->lt($eventStart) || $slotEnd->gt($eventEnd)) {
+                $presentationTitles[] = $presentation->work?->title ?? ('Trabalho #'.$presentation->work_id);
+            }
+        }
+
+        $parts = [];
+        if ($activityTitles !== []) {
+            $parts[] = 'Atividades fora do novo período: '.implode('; ', $activityTitles).'.';
+        }
+        if ($presentationTitles !== []) {
+            $parts[] = 'Apresentações fora do novo período: '.implode('; ', $presentationTitles).'.';
+        }
+        if ($parts === []) {
+            return null;
+        }
+
+        return 'A alteração não foi salva porque algum item fica fora do novo período. Ajuste as datas e horários do evento ou corrija estes itens antes. '.implode(' ', $parts);
     }
 
     private function syncScientificConfiguration(Event $event, Request $request): void
@@ -1441,6 +1558,13 @@ class EventController extends Controller
 
         if ($event->isFinalized()) {
             return redirect()->back()->with('msg', 'Este evento já foi finalizado.');
+        }
+
+        if (! $event->scheduleIsComplete()) {
+            return redirect()->back()->with(
+                'msg',
+                'Defina o horário de início e de fim do evento antes de finalizá-lo.'
+            );
         }
 
         $allowEarly = (bool) config('app.allow_early_event_finalize', false);
@@ -1758,7 +1882,7 @@ class EventController extends Controller
 
         $actStart = Carbon::parse($data['start_at']);
         $actEnd = ! empty($data['end_at']) ? Carbon::parse($data['end_at']) : $actStart;
-        if (! Event::activityFitsEventWindow($actStart, $actEnd, $event->calendarStartAt(), $event->calendarEndAt())) {
+        if ($event->scheduleIsComplete() && ! Event::activityFitsEventWindow($actStart, $actEnd, $event->calendarStartAt(), $event->calendarEndAt())) {
             throw ValidationException::withMessages([
                 'start_at' => 'A atividade deve ocorrer inteiramente entre o início e o fim do evento (pode coincidir com esses instantes, mas não ultrapassar).',
             ]);

@@ -92,11 +92,11 @@
                                 @if($event->end_date)
                                     até {{ $event->end_date->format('d/m/Y') }}
                                 @endif
-                                @if($event->start_time)
+                                @if($event->scheduleIsComplete())
                                     · {{ \Carbon\Carbon::parse($event->start_time)->format('H:i') }}
-                                    @if($event->end_time)
-                                        às {{ \Carbon\Carbon::parse($event->end_time)->format('H:i') }}
-                                    @endif
+                                    às {{ \Carbon\Carbon::parse($event->end_time)->format('H:i') }}
+                                @else
+                                    · horário a definir
                                 @endif
                             </span>
                         </p>
@@ -241,7 +241,7 @@
                             </div>
                         @else
                             <p class="text-sm text-slate-500 max-w-2xl">
-                                Na edição, <span class="text-slate-700 font-medium">datas e horários do evento</span> e <span class="text-slate-700 font-medium">prazo de inscrição</span> não podem ser alterados como no cadastro original, para evitar conflitos com inscrições e certificados. O <span class="text-slate-700 font-medium">prazo de submissão de trabalhos</span> só permite preenchimento até ser definido pela primeira vez; depois também fica fixo. Se precisar mudar calendários ou outros prazos já bloqueados, é mais seguro <span class="text-slate-700 font-medium">criar outro evento</span>. O que você pode mudar são os <span class="text-slate-700 font-medium">dados liberados pelo formulário de edição</span> (por exemplo título, descrição, imagem de capa, capacidade, modalidade, contatos da coordenação). Após a data e hora de início, novas inscrições de participantes encerram. Quando o período do evento terminar, esta área mostrará a opção de <span class="text-slate-700 font-medium">finalizar</span> o evento de forma definitiva.
+                                Datas, horários e prazos de inscrição e de submissão podem ser ajustados na edição até a finalização. Se a mudança deixar uma atividade ou uma apresentação fora do novo período, o salvamento é recusado e a mensagem lista o que corrigir. Sem horário de início e de fim, as inscrições seguem pelo prazo de inscrição, o evento não aparece como encerrado e não pode ser finalizado, e apresentações não podem ser agendadas. Quando os dois horários existem, novas inscrições encerram na data e hora de início. Quando o período terminar, esta área mostra a opção de <span class="text-slate-700 font-medium">finalizar</span> o evento.
                             </p>
                         @endif
                     </div>

@@ -57,6 +57,10 @@ class PresentationController extends Controller
             return back()->with('msg', 'O horário de fim deve ser igual ou posterior ao início.')->withInput();
         }
 
+        if (! $work->event->scheduleIsComplete()) {
+            return back()->with('msg', 'Defina o horário de início e de fim do evento antes de agendar apresentações.')->withInput();
+        }
+
         try {
             $this->assertPresentationWithinEventWindow($work->event, $start, $end);
         } catch (\InvalidArgumentException $e) {
@@ -118,6 +122,10 @@ class PresentationController extends Controller
 
     private function assertPresentationWithinEventWindow(\App\Models\Event $event, Carbon $slotStart, Carbon $slotEnd): void
     {
+        if (! $event->scheduleIsComplete()) {
+            throw new \InvalidArgumentException('Defina o horário de início e de fim do evento antes de agendar apresentações.');
+        }
+
         $evtStart = $event->calendarStartAt();
         $evtEnd = $event->calendarEndAt();
         if ($slotStart->lt($evtStart) || $slotEnd->gt($evtEnd)) {

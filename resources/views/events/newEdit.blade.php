@@ -59,7 +59,7 @@
             </h1>
 
             <p class="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto text-pretty">
-                Ajuste apenas o que for seguro alterar. <strong class="font-semibold text-slate-700">Datas e horários do evento e prazos de inscrição/submissão não podem mais ser editados</strong> após a criação.
+                Ajuste o evento enquanto ele não estiver finalizado. <strong class="font-semibold text-slate-700">Datas, horários e prazos de inscrição e de submissão</strong> podem ser corrigidos aqui. Se a mudança deixar uma atividade ou uma apresentação fora do novo período, o salvamento é recusado e indica o que ajustar.
             </p>
         </div>
     </section>
@@ -212,7 +212,7 @@
                         <p class="text-slate-500 text-sm mt-1">Use negrito, listas e centralizar para organizar o texto.</p>
                     </div>
 
-                    <!-- Date and Time (bloqueado na edição) -->
+                    <!-- Date and Time -->
                     <div class="mb-8">
                         <h2 class="font-montserrat font-bold text-2xl text-gray-800 mb-6 flex items-center">
                             <div class="w-8 h-8 bg-primary-custom rounded-full flex items-center justify-center mr-3">
@@ -221,7 +221,7 @@
                             Data e Horário
                         </h2>
                         <p class="text-sm text-slate-600 mb-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-                            Estes campos são <strong>somente leitura</strong> na edição para evitar conflitos com inscrições, submissões e certificados.
+                            Datas e horários podem ser ajustados até a finalização do evento. O horário de início e o de término podem ficar em branco enquanto ainda não estiverem definidos. Com os dois horários preenchidos, o término precisa ser igual ou posterior ao início.
                         </p>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -234,11 +234,9 @@
                                     id="start_date"
                                     name="start_date"
                                     type="date"
-                                    class="form-input w-full px-4 py-3 rounded-lg font-open-sans bg-slate-100 text-slate-700 cursor-not-allowed"
-                                    value="{{ $event->start_date->format('Y-m-d') }}"
-                                    readonly
+                                    class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
+                                    value="{{ old('start_date', $event->start_date->format('Y-m-d')) }}"
                                     required
-                                    tabindex="-1"
                                 >
 
                             </div>
@@ -252,46 +250,40 @@
                                     id="end_date"
                                     name="end_date"
                                     type="date" 
-                                    class="form-input w-full px-4 py-3 rounded-lg font-open-sans bg-slate-100 text-slate-700 cursor-not-allowed"
-                                    value="{{ $event->end_date ? $event->end_date->format('Y-m-d') : '' }}"
-                                    readonly
+                                    class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
+                                    value="{{ old('end_date', $event->end_date ? $event->end_date->format('Y-m-d') : '') }}"
                                     required
-                                    tabindex="-1"
                                 >
                             </div>
                             
                              <!-- Start Time  -->
                             <div>
                                 <label class="form-label block text-sm font-montserrat mb-2">
-                                    Horário de Início *
+                                    Horário de Início
                                 </label>
                                 <input
                                     id="start_time"
                                     name="start_time"
                                     type="time"
-                                    class="form-input w-full px-4 py-3 rounded-lg font-open-sans bg-slate-100 text-slate-700 cursor-not-allowed"
-                                    value="{{ \Carbon\Carbon::parse($event->start_time)->format('H:i') }}"
-                                    readonly
-                                    required
-                                    tabindex="-1"
+                                    class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
+                                    value="{{ old('start_time', $event->start_time ? \Carbon\Carbon::parse($event->start_time)->format('H:i') : '') }}"
                                 >
+                                <p class="text-[11px] text-slate-500 mt-1.5 m-0">Opcional até a definição do período oficial.</p>
                             </div>
                             
                              <!-- End Time  -->
                             <div>
                                 <label class="form-label block text-sm font-montserrat mb-2">
-                                    Horário de Término *
+                                    Horário de Término
                                 </label>
                                 <input
                                     id="end_time"
                                     name="end_time"
                                     type="time"
-                                    class="form-input w-full px-4 py-3 rounded-lg font-open-sans bg-slate-100 text-slate-700 cursor-not-allowed"
-                                    value="{{ $event->end_time ? \Carbon\Carbon::parse($event->end_time)->format('H:i') : '' }}"
-                                    readonly
-                                    required
-                                    tabindex="-1"
+                                    class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
+                                    value="{{ old('end_time', $event->end_time ? \Carbon\Carbon::parse($event->end_time)->format('H:i') : '') }}"
                                 >
+                                <p class="text-[11px] text-slate-500 mt-1.5 m-0">Opcional. Sem este horário, o evento não encerra nem pode ser finalizado.</p>
                             </div>
                         </div>
                     </div>
@@ -443,8 +435,6 @@
                      <!-- Registration Settings  -->
                     <div class="mb-8">
                         @php
-                            /** Prazo de submissão bloqueado após salvo pela primeira vez; datas e prazo de inscrição sempre fixos na edição. */
-                            $submissionDeadlineLockedEdit = $event->submission_deadline_at !== null;
                             $acceptSubsForEditUi = (bool) old('accepts_submissions', $event->accepts_submissions);
                         @endphp
                         <h2 class="font-montserrat font-bold text-2xl text-gray-800 mb-6 flex items-center">
@@ -466,8 +456,8 @@
                         </div>
                         
                         <p class="text-sm text-slate-600 mb-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 space-y-1.5">
-                            <span class="block">As <strong>datas e horários do evento</strong> e o <strong>prazo de inscrição</strong> ficam fixos nesta edição (como no cadastro), para preservar histórico e evitar impacto em participantes já inscritos.</span>
-                            <span class="block">O <strong>prazo para submissão de trabalhos</strong> aparece apenas quando o evento aceita esse fluxo e <strong>só pode ser preenchido ou alterado enquanto ainda não foi definido</strong>; após definido pela primeira vez, passa a ser somente leitura, igual ao prazo de inscrição.</span>
+                            <span class="block">O <strong>prazo de inscrição</strong> e o <strong>prazo de submissão</strong> podem ser alterados até a finalização do evento.</span>
+                            <span class="block">Com horário de início definido, nenhum prazo pode passar desse instante. Sem horário de início, nenhum prazo pode passar do fim do dia da data de início.</span>
                         </p>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -495,36 +485,24 @@
                                     id="datetime_registration"
                                     name="datetime_registration"
                                     type="datetime-local" 
-                                    class="form-input w-full px-4 py-3 rounded-lg font-open-sans bg-slate-100 text-slate-700 cursor-not-allowed"
-                                    value="{{ $event->datetime_registration ? $event->datetime_registration->format('Y-m-d\TH:i') : '' }}"
-                                    readonly
+                                    class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
+                                    value="{{ old('datetime_registration', $event->datetime_registration ? $event->datetime_registration->format('Y-m-d\TH:i') : '') }}"
                                     required
-                                    tabindex="-1"
                                 >
                             </div>
                             <div id="submission-deadline-field-wrap" class="{{ $acceptSubsForEditUi ? '' : 'hidden' }}">
                                 <label class="form-label block text-sm font-montserrat mb-2">
                                     Prazo para Submissão de Trabalhos
-                                    @unless($submissionDeadlineLockedEdit)<span class="text-red-500">*</span>@endunless
+                                    <span class="text-red-500">*</span>
                                 </label>
                                 <input
                                     id="submission_deadline_at"
                                     name="submission_deadline_at"
                                     type="datetime-local"
-                                    class="form-input w-full px-4 py-3 rounded-lg font-open-sans @if($submissionDeadlineLockedEdit) bg-slate-100 text-slate-700 cursor-not-allowed @endif"
+                                    class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
                                     value="{{ old('submission_deadline_at', $event->submission_deadline_at ? $event->submission_deadline_at->format('Y-m-d\TH:i') : '') }}"
-                                    @if($submissionDeadlineLockedEdit) readonly tabindex="-1" @endif
-                                    @unless($submissionDeadlineLockedEdit)
-                                        title="Enquanto nenhum valor tiver sido salvo, você pode definir este prazo uma vez aqui na edição."
-                                    @else
-                                        title="Este prazo já foi definido na edição e não pode mais ser alterado aqui."
-                                    @endunless
                                 >
-                                @unless($submissionDeadlineLockedEdit)
-                                    <p class="text-[11px] text-slate-500 mt-1.5 m-0">Obrigatório enquanto o evento aceita trabalhos — após gravar pela primeira vez, ficará como somente leitura nesta edição.</p>
-                                @else
-                                    <p class="text-[11px] text-slate-500 mt-1.5 m-0">Definido e bloqueado — usa o mesmo critério de estabilidade do prazo de inscrição.</p>
-                                @endunless
+                                <p class="text-[11px] text-slate-500 mt-1.5 m-0">Obrigatório enquanto o evento aceita trabalhos. Pode ser ajustado até a finalização.</p>
                             </div>
                         </div>
                     </div>
@@ -998,7 +976,6 @@
         toggleEventTypeOther();
 
         const acceptsSubmissionsCheckbox = document.getElementById('accepts_submissions');
-        const submissionDeadlineLockedFromDb = {{ $submissionDeadlineLockedEdit ? 'true' : 'false' }};
         const scientificConfigSection = document.getElementById('scientific-config-section');
         const acceptedWorkTypeOtherEditCheckbox = document.getElementById('accepted_work_type_other_edit');
         const customWorkTypesEditBox = document.getElementById('custom-work-types-box-edit');
@@ -1022,9 +999,8 @@
             }
 
             if (submissionDeadlineInput) {
-                const lockedFromServer = submissionDeadlineLockedFromDb === true;
                 submissionDeadlineInput.disabled = !enabled;
-                submissionDeadlineInput.required = enabled && !lockedFromServer;
+                submissionDeadlineInput.required = enabled;
             }
             scientificConfigSection.style.opacity = enabled ? '1' : '0.5';
             scientificConfigSection.querySelectorAll('input, select, textarea').forEach((input) => {

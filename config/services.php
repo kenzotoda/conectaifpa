@@ -25,7 +25,9 @@ return [
     ],
 
     'resend' => [
-        'key' => env('RESEND_KEY'),
+        // O Laravel Cloud injeta RESEND_API_KEY ao conectar o Resend.
+        // Esqueletos anteriores ao Laravel 12.10 liam RESEND_KEY, que o Cloud não define.
+        'key' => env('RESEND_API_KEY'),
     ],
 
     'slack' => [
@@ -46,6 +48,7 @@ return [
         'bucket_evaluator_to_coordinator' => env('SUPABASE_BUCKET_EVALUATOR_TO_COORDINATOR', 'evaluator-to-coordinator-dev'),
         'bucket_coordinator_to_participant' => env('SUPABASE_BUCKET_COORDINATOR_TO_PARTICIPANT', 'coordinator-to-participant-dev'),
         'bucket_attachments' => env('SUPABASE_BUCKET_ATTACHMENTS', env('SUPABASE_BUCKET_EVENTS', env('SUPABASE_BUCKET'))),
+        'bucket_annals' => env('SUPABASE_BUCKET_ANNALS', 'annals-dev'),
         'bucket_signatures' => env('SUPABASE_BUCKET_SIGNATURES', 'signatures-dev'),
         'bucket_certificates' => env('SUPABASE_BUCKET_CERTIFICATES', 'certificates-dev'),
     ],

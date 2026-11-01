@@ -21,9 +21,7 @@
 
         <div class="max-w-md">
             <div class="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
-                <div class="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-white/20 backdrop-blur-sm rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0">
-                    <span class="font-outfit font-black text-xl sm:text-2xl text-white">C</span>
-                </div>
+                @include('partials.brand-mark', ['class' => 'w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14'])
                 <span class="font-outfit font-bold text-2xl sm:text-3xl text-white">ConectaIFPA</span>
             </div>
             <h1 class="font-outfit font-bold text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white leading-tight mb-3 sm:mb-4">
@@ -37,23 +35,21 @@
 </div>
 
 {{-- Painel do formulário (direita) --}}
-<div class="lg:w-1/2 flex items-start lg:items-center justify-center px-4 sm:px-6 py-6 sm:py-8 lg:py-0 order-1 lg:order-2 bg-slate-50/50 auth-safe-top auth-safe-bottom">
+<div class="lg:w-1/2 flex items-start lg:items-center justify-center px-4 sm:px-6 py-6 sm:py-8 lg:py-0 order-1 lg:order-2  auth-safe-top auth-safe-bottom">
     <div class="w-full max-w-md">
         <div class="glass-card rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl shadow-slate-200/50 border border-white/60 p-5 sm:p-6 md:p-8 lg:p-10">
             <div class="flex justify-center mb-6 sm:mb-8 lg:hidden">
                 <div class="flex items-center gap-2">
-                    <div class="w-9 h-9 sm:w-10 sm:h-10 bg-primary-custom rounded-lg sm:rounded-xl flex items-center justify-center">
-                        <span class="font-outfit font-black text-base sm:text-lg text-white">C</span>
-                    </div>
-                    <span class="font-outfit font-bold text-lg sm:text-xl text-slate-800">ConectaIFPA</span>
+                    @include('partials.brand-mark', ['class' => 'w-9 h-9 sm:w-10 sm:h-10'])
+                    <span class="font-outfit font-bold text-lg sm:text-xl dash-title">ConectaIFPA</span>
                 </div>
             </div>
 
-            <h2 class="font-outfit font-bold text-xl sm:text-2xl text-slate-800 mb-1 sm:mb-2">Esqueceu a senha?</h2>
-            <p class="text-slate-500 text-sm mb-4 sm:mb-6">Informe seu e-mail para receber o link de redefinição</p>
+            <h2 class="font-outfit font-bold text-xl sm:text-2xl dash-title mb-1 sm:mb-2">Esqueceu a senha?</h2>
+            <p class="dash-muted text-sm mb-4 sm:mb-6">Informe seu e-mail para receber o link de redefinição</p>
 
             @session('status')
-                <div class="mb-4 p-3 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-medium">
+                <div class="dash-badge-positive mb-4 p-3 rounded-xl text-sm font-medium">
                     {{ $value }}
                 </div>
             @endsession
@@ -64,21 +60,21 @@
                 @csrf
 
                 <div>
-                    <label for="email" class="block font-outfit font-medium text-slate-700 mb-2">Email</label>
+                    <label for="email" class="block font-outfit font-medium dash-title mb-2">Email</label>
                     <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus
-                        class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 outline-none transition-all"
+                        class="w-full px-4 py-3 rounded-xl dash-field outline-none"
                         placeholder="seu@email.com">
                 </div>
 
                 <button type="submit"
-                    class="w-full py-3.5 rounded-xl bg-primary-custom hover:bg-[#0d5a1a] text-white font-outfit font-semibold text-base transition-all duration-200 shadow-lg shadow-emerald-900/20 hover:shadow-xl hover:shadow-emerald-900/25 active:scale-[0.99]">
+                    class="w-full py-3.5 rounded-xl dash-btn font-outfit font-semibold text-base">
                     Enviar link de recuperação
                 </button>
             </form>
 
-            <p class="mt-6 text-center text-slate-600 text-sm">
+            <p class="mt-6 text-center dash-text text-sm">
                 Lembrou a senha?
-                <a href="{{ route('login') }}" class="font-semibold text-emerald-600 hover:text-emerald-700 transition-colors">Voltar ao login</a>
+                <a href="{{ route('login') }}" class="dash-link font-semibold">Voltar ao login</a>
             </p>
         </div>
     </div>

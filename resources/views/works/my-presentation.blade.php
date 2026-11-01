@@ -23,7 +23,7 @@
 
         @if($works->isEmpty())
             <div class="rounded-2xl border border-slate-200/90 bg-white shadow-[0_8px_30px_-12px_rgba(15,23,42,0.12)] ring-1 ring-slate-100/80 overflow-hidden text-center px-6 py-14 sm:py-16">
-                <div class="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/25 mb-4">
+                <div class="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0b6b45] text-white mb-4">
                     <ion-icon name="calendar-outline" class="text-3xl" aria-hidden="true"></ion-icon>
                 </div>
                 <h2 class="font-semibold text-lg text-slate-900 m-0 mb-2">Nada agendado ainda</h2>
@@ -34,22 +34,18 @@
                 @foreach($works as $work)
                     @php
                         $badgeClass = match ($work->status) {
-                            Work::STATUS_SCHEDULED => 'border-sky-200/90 bg-sky-50 text-sky-950 ring-sky-100',
-                            Work::STATUS_PRESENTED => 'border-emerald-200/90 bg-emerald-50 text-emerald-950 ring-emerald-100',
+                            Work::STATUS_SCHEDULED, Work::STATUS_PRESENTED, Work::STATUS_PUBLISHED_ANNALS => 'border-[#b7ebcf] bg-[#e7f8ef] text-[#0b6b45]',
                             Work::STATUS_ABSENT => 'border-red-200/90 bg-red-50 text-red-950 ring-red-100',
-                            Work::STATUS_PUBLISHED_ANNALS => 'border-indigo-200/90 bg-indigo-50 text-indigo-950 ring-indigo-100',
                             default => 'border-slate-200/90 bg-slate-50 text-slate-900 ring-slate-100',
                         };
                         $accentClass = match ($work->status) {
-                            Work::STATUS_SCHEDULED => 'from-sky-500 via-blue-500 to-indigo-500',
-                            Work::STATUS_PRESENTED => 'from-emerald-500 via-teal-500 to-cyan-600',
-                            Work::STATUS_ABSENT => 'from-slate-400 via-slate-500 to-slate-600',
-                            Work::STATUS_PUBLISHED_ANNALS => 'from-indigo-500 via-violet-500 to-purple-600',
-                            default => 'from-slate-400 to-slate-600',
+                            Work::STATUS_SCHEDULED, Work::STATUS_PRESENTED, Work::STATUS_PUBLISHED_ANNALS => 'bg-[#0b6b45]',
+                            Work::STATUS_ABSENT => 'bg-red-700',
+                            default => 'bg-slate-300',
                         };
                     @endphp
                     <li class="group rounded-2xl border border-slate-200/90 bg-white shadow-[0_10px_40px_-18px_rgba(15,23,42,0.18)] ring-1 ring-slate-100/90 overflow-hidden transition-shadow hover:shadow-[0_16px_48px_-16px_rgba(15,23,42,0.22)]">
-                        <div class="h-1 w-full bg-gradient-to-r {{ $accentClass }}" aria-hidden="true"></div>
+                        <div class="h-1 w-full {{ $accentClass }}" aria-hidden="true"></div>
                         <div class="p-5 sm:p-6 space-y-4">
                             <div class="flex flex-wrap items-start justify-between gap-3">
                                 <div class="min-w-0 flex-1 space-y-2">
@@ -70,7 +66,7 @@
                             @if($work->presentation)
                                 <div class="rounded-xl border border-slate-100 bg-gradient-to-b from-slate-50/80 to-white p-4 sm:p-5 space-y-3">
                                     <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500 m-0 flex items-center gap-2">
-                                        <ion-icon name="videocam-outline" class="text-base text-violet-600" aria-hidden="true"></ion-icon>
+                                        <ion-icon name="videocam-outline" class="text-base text-emerald-700" aria-hidden="true"></ion-icon>
                                         Sessão de apresentação
                                     </p>
                                     <dl class="grid gap-3 sm:grid-cols-2 m-0 text-sm">
@@ -125,7 +121,7 @@
 
                             <div class="flex flex-wrap gap-2 pt-1">
                                 <a href="{{ route('works.show', $work->id) }}"
-                                   class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold no-underline transition-colors shadow-sm">
+                                   class="dash-btn inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold no-underline transition-colors">
                                     <ion-icon name="open-outline" class="text-lg shrink-0" aria-hidden="true"></ion-icon>
                                     Ver trabalho
                                 </a>

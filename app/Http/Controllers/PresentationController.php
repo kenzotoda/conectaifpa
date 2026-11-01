@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Event;
 use App\Models\Work;
 use App\Models\WorkAuthor;
 use App\Models\WorkPresentation;
+use App\Notifications\PresentationScheduled;
+use App\Services\EventMailer;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -91,6 +94,12 @@ class PresentationController extends Controller
 
         $this->syncWorkStatusAfterPresentationSave($work, true);
 
+        $presentation = WorkPresentation::query()->where('work_id', $work->id)->first();
+        $work->loadMissing('submitter');
+        if ($presentation && $work->submitter) {
+            EventMailer::notify($work->submitter, new PresentationScheduled($work, $presentation));
+        }
+
         return back()->with('msg', 'Dados da apresentação atualizados.');
     }
 
@@ -113,14 +122,14 @@ class PresentationController extends Controller
         return back()->with('msg', 'Apresentação removida.');
     }
 
-    private function ensureEventCoordinator(\App\Models\Event $event): void
+    private function ensureEventCoordinator(Event $event): void
     {
         if (auth()->id() !== $event->user_id) {
             abort(403, 'Acesso negado.');
         }
     }
 
-    private function assertPresentationWithinEventWindow(\App\Models\Event $event, Carbon $slotStart, Carbon $slotEnd): void
+    private function assertPresentationWithinEventWindow(Event $event, Carbon $slotStart, Carbon $slotEnd): void
     {
         if (! $event->scheduleIsComplete()) {
             throw new \InvalidArgumentException('Defina o horário de início e de fim do evento antes de agendar apresentações.');

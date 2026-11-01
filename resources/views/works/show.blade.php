@@ -3,7 +3,7 @@
 @section('title', 'Detalhes do Trabalho')
 
 @section('content')
-<div class="min-h-screen bg-slate-50/50">
+<div class="dash-page min-h-screen">
     @php
         $workTypeLabels = \App\Models\Work::workTypeLabels();
         $Wr = \App\Models\WorkReviewer::class;
@@ -21,35 +21,34 @@
             $Rv::RECOMMENDATION_REJECT => 'Reprovar',
         ];
         $reviewAssignmentStatusBadgeClass = [
-            $Wr::STATUS_ASSIGNED => 'bg-slate-100 text-slate-900 ring-1 ring-slate-200 shadow-sm',
-            $Wr::STATUS_IN_PROGRESS => 'bg-sky-50 text-sky-950 ring-1 ring-sky-200 shadow-sm',
-            $Wr::STATUS_COMPLETED => 'bg-emerald-50 text-emerald-950 ring-1 ring-emerald-200 shadow-sm',
+            $Wr::STATUS_ASSIGNED => 'dash-badge',
+            $Wr::STATUS_IN_PROGRESS => 'bg-amber-50 text-amber-950 ring-1 ring-amber-200',
+            $Wr::STATUS_COMPLETED => 'dash-badge-positive',
         ];
         $recommendationBadgeClassByKey = [
-            $Rv::RECOMMENDATION_ACCEPT => 'bg-emerald-50 text-emerald-950 ring-1 ring-emerald-200 shadow-sm',
-            $Rv::RECOMMENDATION_ACCEPT_WITH_CORRECTIONS => 'bg-amber-50 text-amber-950 ring-1 ring-amber-300/80 shadow-sm',
-            $Rv::RECOMMENDATION_REJECT => 'bg-red-50 text-red-950 ring-1 ring-red-200 shadow-sm',
+            $Rv::RECOMMENDATION_ACCEPT => 'dash-badge-positive',
+            $Rv::RECOMMENDATION_ACCEPT_WITH_CORRECTIONS => 'bg-amber-50 text-amber-950 ring-1 ring-amber-300/80',
+            $Rv::RECOMMENDATION_REJECT => 'bg-red-50 text-red-950 ring-1 ring-red-200',
         ];
         if ($work->isAwaitingCorrectionReReview()) {
-            $workStatusBadgeClass = 'bg-indigo-50 text-indigo-950 ring-1 ring-indigo-200/90 shadow-sm';
+            $workStatusBadgeClass = 'bg-amber-50 text-amber-950 ring-1 ring-amber-200';
         } else {
             $workStatusBadgeClass = match ($work->status) {
-                $W::STATUS_SUBMITTED => 'bg-slate-100 text-slate-900 ring-1 ring-slate-300/80 shadow-sm',
-                $W::STATUS_UNDER_REVIEW => 'bg-amber-50 text-amber-950 ring-1 ring-amber-200 shadow-sm',
-                $W::STATUS_APPROVED_FINAL => 'bg-sky-50 text-sky-950 ring-1 ring-sky-200 shadow-sm',
-                $W::STATUS_ACCEPTED_WITH_CORRECTIONS => 'bg-orange-50 text-orange-950 ring-1 ring-orange-200 shadow-sm',
-                $W::STATUS_REJECTED => 'bg-red-50 text-red-950 ring-1 ring-red-200 shadow-sm',
-                $W::STATUS_DESK_REJECTED => 'bg-red-50 text-red-950 ring-1 ring-red-200 shadow-sm',
-                $W::STATUS_FINAL_VALIDATED => 'bg-emerald-50 text-emerald-950 ring-1 ring-emerald-200 shadow-sm',
-                $W::STATUS_SCHEDULED => 'bg-cyan-50 text-cyan-950 ring-1 ring-cyan-200 shadow-sm',
-                $W::STATUS_PRESENTED => 'bg-green-50 text-green-950 ring-1 ring-green-200 shadow-sm',
-                $W::STATUS_ABSENT => 'bg-rose-50 text-rose-950 ring-1 ring-rose-200 shadow-sm',
-                $W::STATUS_PUBLISHED_ANNALS => 'bg-violet-50 text-violet-950 ring-1 ring-violet-200 shadow-sm',
-                $W::STATUS_CONFLICT => 'bg-amber-100 text-amber-950 ring-1 ring-amber-300 shadow-sm',
-                $W::STATUS_WITHDRAWAL_REQUESTED => 'bg-slate-200 text-slate-900 ring-1 ring-slate-400/40 shadow-sm',
-                $W::STATUS_WITHDRAWN => 'bg-slate-200 text-slate-800 ring-1 ring-slate-300 shadow-sm',
-                $W::STATUS_CANCELLED => 'bg-slate-200 text-slate-800 ring-1 ring-slate-300 shadow-sm',
-                default => 'bg-slate-100 text-slate-900 ring-1 ring-slate-200 shadow-sm',
+                $W::STATUS_SUBMITTED => 'dash-badge',
+                $W::STATUS_UNDER_REVIEW => 'bg-amber-50 text-amber-950 ring-1 ring-amber-200',
+                $W::STATUS_APPROVED_FINAL => 'dash-badge-positive',
+                $W::STATUS_ACCEPTED_WITH_CORRECTIONS => 'bg-amber-50 text-amber-950 ring-1 ring-amber-200',
+                $W::STATUS_REJECTED => 'bg-red-50 text-red-950 ring-1 ring-red-200',
+                $W::STATUS_DESK_REJECTED => 'bg-red-50 text-red-950 ring-1 ring-red-200',
+                $W::STATUS_FINAL_VALIDATED => 'dash-badge-positive',
+                $W::STATUS_SCHEDULED => 'dash-badge-positive',
+                $W::STATUS_PRESENTED, $W::STATUS_PUBLISHED_ANNALS => 'dash-badge-positive',
+                $W::STATUS_ABSENT => 'bg-red-50 text-red-950 ring-1 ring-red-200',
+                $W::STATUS_CONFLICT => 'bg-amber-100 text-amber-950 ring-1 ring-amber-300',
+                $W::STATUS_WITHDRAWAL_REQUESTED => 'dash-badge',
+                $W::STATUS_WITHDRAWN => 'dash-badge',
+                $W::STATUS_CANCELLED => 'dash-badge',
+                default => 'dash-badge',
             };
         }
     @endphp
@@ -59,17 +58,17 @@
             $evt = $work->event;
             $downloadIsOfficial = filled($work->final_version_file_path) && $work->final_version_validated_at !== null;
         @endphp
-        <header class="mb-8 rounded-2xl border border-slate-200/90 bg-white shadow-[0_1px_6px_rgba(15,23,42,0.07)] overflow-hidden">
+        <header class="dash-card mb-8 rounded-2xl overflow-hidden">
             <div class="px-5 py-5 sm:px-6 sm:py-6">
                 <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-2 flex-wrap">
-                    <a href="{{ route('events.show', $evt->id) }}" class="inline-flex items-center gap-1.5 font-semibold text-slate-600 hover:text-emerald-700 transition-colors no-underline">
-                        <ion-icon name="calendar-outline" class="text-emerald-600 text-base shrink-0" aria-hidden="true"></ion-icon>
+                    <a href="{{ route('events.show', $evt->id) }}" class="dash-link inline-flex items-center gap-1.5 font-semibold no-underline">
+                        <ion-icon name="calendar-outline" class="text-base shrink-0" aria-hidden="true"></ion-icon>
                         <span class="truncate max-w-[min(100vw-4rem,28rem)] sm:max-w-none">{{ $evt->title }}</span>
                     </a>
                 </p>
                 <div class="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-5">
                     <div class="min-w-0 flex-1">
-                        <h1 class="font-montserrat font-bold text-2xl sm:text-3xl lg:text-[1.875rem] text-slate-900 leading-tight [overflow-wrap:anywhere] m-0">{{ $work->listTitleCompact($isCoordinator) }}</h1>
+                        <h1 class="dash-title font-montserrat font-bold text-2xl sm:text-3xl lg:text-[1.875rem] leading-tight [overflow-wrap:anywhere] m-0">{{ $work->listTitleCompact($isCoordinator) }}</h1>
                         <p class="mt-3 m-0">
                             <span class="inline-flex items-center rounded-lg px-3 py-1 text-sm font-semibold {{ $workStatusBadgeClass }}">{{ $work->statusLabel() }}</span>
                         </p>
@@ -78,7 +77,7 @@
                         <div class="flex flex-wrap gap-2 justify-start xl:justify-end">
                             @if($canReviewerDownloadWork)
                                 <a href="{{ route('works.download', $work->id) }}" id="work-download-link" aria-describedby="work-download-hint"
-                                   class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold no-underline transition-colors shadow-sm ring-1 ring-indigo-700/25">
+                                   class="dash-btn inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold no-underline">
                                     <ion-icon name="download-outline" class="text-lg shrink-0" aria-hidden="true"></ion-icon>
                                     Baixar arquivo
                                 </a>
@@ -90,7 +89,7 @@
                                 </span>
                             @endif
                             <a href="{{ $isCoordinator ? route('events.works.index', $work->event_id) : (auth()->user()->isReviewer() ? route('reviews.assigned') : route('works.my')) }}"
-                               class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white text-slate-800 text-sm font-semibold no-underline transition-colors hover:bg-slate-50 shadow-sm ring-1 ring-slate-200">
+                               class="dash-btn-secondary inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold no-underline">
                                 <ion-icon name="arrow-back-outline" class="text-lg shrink-0"></ion-icon>
                                 Voltar
                             </a>
@@ -112,7 +111,7 @@
         <div class="xl:grid xl:grid-cols-12 xl:gap-8 xl:items-start space-y-8 xl:space-y-0">
             <div class="xl:col-span-8 flex min-w-0 flex-col gap-6 sm:gap-8">
             @if($work->isAwaitingCorrectionReReview())
-                <div class="rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-950 px-4 py-4 text-sm shadow-sm ring-1 ring-indigo-100">
+                <div class="dash-panel dash-text rounded-xl px-4 py-4 text-sm">
                     <p class="font-bold m-0 mb-2 flex items-center gap-2"><ion-icon name="sync-outline" class="text-xl shrink-0"></ion-icon> Reavaliação das correções</p>
                     @if(auth()->id() === $work->submitter_user_id)
                         <p class="m-0">
@@ -136,9 +135,9 @@
                 </div>
             @endif
 
-            <article class="bg-white rounded-2xl border border-slate-200/90 shadow-[0_1px_5px_rgba(15,23,42,0.06)] overflow-hidden">
-                    <div class="flex items-center gap-3 px-5 py-3.5 sm:px-6 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
-                        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900/5 text-emerald-600 shrink-0">
+            <article class="dash-card rounded-2xl overflow-hidden">
+                    <div class="dash-panel dash-rule flex items-center gap-3 px-5 py-3.5 sm:px-6 border-b">
+                        <span class="dash-icon-well flex h-9 w-9 items-center justify-center rounded-xl shrink-0">
                             <ion-icon name="library-outline" class="text-xl" aria-hidden="true"></ion-icon>
                         </span>
                         <div>
@@ -173,8 +172,8 @@
                 </article>
 
             @if($work->decision_at)
-                <article class="bg-white rounded-2xl border border-slate-200/90 shadow-[0_1px_5px_rgba(15,23,42,0.06)] overflow-hidden">
-                    <div class="flex items-center gap-3 px-5 py-3.5 sm:px-6 border-b border-emerald-100 bg-gradient-to-r from-emerald-50/75 to-white">
+                <article class="dash-card rounded-2xl overflow-hidden">
+                    <div class="dash-panel dash-rule flex items-center gap-3 px-5 py-3.5 sm:px-6 border-b">
                         <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100/70 text-emerald-700 shrink-0">
                             <ion-icon name="ribbon-outline" class="text-xl" aria-hidden="true"></ion-icon>
                         </span>
@@ -207,14 +206,14 @@
                                 <p class="text-xs text-amber-900/90 m-0 leading-relaxed">Enquanto a nova versão não for enviada, não há nova decisão nem reavaliação.</p>
                             </div>
                         @elseif($work->isAwaitingCorrectionReReview())
-                            <div class="space-y-2 rounded-xl border border-indigo-200/90 bg-indigo-50/50 px-4 py-3 ring-1 ring-indigo-100">
-                                <p class="text-[11px] font-bold uppercase tracking-wider text-indigo-950 m-0">Encaminhamento anterior em {{ $work->decision_at->format('d/m/Y H:i') }}</p>
-                                <p class="text-sm font-medium text-indigo-950 m-0 leading-relaxed">A coordenação havia solicitado <strong>correções</strong>. A versão corrigida foi enviada
+                            <div class="dash-panel space-y-2 rounded-xl px-4 py-3">
+                                <p class="dash-muted text-[11px] font-bold uppercase tracking-wider m-0">Encaminhamento anterior em {{ $work->decision_at->format('d/m/Y H:i') }}</p>
+                                <p class="dash-text text-sm font-medium m-0 leading-relaxed">A coordenação havia solicitado <strong>correções</strong>. A versão corrigida foi enviada
                                     @if($work->correction_submitted_at)em <span class="font-bold tabular-nums">{{ $work->correction_submitted_at->format('d/m/Y H:i') }}</span>@endif.</p>
                                 @if(! empty($allReviewersCompleted))
-                                    <p class="text-xs font-semibold text-indigo-900 m-0">Os avaliadores concluíram a análise da versão corrigida — a próxima etapa é a decisão definitiva (<strong>aceitar</strong> ou <strong>reprovar</strong>) pela coordenação.</p>
+                                    <p class="dash-text text-xs font-semibold m-0">Os avaliadores concluíram a análise da versão corrigida — a próxima etapa é a decisão definitiva (<strong>aceitar</strong> ou <strong>reprovar</strong>) pela coordenação.</p>
                                 @else
-                                    <p class="text-xs font-medium text-indigo-900 m-0">Os avaliadores estão na <strong>reavaliação</strong> do arquivo corrigido. A decisão final (aceitar ou reprovar) só aparece quando todos enviarem o parecer nesta rodada.</p>
+                                    <p class="dash-text text-xs font-medium m-0">Os avaliadores estão na <strong>reavaliação</strong> do arquivo corrigido. A decisão final (aceitar ou reprovar) só aparece quando todos enviarem o parecer nesta rodada.</p>
                                 @endif
                             </div>
                         @else
@@ -269,9 +268,9 @@
             @endif
 
             @if(filled($work->abstract))
-                <article class="bg-white rounded-2xl border border-slate-200/90 shadow-[0_1px_5px_rgba(15,23,42,0.06)] overflow-hidden">
-                    <div class="flex items-center gap-3 px-5 py-3.5 sm:px-6 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
-                        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900/5 text-emerald-600 shrink-0">
+                <article class="dash-card rounded-2xl overflow-hidden">
+                    <div class="dash-panel dash-rule flex items-center gap-3 px-5 py-3.5 sm:px-6 border-b">
+                        <span class="dash-icon-well flex h-9 w-9 items-center justify-center rounded-xl shrink-0">
                             <ion-icon name="reader-outline" class="text-xl" aria-hidden="true"></ion-icon>
                         </span>
                         <h2 class="font-semibold text-slate-900 text-base sm:text-lg m-0 tracking-tight">Resumo</h2>
@@ -282,9 +281,9 @@
                 </article>
             @endif
 
-            <article class="bg-white rounded-2xl border border-slate-200/90 shadow-[0_1px_5px_rgba(15,23,42,0.06)] overflow-hidden">
-                    <div class="flex items-center gap-3 px-5 py-3.5 sm:px-6 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
-                        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900/5 text-emerald-600 shrink-0">
+            <article class="dash-card rounded-2xl overflow-hidden">
+                    <div class="dash-panel dash-rule flex items-center gap-3 px-5 py-3.5 sm:px-6 border-b">
+                        <span class="dash-icon-well flex h-9 w-9 items-center justify-center rounded-xl shrink-0">
                             <ion-icon name="people-outline" class="text-xl" aria-hidden="true"></ion-icon>
                         </span>
                         <div>
@@ -304,7 +303,7 @@
                                 @if($author->author_email)
                                     <p class="mt-2 m-0 flex items-center gap-2 text-sm text-slate-700">
                                         <ion-icon name="mail-outline" class="text-lg text-slate-500 shrink-0"></ion-icon>
-                                        <a href="mailto:{{ $author->author_email }}" class="font-semibold text-indigo-700 hover:text-indigo-900 no-underline [overflow-wrap:anywhere]">{{ $author->author_email }}</a>
+                                        <a href="mailto:{{ $author->author_email }}" class="font-semibold dash-link no-underline [overflow-wrap:anywhere]">{{ $author->author_email }}</a>
                                     </p>
                                 @endif
                                 @if($author->institution)
@@ -316,9 +315,9 @@
                 </article>
 
             @if($work->decision_at && $work->reviews->whereNotNull('submitted_at')->isNotEmpty())
-                <article class="bg-white rounded-2xl border border-slate-200/90 shadow-[0_1px_5px_rgba(15,23,42,0.06)] overflow-hidden">
-                    <div class="flex items-center gap-3 px-5 py-3.5 sm:px-6 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
-                        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900/5 text-emerald-600 shrink-0">
+                <article class="dash-card rounded-2xl overflow-hidden">
+                    <div class="dash-panel dash-rule flex items-center gap-3 px-5 py-3.5 sm:px-6 border-b">
+                        <span class="dash-icon-well flex h-9 w-9 items-center justify-center rounded-xl shrink-0">
                             <ion-icon name="chatbubbles-outline" class="text-xl" aria-hidden="true"></ion-icon>
                         </span>
                         <div>
@@ -349,9 +348,9 @@
             @endif
 
             @if($work->author_feedback)
-                <article class="bg-white rounded-2xl border border-slate-200/90 shadow-[0_1px_5px_rgba(15,23,42,0.06)] overflow-hidden">
-                    <div class="flex items-center gap-3 px-5 py-3.5 sm:px-6 border-b border-violet-100 bg-gradient-to-r from-violet-50/55 to-white">
-                        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-100/70 text-violet-700 shrink-0">
+                <article class="dash-card rounded-2xl overflow-hidden">
+                    <div class="dash-panel dash-rule flex items-center gap-3 px-5 py-3.5 sm:px-6 border-b">
+                        <span class="dash-icon-well flex h-9 w-9 items-center justify-center rounded-xl shrink-0">
                             <ion-icon name="megaphone-outline" class="text-xl"></ion-icon>
                         </span>
                         <div>
@@ -366,9 +365,9 @@
             @endif
 
             @if($work->coordinator_feedback_file_path && (auth()->id() === $work->submitter_user_id || $isCoordinator))
-                <article class="bg-white rounded-2xl border border-slate-200/90 shadow-[0_1px_5px_rgba(15,23,42,0.06)] overflow-hidden">
-                    <div class="flex items-center gap-3 px-5 py-3.5 sm:px-6 border-b border-indigo-100 bg-gradient-to-r from-indigo-50/70 to-white">
-                        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100/75 text-indigo-700 shrink-0">
+                <article class="dash-card rounded-2xl overflow-hidden">
+                    <div class="dash-panel dash-rule flex items-center gap-3 px-5 py-3.5 sm:px-6 border-b">
+                        <span class="dash-icon-well flex h-9 w-9 items-center justify-center rounded-xl shrink-0">
                             <ion-icon name="folder-open-outline" class="text-xl"></ion-icon>
                         </span>
                         <h2 class="font-semibold text-slate-900 text-base sm:text-lg m-0 tracking-tight">Arquivo de correções consolidadas</h2>
@@ -376,7 +375,7 @@
                     <div class="p-5 sm:p-6 space-y-4">
                         <p class="text-sm leading-relaxed text-slate-700 font-medium m-0">Documento reunindo orientações dos avaliadores preparado pela coordenação.</p>
                         <a href="{{ route('works.coordinator-feedback.download', $work->id) }}"
-                           class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold no-underline transition-colors shadow-sm ring-1 ring-indigo-700/20">
+                           class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl dash-btn text-sm font-semibold no-underline transition-colors">
                             <ion-icon name="download-outline" class="text-lg"></ion-icon>
                             Baixar arquivo
                         </a>
@@ -385,9 +384,9 @@
             @endif
 
             @if($work->presentation && ! $work->decision_at)
-                <article class="bg-white rounded-2xl border border-slate-200/90 shadow-[0_1px_5px_rgba(15,23,42,0.06)] overflow-hidden">
-                    <div class="flex items-center gap-3 px-5 py-3.5 sm:px-6 border-b border-cyan-100 bg-gradient-to-r from-cyan-50/50 to-white">
-                        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-100/70 text-cyan-800 shrink-0">
+                <article class="dash-card rounded-2xl overflow-hidden">
+                    <div class="dash-panel dash-rule flex items-center gap-3 px-5 py-3.5 sm:px-6 border-b">
+                        <span class="dash-icon-well flex h-9 w-9 items-center justify-center rounded-xl shrink-0">
                             <ion-icon name="mic-outline" class="text-xl"></ion-icon>
                         </span>
                         <div>
@@ -439,7 +438,7 @@
                     $awaitingCorrectionReReview = $work->isAwaitingCorrectionReReview();
                 @endphp
 
-                <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6">
+                <div class="dash-card rounded-2xl p-5 sm:p-6">
                     <h2 class="font-semibold text-slate-900 text-lg mb-3">Ações do autor</h2>
                     @if($awaitingCorrectionReReview)
                         <p class="text-sm text-slate-600 m-0">
@@ -470,7 +469,7 @@
                                       class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-emerald-500 outline-none"
                                       placeholder="Descreva o que foi ajustado (opcional).">{{ old('correction_change_log') }}</textarea>
                             <button type="submit"
-                                    class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors">
+                                    class="inline-flex items-center gap-2 px-4 py-2 rounded-lg dash-btn text-sm font-semibold transition-colors">
                                 <ion-icon name="cloud-upload-outline"></ion-icon>
                                 Enviar versão corrigida
                             </button>
@@ -491,14 +490,14 @@
 
             <aside class="xl:col-span-4 flex min-w-0 flex-col gap-6 sm:gap-8 xl:sticky xl:top-[5.25rem] xl:self-start mt-10 xl:mt-0 pb-8 xl:pb-0">
                 <div class="rounded-2xl border border-slate-200/90 bg-white shadow-[0_1px_5px_rgba(15,23,42,0.06)] overflow-hidden ring-1 ring-slate-200/40">
-                    <div class="flex items-center gap-2 px-4 py-3 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
+                    <div class="dash-panel dash-rule flex items-center gap-2 px-4 py-3 border-b">
                         <ion-icon name="compass-outline" class="text-xl text-emerald-600 shrink-0" aria-hidden="true"></ion-icon>
                         <h3 class="font-semibold text-slate-900 text-sm m-0 tracking-tight">Contexto</h3>
                     </div>
                     <div class="p-4 sm:p-5 space-y-5 text-sm">
                         <div>
                             <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2 m-0">Evento</p>
-                            <a href="{{ route('events.show', $work->event_id) }}" class="font-semibold text-indigo-700 hover:text-indigo-900 no-underline leading-snug block [overflow-wrap:anywhere]">{{ $work->event->title }}</a>
+                            <a href="{{ route('events.show', $work->event_id) }}" class="font-semibold dash-link no-underline leading-snug block [overflow-wrap:anywhere]">{{ $work->event->title }}</a>
                         </div>
                         <div class="h-px bg-slate-100"></div>
                         <div>
@@ -520,8 +519,8 @@
                             </div>
                         @endif
                         @if($work->presentation && ($work->presentation->scheduled_start || $work->presentation->scheduled_end || $work->presentation->location))
-                            <div class="rounded-xl border border-cyan-100 bg-cyan-50/35 px-4 py-3 ring-1 ring-cyan-200/60">
-                                <p class="text-[10px] font-bold uppercase tracking-wider text-cyan-950/80 mb-2 m-0">Apresentação</p>
+                            <div class="dash-panel rounded-xl px-4 py-3">
+                                <p class="dash-muted text-[10px] font-bold uppercase tracking-wider mb-2 m-0">Apresentação</p>
                                 @if($work->presentation->scheduled_start)
                                     <p class="font-semibold text-slate-900 m-0 tabular-nums text-[13px]">{{ \Carbon\Carbon::parse($work->presentation->scheduled_start)->format('d/m/Y H:i') }}@if($work->presentation->scheduled_end)<span class="font-normal text-slate-400 mx-1">→</span>{{ \Carbon\Carbon::parse($work->presentation->scheduled_end)->format('H:i') }}@endif</p>
                                 @endif
@@ -541,8 +540,8 @@
             @if($isCoordinator)
             <div class="mt-8 flex flex-col gap-6 border-t border-slate-200/70 pt-8 sm:mt-10 sm:gap-8 sm:pt-10">
                 <article class="bg-white rounded-2xl border border-slate-200/90 shadow-[0_1px_4px_rgba(15,23,42,0.06)] overflow-hidden">
-                    <div class="flex items-center gap-2 px-5 py-3.5 sm:px-6 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
-                        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900/5 text-emerald-600 shrink-0">
+                    <div class="dash-panel dash-rule flex items-center gap-2 px-5 py-3.5 sm:px-6 border-b">
+                        <span class="dash-icon-well flex h-9 w-9 items-center justify-center rounded-xl shrink-0">
                             <ion-icon name="school-outline" class="text-xl" aria-hidden="true"></ion-icon>
                         </span>
                         <div class="min-w-0 flex-1">
@@ -552,7 +551,7 @@
                     </div>
                     <div class="p-5 sm:p-6 space-y-5">
                         @if($work->isAwaitingCorrectionReReview())
-                            <div class="rounded-xl border border-indigo-200 bg-indigo-50/95 px-4 py-3 text-sm text-indigo-950 shadow-sm ring-1 ring-indigo-100">
+                            <div class="dash-panel dash-text rounded-xl px-4 py-3 text-sm">
                                 <p class="font-bold m-0 flex items-center gap-2"><ion-icon name="git-branch-outline" class="text-lg shrink-0"></ion-icon> Rodada de reavaliação</p>
                                 <p class="m-0 mt-2 leading-relaxed opacity-95">Os avaliadores emitiram parecer sobre a <strong>versão corrigida</strong> (aceitar ou rejeitar). A decisão final só depois que todos concluírem.</p>
                             </div>
@@ -562,7 +561,7 @@
                                 Para incluir ou trocar avaliadores em lote, use a lista de trabalhos do evento.
                             </p>
                             <a href="{{ route('events.works.index', $work->event_id) }}"
-                               class="inline-flex items-center gap-2 mt-3 text-sm font-semibold text-indigo-700 hover:text-indigo-900 no-underline">
+                               class="inline-flex items-center gap-2 mt-3 text-sm font-semibold dash-link no-underline">
                                 <ion-icon name="open-outline" class="text-lg shrink-0"></ion-icon>
                                 Abrir gerenciar trabalhos do evento
                             </a>
@@ -596,8 +595,8 @@
                 </article>
 
                 <article class="bg-white rounded-2xl border border-slate-200/90 shadow-[0_1px_4px_rgba(15,23,42,0.06)] overflow-hidden">
-                    <div class="flex items-center gap-2 px-5 py-3.5 sm:px-6 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
-                        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900/5 text-emerald-600 shrink-0">
+                    <div class="dash-panel dash-rule flex items-center gap-2 px-5 py-3.5 sm:px-6 border-b">
+                        <span class="dash-icon-well flex h-9 w-9 items-center justify-center rounded-xl shrink-0">
                             <ion-icon name="clipboard-outline" class="text-xl" aria-hidden="true"></ion-icon>
                         </span>
                         <div class="min-w-0 flex-1">
@@ -607,14 +606,14 @@
                     </div>
                     <div class="p-5 sm:p-6 space-y-5">
                         @if($work->isAwaitingCorrectionReReview())
-                            <div class="rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-950 ring-1 ring-indigo-100">
+                            <div class="dash-panel dash-text rounded-xl px-4 py-3 text-sm">
                                 <p class="font-bold m-0">Versão corrigida</p>
                                 <p class="m-0 mt-1 leading-relaxed">Os itens desta lista referem-se ao arquivo após as correções do autor.</p>
                             </div>
                         @endif
                         @if($hasReviewConflict)
                             <div class="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-950 shadow-sm ring-1 ring-amber-200 flex gap-3 items-start">
-                                <ion-icon name="warning-outline" class="text-2xl text-amber-600 shrink-0 mt-0.5" aria-hidden="true"></ion-icon>
+                                <ion-icon name="warning-outline" class="text-2xl text-amber-800 shrink-0 mt-0.5" aria-hidden="true"></ion-icon>
                                 <p class="m-0 leading-relaxed"><strong>Conflito entre pareceres.</strong> A decisão final deve ser registrada pela coordenação na seção ao final da página.</p>
                             </div>
                         @endif
@@ -674,7 +673,7 @@
                                     @if($review->refined_correction_file_path && $work->event->workSubmissionDeadlinePassed())
                                         <div class="flex flex-wrap items-center gap-2 pt-1">
                                             <a href="{{ route('reviews.refined-correction.download', [$work->id, $review->id]) }}"
-                                               class="inline-flex flex-1 min-w-[12rem] items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold no-underline transition-colors shadow-sm ring-1 ring-violet-700/20 sm:flex-none">
+                                               class="inline-flex flex-1 min-w-[12rem] items-center justify-center gap-2 px-4 py-2.5 rounded-xl dash-btn text-sm font-semibold no-underline transition-colors sm:flex-none">
                                                 <ion-icon name="document-outline" class="text-lg shrink-0"></ion-icon>
                                                 Versão refinada (reavaliação)
                                             </a>
@@ -688,7 +687,7 @@
                                     @if($review->feedback_file_path && $work->event->workSubmissionDeadlinePassed())
                                         <div class="flex flex-wrap items-center gap-2 pt-1">
                                             <a href="{{ route('reviews.feedback.download', [$work->id, $review->id]) }}"
-                                               class="inline-flex flex-1 min-w-[12rem] items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold no-underline transition-colors shadow-sm ring-1 ring-indigo-700/20 sm:flex-none">
+                                               class="inline-flex flex-1 min-w-[12rem] items-center justify-center gap-2 px-4 py-2.5 rounded-xl dash-btn text-sm font-semibold no-underline transition-colors sm:flex-none">
                                                 <ion-icon name="document-attach-outline" class="text-lg shrink-0"></ion-icon>
                                                 Baixar arquivo de feedback
                                             </a>
@@ -724,7 +723,7 @@
                             || $errors->has('coordinator_feedback_file')
                         );
                 @endphp
-                <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6">
+                <div class="dash-card rounded-2xl p-5 sm:p-6">
                     <h2 class="font-semibold text-slate-900 text-lg mb-3">Decisão final da coordenação</h2>
 
                     <div class="mb-4 p-4 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm space-y-2">
@@ -733,20 +732,20 @@
                             <li><strong>Submissão do autor</strong> — arquivo inicial conservado pelo sistema como referência histórica.</li>
                             <li><strong>Correções e parecer em arquivo</strong> — quando o avaliador indica correções ou na reavaliação, há arquivos anexados que ficam só para uso da coordenação (junto com eventual nova versão que o próprio autor enviou).</li>
                             <li><strong>Correções para o autor</strong> — ao marcar “Aceito com correções”, você pode anexar o documento com as orientações que o participante deve seguir.</li>
-                            <li><strong>Versão oficial final</strong> — ao marcar “Aceito”, você envia o PDF (ou DOC/ODT) que deve valer para apresentações e para os anais; é essa cópia que o sistema passa a oferecer no download principal após a aprovação.</li>
+                            <li><strong>Versão oficial final</strong> — ao marcar “Aceito”, você envia o PDF (ou DOC/ODT) que vale para a apresentação; é essa cópia que o sistema passa a oferecer no download principal após a aprovação.</li>
                         </ul>
                     </div>
 
                     @if($work->isAwaitingCorrectionReReview())
-                        <div class="mb-4 p-3 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-950 text-sm space-y-2">
+                        <div class="dash-panel dash-text mb-4 p-3 rounded-xl text-sm space-y-2">
                             <p class="font-medium m-0">Decisão após correção e parecer dos avaliadores</p>
                             <p class="m-0 mt-1">Somente os avaliadores que tinham “Aceitar com correções” foram reconvocados para esta rodada. Você registra aqui <strong>Aceito</strong> ou <strong>Rejeitado</strong>. Se aceitar, é obrigatório enviar também a <strong>versão oficial final</strong> neste formulário.</p>
                         </div>
                     @else
                         <div class="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-950 text-sm space-y-2">
                             <p class="font-medium m-0 mb-1">Primeira decisão da coordenação</p>
-                            <p class="m-0"><strong>Aceito</strong> → anexe a versão oficial final que deve valer nos anais e na apresentação (pode ser o mesmo arquivo da submissão ou uma versão ajustada por você).</p>
-                            <p class="m-0 mt-2"><strong>Aceito com correções</strong> → preencha o prazo ao autor e envie o consolidado ao participante no campo indicado mais abixo; o envio da <strong>versão oficial final</strong> ficará obrigatório apenas depois, quando você aceitar na rodada após a correção pelos avaliadores e pelo autor.</p>
+                            <p class="m-0"><strong>Aceito</strong> → anexe a versão oficial final que vale para a apresentação (pode ser o mesmo arquivo da submissão ou uma versão ajustada por você).</p>
+                            <p class="m-0 mt-2"><strong>Aceito com correções</strong> → preencha o prazo ao autor e envie o consolidado ao participante no campo indicado mais abaixo; o envio da <strong>versão oficial final</strong> ficará obrigatório apenas depois, quando você aceitar na rodada após a correção pelos avaliadores e pelo autor.</p>
                             <p class="m-0 mt-2"><strong>Rejeitado</strong> → não é necessário arquivo oficial.</p>
                         </div>
                     @endif
@@ -775,14 +774,14 @@
                             @enderror
                         </div>
                         <div id="work_decision_block_official"
-                             class="rounded-xl border border-violet-200 bg-violet-50/60 p-4 space-y-2 {{ $showOfficialBlockInit ? '' : 'hidden' }}">
+                             class="dash-panel rounded-xl p-4 space-y-2 {{ $showOfficialBlockInit ? '' : 'hidden' }}">
                             <label class="block text-sm font-medium text-slate-900">Versão oficial final <span class="text-red-600">*</span> <span class="text-slate-500 font-normal">(obrigatória se a decisão for “Aceito”)</span></label>
-                            <p class="text-xs text-slate-600 m-0">Este é o arquivo que o sistema usará principalmente quando o trabalho estiver aceito — por exemplo nos downloads aos participantes e para referência de apresentação e anais.</p>
+                            <p class="text-xs text-slate-600 m-0">Este é o arquivo que o sistema usa quando o trabalho estiver aceito, nos downloads e na apresentação.</p>
                             <input type="file"
                                    name="official_final_file"
                                    id="work_decision_official_final_file"
                                    accept=".pdf,.doc,.docx,.odt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text"
-                                   class="w-full px-4 py-3 rounded-xl border-2 border-violet-200 focus:border-violet-500 outline-none bg-white"
+                                   class="dash-field w-full px-4 py-3 rounded-xl outline-none bg-white"
                                    @disabled(! $showOfficialBlockInit)>
                             @error('official_final_file')
                                 <p class="text-sm text-red-600 mt-1 mb-0">{{ $message }}</p>
@@ -830,7 +829,7 @@
                                         <p class="text-sm text-red-600 mt-1 mb-0">{{ $message }}</p>
                                     @enderror
                                 </div>
-                                <div class="rounded-xl border border-sky-200 bg-sky-50/50 p-4 space-y-2">
+                                <div class="dash-panel rounded-xl p-4 space-y-2">
                                     <label class="block text-sm font-medium text-slate-900" for="work_decision_coordinator_feedback_file">
                                         Arquivo de correções para o aluno <span class="text-red-600">*</span>
                                     </label>
@@ -841,7 +840,7 @@
                                            id="work_decision_coordinator_feedback_file"
                                            name="coordinator_feedback_file"
                                            accept=".pdf,.doc,.docx,.odt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text"
-                                           class="w-full px-4 py-3 rounded-xl border-2 border-sky-200 focus:border-sky-500 outline-none bg-white"
+                                           class="dash-field w-full px-4 py-3 rounded-xl outline-none bg-white"
                                            @disabled(! $showCorrectionsBlockInit)>
                                     @error('coordinator_feedback_file')
                                         <p class="text-sm text-red-600 mt-1 mb-0">{{ $message }}</p>
@@ -852,7 +851,7 @@
                                             <span class="text-xs text-slate-600">
                                                 Já existe um arquivo anexado.
                                                 <a href="{{ route('works.coordinator-feedback.download', $work->id) }}"
-                                                   class="text-indigo-700 hover:text-indigo-800 font-semibold no-underline">
+                                                   class="dash-link font-semibold no-underline">
                                                     Baixar arquivo atual
                                                 </a>.
                                                 Selecionar um novo arquivo o substituirá.
@@ -870,7 +869,7 @@
                                       class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-emerald-500 outline-none">{{ old('author_feedback', $work->author_feedback) }}</textarea>
                         </div>
                         <button type="submit"
-                                class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition-colors">
+                                class="inline-flex items-center gap-2 px-5 py-3 rounded-xl dash-btn font-semibold transition-colors">
                             <ion-icon name="checkmark-circle-outline"></ion-icon>
                             Salvar decisão
                         </button>
@@ -878,7 +877,7 @@
                 </div>
                 @elseif($work->reviewerAssignments->isNotEmpty())
                     @if($work->coordinatorCanRegisterNewDecision() && ! $work->event->workSubmissionDeadlinePassed())
-                        <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6">
+                        <div class="dash-card rounded-2xl p-5 sm:p-6">
                             <h2 class="font-semibold text-slate-900 text-lg mb-3">Decisão final</h2>
                             <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm">
                                 <p class="font-medium m-0 mb-1">Aguardando o fim do prazo de submissão</p>
@@ -892,7 +891,7 @@
                             </div>
                         </div>
                     @elseif($work->event->workSubmissionDeadlinePassed() && $work->coordinatorCanRegisterNewDecision() && ! $allReviewersCompleted)
-                        <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6">
+                        <div class="dash-card rounded-2xl p-5 sm:p-6">
                             <h2 class="font-semibold text-slate-900 text-lg mb-3">Decisão final</h2>
                             <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm">
                                 <p class="font-medium m-0 mb-1">Aguardando avaliadores</p>
@@ -906,9 +905,9 @@
                             </div>
                         </div>
                     @elseif($work->event->workSubmissionDeadlinePassed() && $work->isAwaitingAuthorCorrection())
-                        <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6">
+                        <div class="dash-card rounded-2xl p-5 sm:p-6">
                             <h2 class="font-semibold text-slate-900 text-lg mb-3">Decisão</h2>
-                            <div class="p-4 rounded-xl bg-sky-50 border border-sky-200 text-sky-950 text-sm">
+                            <div class="dash-panel dash-text p-4 rounded-xl text-sm">
                                 <p class="font-medium m-0 mb-1">Aguardando nova versão do autor</p>
                                 <p class="m-0">
                                     Você já registrou <strong>aceito com correções</strong>. O formulário para nova decisão só reaparecerá quando o autor enviar o arquivo na data limite (@if($work->correction_deadline_at)<span class="font-bold tabular-nums">{{ $work->correction_deadline_at->format('d/m/Y H:i') }}</span>@else defina um prazo no encaminhamento anterior @endif).
@@ -918,7 +917,7 @@
                     @endif
                 @endif
 
-                <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6">
+                <div class="dash-card rounded-2xl p-5 sm:p-6">
                     <h2 class="font-semibold text-slate-900 text-lg mb-3">Excluir trabalho</h2>
                     <p class="text-sm text-slate-600 mb-4">
                         Remove o registro do trabalho, as avaliações vinculadas e os arquivos no armazenamento. Esta ação não pode ser desfeita.
@@ -951,8 +950,7 @@
                                     @endif
                                 </li>
                                 <li>
-                                    <a class="text-emerald-800 underline font-medium" href="{{ route('events.annals.manage', $work->event_id) }}">Publicação nos anais</a>
-                                    <span class="text-emerald-900/90"> — após marcar a apresentação como realizada, use a tela única do painel para registrar URL e observações dos trabalhos elegíveis.</span>
+                                    Depois de finalizar o evento, publique um PDF único dos anais ou do e-book no painel ou na página do evento.
                                 </li>
                             @endif
                         </ul>

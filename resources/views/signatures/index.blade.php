@@ -3,23 +3,24 @@
 @section('title', 'Assinaturas para certificados')
 
 @section('content')
+<div class="dash-page min-h-screen">
 <div class="max-w-3xl mx-auto px-4 py-10 space-y-8">
-    <h1 class="text-2xl font-bold text-slate-900 m-0">Assinaturas</h1>
-    <p class="text-slate-600 text-sm m-0">Imagens usadas no rodapé dos certificados em PDF. Você pode cadastrar <strong>quantas assinaturas quiser</strong>; em cada evento, escolha quais entram na tela de certificados (mínimo uma para emitir).</p>
+    <h1 class="dash-title text-2xl font-bold m-0">Assinaturas</h1>
+    <p class="dash-text text-sm m-0">Imagens usadas no rodapé dos certificados em PDF. Você pode cadastrar <strong>quantas assinaturas quiser</strong>; em cada evento, escolha quais entram na tela de certificados (mínimo uma para emitir).</p>
 
     @if (session('msg'))
-        <div class="rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-900 px-4 py-3 text-sm">{{ session('msg') }}</div>
+        <div class="dash-badge-positive rounded-xl px-4 py-3 text-sm">{{ session('msg') }}</div>
     @endif
 
     <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 sm:gap-4">
         @isset($certificatesReturnEvent)
-            <a href="{{ route('events.certificates.index', $certificatesReturnEvent) }}" class="inline-flex items-center gap-2 text-emerald-800 font-semibold text-sm no-underline rounded-xl px-4 py-2.5 border border-emerald-200 bg-emerald-50/80 hover:bg-emerald-100 transition-colors w-fit">
+            <a href="{{ route('events.certificates.index', $certificatesReturnEvent) }}" class="dash-btn-soft inline-flex items-center gap-2 font-semibold text-sm no-underline rounded-xl px-4 py-2.5 transition-colors w-fit">
                 <ion-icon name="arrow-back-outline" class="text-lg shrink-0" aria-hidden="true"></ion-icon>
                 Voltar aos certificados deste evento
             </a>
         @endisset
-        <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 text-slate-700 font-medium text-sm no-underline rounded-xl px-4 py-2.5 border border-slate-200 bg-white hover:bg-slate-50 transition-colors w-fit">
-            <ion-icon name="grid-outline" class="text-lg shrink-0 text-slate-500" aria-hidden="true"></ion-icon>
+        <a href="{{ route('dashboard') }}" class="dash-btn-secondary inline-flex items-center gap-2 font-medium text-sm no-underline rounded-xl px-4 py-2.5 transition-colors w-fit">
+            <ion-icon name="grid-outline" class="text-lg shrink-0" aria-hidden="true"></ion-icon>
             Painel
         </a>
     </div>
@@ -40,29 +41,29 @@
         </p>
     </div>
 
-    <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
-        <h2 class="text-lg font-semibold m-0">Nova assinatura</h2>
+    <section class="dash-card rounded-2xl p-6 space-y-4">
+        <h2 class="dash-title text-lg font-semibold m-0">Nova assinatura</h2>
         <form id="signature-form" action="{{ route('signatures.store') }}" method="POST" enctype="multipart/form-data" class="grid gap-4">
             @csrf
             @isset($certificatesReturnEvent)
                 <input type="hidden" name="return_event" value="{{ $certificatesReturnEvent->id }}">
             @endisset
             <div>
-                <label class="block text-xs font-medium text-slate-600 mb-1">Nome</label>
-                <input type="text" id="sig-nome" name="nome" value="{{ old('nome') }}" required class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" placeholder="Nome completo como no certificado">
+                <label class="dash-text block text-xs font-medium mb-1">Nome</label>
+                <input type="text" id="sig-nome" name="nome" value="{{ old('nome') }}" required class="dash-field w-full rounded-xl px-3 py-2 text-sm" placeholder="Nome completo como no certificado">
             </div>
             <div>
-                <label class="block text-xs font-medium text-slate-600 mb-1">Cargo</label>
-                <input type="text" id="sig-cargo" name="cargo" value="{{ old('cargo') }}" required placeholder="Coordenador do Evento" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                <label class="dash-text block text-xs font-medium mb-1">Cargo</label>
+                <input type="text" id="sig-cargo" name="cargo" value="{{ old('cargo') }}" required placeholder="Coordenador do Evento" class="dash-field w-full rounded-xl px-3 py-2 text-sm">
             </div>
             <div>
-                <label class="block text-xs font-medium text-slate-600 mb-1">Imagem</label>
+                <label class="dash-text block text-xs font-medium mb-1">Imagem</label>
                 <input type="file" id="sig-imagem" name="imagem" accept="image/jpeg,image/png,image/webp" required class="text-sm">
             </div>
 
-            <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-2">
-                <p class="text-xs font-semibold text-slate-600 uppercase tracking-wide m-0">Prévia — rodapé do certificado (aproximado)</p>
-                <div class="border-2 border-emerald-600 rounded-lg bg-white px-4 py-5 shadow-sm max-w-md mx-auto sm:mx-0">
+            <div class="dash-panel rounded-xl p-4 space-y-2">
+                <p class="dash-muted text-xs font-semibold uppercase tracking-wide m-0">Prévia — rodapé do certificado (aproximado)</p>
+                <div class="dash-preview rounded-lg px-4 py-5 max-w-md mx-auto sm:mx-0">
                     <div class="border-t border-slate-200 pt-3 mt-8">
                         <p class="text-[10px] text-slate-400 m-0 mb-3">… texto do certificado acima …</p>
                     </div>
@@ -79,26 +80,26 @@
                 </div>
             </div>
 
-            <button type="submit" class="inline-flex justify-center px-4 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 w-fit">Cadastrar</button>
+            <button type="submit" class="dash-btn inline-flex justify-center px-4 py-2.5 rounded-xl text-sm font-semibold w-fit">Cadastrar</button>
         </form>
     </section>
 
-    <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-        <h2 class="text-lg font-semibold m-0 mb-1">Cadastradas</h2>
-        <p class="text-xs text-slate-500 m-0 mb-4">Miniatura com a mesma altura máxima usada no PDF (~64 px).</p>
+    <section class="dash-card rounded-2xl p-6">
+        <h2 class="dash-title text-lg font-semibold m-0 mb-1">Cadastradas</h2>
+        <p class="dash-muted text-xs m-0 mb-4">Miniatura com a mesma altura máxima usada no PDF (~64 px).</p>
         <ul class="divide-y divide-slate-100">
             @forelse($signatures as $sig)
                 <li class="py-4 flex flex-col sm:flex-row gap-4 sm:items-start">
                     @if($sig->imagem_assinatura)
-                        <div class="shrink-0 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 inline-flex flex-col items-center justify-end min-w-[140px]">
+                        <div class="dash-panel shrink-0 rounded-lg px-3 py-2 inline-flex flex-col items-center justify-end min-w-[140px]">
                             <span class="text-[10px] text-slate-400 mb-1">No PDF</span>
                             <img src="{{ route('signatures.image', $sig) }}" alt="" class="max-h-[64px] w-auto object-contain object-bottom">
                         </div>
                     @endif
                     <div class="min-w-0 flex-1 sm:flex sm:items-start sm:justify-between sm:gap-4">
                         <div>
-                            <p class="font-medium text-slate-900 m-0">{{ $sig->nome }}</p>
-                            <p class="text-sm text-slate-600 m-0">{{ $sig->cargo }}</p>
+                            <p class="dash-title font-medium m-0">{{ $sig->nome }}</p>
+                            <p class="dash-text text-sm m-0">{{ $sig->cargo }}</p>
                         </div>
                         <form action="{{ route('signatures.destroy', $sig) }}{{ isset($certificatesReturnEvent) ? '?event='.$certificatesReturnEvent->id : '' }}" method="POST" class="shrink-0 mt-3 sm:mt-0 cert-signature-delete-swal inline-block" data-swal-text="Esta assinatura será excluída do cadastro e desvinculada dos eventos. Certificados já emitidos no passado não são alterados.">
                             @csrf
@@ -111,11 +112,12 @@
                     </div>
                 </li>
             @empty
-                <li class="py-6 text-sm text-slate-500 text-center">Nenhuma assinatura ainda.</li>
+                <li class="dash-muted py-6 text-sm text-center">Nenhuma assinatura ainda.</li>
             @endforelse
         </ul>
         <div class="flex justify-center mt-4">{{ $signatures->links() }}</div>
     </section>
+</div>
 </div>
 @endsection
 

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -14,7 +15,7 @@ class User extends Authenticatable
 {
     use HasApiTokens;
 
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasFactory;
 
     use HasProfilePhoto;
@@ -30,6 +31,68 @@ class User extends Authenticatable
 
     const ROLE_REVIEWER = 'reviewer';
 
+    public const PROFILE_DISCENTE = 'discente';
+
+    public const PROFILE_DOCENTE = 'docente';
+
+    public const PROFILE_TECNICO = 'tecnico_administrativo';
+
+    public const PROFILE_EMPREENDEDOR = 'empreendedor';
+
+    public const PROFILE_ESTUDANTE_ESCOLA_PUBLICA = 'estudante_escola_publica';
+
+    public const PROFILE_STARTUP = 'startup';
+
+    public const PROFILE_ORGANIZACAO_SOCIAL = 'organizacao_social';
+
+    public const PROFILE_COMUNIDADE_GERAL = 'comunidade_geral';
+
+    /** @var array<string, string> */
+    public const PARTICIPANT_PROFILE_LABELS = [
+        self::PROFILE_DISCENTE => 'Discente',
+        self::PROFILE_DOCENTE => 'Docente',
+        self::PROFILE_TECNICO => 'Técnico administrativo',
+        self::PROFILE_EMPREENDEDOR => 'Empreendedor',
+        self::PROFILE_ESTUDANTE_ESCOLA_PUBLICA => 'Estudante de escola pública',
+        self::PROFILE_STARTUP => 'Startup',
+        self::PROFILE_ORGANIZACAO_SOCIAL => 'Organização social',
+        self::PROFILE_COMUNIDADE_GERAL => 'Comunidade em geral',
+    ];
+
+    /** @var list<string> */
+    public const INTERNAL_PARTICIPANT_PROFILES = [
+        self::PROFILE_DISCENTE,
+        self::PROFILE_DOCENTE,
+        self::PROFILE_TECNICO,
+    ];
+
+    /** @var list<string> */
+    public const EXTERNAL_PARTICIPANT_PROFILES = [
+        self::PROFILE_EMPREENDEDOR,
+        self::PROFILE_ESTUDANTE_ESCOLA_PUBLICA,
+        self::PROFILE_STARTUP,
+        self::PROFILE_ORGANIZACAO_SOCIAL,
+        self::PROFILE_COMUNIDADE_GERAL,
+    ];
+
+    /** Perfis que informam curso, área, setor ou série. */
+    /** @var list<string> */
+    public const PROFILES_WITH_DETAIL = [
+        self::PROFILE_DISCENTE,
+        self::PROFILE_DOCENTE,
+        self::PROFILE_TECNICO,
+        self::PROFILE_ESTUDANTE_ESCOLA_PUBLICA,
+    ];
+
+    /** Perfis externos em que a organização é obrigatória. Comunidade em geral pode ficar sem. */
+    /** @var list<string> */
+    public const PROFILES_WITH_REQUIRED_ORGANIZATION = [
+        self::PROFILE_EMPREENDEDOR,
+        self::PROFILE_ESTUDANTE_ESCOLA_PUBLICA,
+        self::PROFILE_STARTUP,
+        self::PROFILE_ORGANIZACAO_SOCIAL,
+    ];
+
     /**
      * The attributes that are mass assignable.
      *
@@ -43,6 +106,7 @@ class User extends Authenticatable
         'matricula',
         'curso',
         'is_external_participant',
+        'participant_profile',
         'institution',
     ];
 
@@ -138,6 +202,21 @@ class User extends Authenticatable
         return $this->hasMany(Review::class, 'reviewer_user_id');
     }
 
+    public function audienceCategoryLabel(): string
+    {
+        return $this->is_external_participant ? 'Externo' : 'Interno';
+    }
+
+    public function participantProfileLabel(): string
+    {
+        $profile = (string) ($this->participant_profile ?? '');
+        if (isset(self::PARTICIPANT_PROFILE_LABELS[$profile])) {
+            return self::PARTICIPANT_PROFILE_LABELS[$profile];
+        }
+
+        return $this->is_external_participant ? 'Comunidade externa' : 'Discente';
+    }
+
     /**
      * Texto de vínculo (instituição / curso) para autoria principal em trabalhos.
      */
@@ -147,16 +226,21 @@ class User extends Authenticatable
             return null;
         }
 
+        $detail = trim((string) ($this->curso ?? ''));
+        $organization = trim((string) ($this->institution ?? ''));
+
         if ($this->is_external_participant) {
-            $inst = trim((string) ($this->institution ?? ''));
-            $course = trim((string) ($this->curso ?? ''));
-            if ($inst !== '' && $course !== '') {
-                return $inst.' — '.$course;
+            if ($organization !== '' && $detail !== '') {
+                return $organization.' — '.$detail;
             }
 
-            return $inst !== '' ? $inst : ($course !== '' ? $course : null);
+            return $organization !== '' ? $organization : ($detail !== '' ? $detail : null);
         }
 
-        return $this->curso ?: null;
+        if ($detail !== '') {
+            return 'IFPA — Belém — '.$detail;
+        }
+
+        return 'IFPA — Belém';
     }
 }

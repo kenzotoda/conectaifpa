@@ -40,8 +40,13 @@ class Event extends Model
         'datetime_registration' => 'datetime',
         'submission_deadline_at' => 'datetime',
         'finalized_at' => 'datetime',
+        'annals_uploaded_at' => 'datetime',
         'certificate_total_hours' => 'decimal:2',
     ];
+
+    public const ANNALS_KIND_ANAIS = 'anais';
+
+    public const ANNALS_KIND_EBOOK = 'ebook';
 
     // Tudo que foi enviado pelo POST pode ser atualizado, sem restrição.
     protected $guarded = [];
@@ -60,6 +65,17 @@ class Event extends Model
                 ])->delete(
                     config('services.supabase.url').
                     "/storage/v1/object/$bucket/$path"
+                );
+            }
+
+            if ($event->annals_storage_path) {
+                $annalsBucket = config('services.supabase.bucket_annals');
+                Http::withHeaders([
+                    'Authorization' => 'Bearer '.config('services.supabase.service_role'),
+                    'apikey' => config('services.supabase.service_role'),
+                ])->delete(
+                    config('services.supabase.url').
+                    "/storage/v1/object/{$annalsBucket}/{$event->annals_storage_path}"
                 );
             }
 
@@ -263,6 +279,26 @@ class Event extends Model
         return $this->finalized_at !== null;
     }
 
+    public static function annalsKindOptions(): array
+    {
+        return [
+            self::ANNALS_KIND_ANAIS => 'Anais',
+            self::ANNALS_KIND_EBOOK => 'E-book',
+        ];
+    }
+
+    public function hasAnnalsPublication(): bool
+    {
+        return filled($this->annals_storage_path);
+    }
+
+    public function annalsKindLabel(): string
+    {
+        $options = self::annalsKindOptions();
+
+        return $options[$this->annals_kind] ?? 'Anais';
+    }
+
     /** Apenas prazo de inscrição (campo datetime_registration), ignorando calendário do evento. */
     public function registrationDeadlinePassed(): bool
     {
@@ -279,9 +315,105 @@ class Event extends Model
         return $this->registrationDeadlinePassed();
     }
 
+    public function hasAudienceQuotas(): bool
+    {
+        $internal = $this->getAttributes()['internal_capacity'] ?? null;
+        $external = $this->getAttributes()['external_capacity'] ?? null;
+
+        return $internal !== null && $external !== null;
+    }
+
+    public function externalParticipants()
+    {
+        return $this->users()->where('users.is_external_participant', true);
+    }
+
+    /**
+     * Participantes sem a marca de externo (incluindo cadastros antigos) contam como internos.
+     *
+     * @return array{internal: int, external: int, total: int}
+     */
+    public function audienceRegistrationCounts(): array
+    {
+        $external = (int) $this->externalParticipants()->count();
+        $total = (int) $this->users()->count();
+
+        return [
+            'internal' => $total - $external,
+            'external' => $external,
+            'total' => $total,
+        ];
+    }
+
+    /**
+     * Sugestão para eventos que ainda não dividem as vagas.
+     * A sobra ímpar fica com os internos e o piso é a quantidade já inscrita.
+     *
+     * @return array{internal: int, external: int}
+     */
+    public function suggestedAudienceCapacities(): array
+    {
+        if ($this->hasAudienceQuotas()) {
+            return [
+                'internal' => (int) $this->internal_capacity,
+                'external' => (int) $this->external_capacity,
+            ];
+        }
+
+        $counts = $this->audienceRegistrationCounts();
+        $capacity = max((int) $this->capacity, $counts['total']);
+        $remaining = $capacity - $counts['total'];
+
+        if ($remaining <= 0) {
+            return [
+                'internal' => $counts['internal'],
+                'external' => $counts['external'],
+            ];
+        }
+
+        $externalExtra = intdiv($remaining, 2);
+        $internalExtra = $remaining - $externalExtra;
+
+        return [
+            'internal' => $counts['internal'] + $internalExtra,
+            'external' => $counts['external'] + $externalExtra,
+        ];
+    }
+
+    public function audienceQuotaBlockFor(User $user): ?string
+    {
+        if (! $this->hasAudienceQuotas()) {
+            return null;
+        }
+
+        $counts = $this->audienceRegistrationCounts();
+        if ($user->is_external_participant) {
+            return $counts['external'] >= (int) $this->external_capacity ? 'external_full' : null;
+        }
+
+        return $counts['internal'] >= (int) $this->internal_capacity ? 'internal_full' : null;
+    }
+
     public function isFull(): bool
     {
-        return $this->users()->count() >= $this->capacity;
+        if ($this->hasAudienceQuotas()) {
+            $counts = $this->audienceRegistrationCounts();
+
+            return $counts['internal'] >= (int) $this->internal_capacity
+                && $counts['external'] >= (int) $this->external_capacity;
+        }
+
+        return $this->users()->count() >= (int) $this->capacity;
+    }
+
+    public function registrationsBlockedReasonFor(?User $user): ?string
+    {
+        $reason = $this->registrationsBlockedReason();
+        if ($reason !== null || $user === null || ! $user->isParticipant()) {
+            return $reason;
+        }
+
+        return $this->audienceQuotaBlockFor($user);
     }
 
     /** Horário de início e de fim definidos. Sem isso o evento não inicia, não encerra e não finaliza. */

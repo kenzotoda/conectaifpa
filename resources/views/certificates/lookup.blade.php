@@ -49,7 +49,7 @@
                         Voltar ao início
                     </a>
                     <button type="submit"
-                            class="inline-flex justify-center items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white text-sm font-semibold shadow-md shadow-emerald-600/20 hover:from-emerald-500 hover:to-teal-500 transition-colors min-h-[44px] sm:ml-auto w-full sm:w-auto">
+                            class="dash-btn inline-flex justify-center items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold transition-colors min-h-[44px] sm:ml-auto w-full sm:w-auto">
                         <ion-icon name="search-outline" class="text-lg" aria-hidden="true"></ion-icon>
                         Verificar certificado
                     </button>

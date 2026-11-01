@@ -93,7 +93,7 @@ class Work extends Model
 
     public const STATUS_ABSENT = 'absent';
 
-    /** Publicado nos anais (catálogo). */
+    /** Status antigo de catálogo por trabalho. Mantido só para registros ainda não migrados. */
     public const STATUS_PUBLISHED_ANNALS = 'published_annals';
 
     public const TYPE_RESUMO_SIMPLES = 'resumo_simples';
@@ -133,7 +133,6 @@ class Work extends Model
             self::STATUS_SCHEDULED,
             self::STATUS_PRESENTED,
             self::STATUS_ABSENT,
-            self::STATUS_PUBLISHED_ANNALS,
         ];
     }
 
@@ -175,7 +174,6 @@ class Work extends Model
             self::STATUS_SCHEDULED => 'Agendado',
             self::STATUS_PRESENTED => 'Apresentado',
             self::STATUS_ABSENT => 'Ausente',
-            self::STATUS_PUBLISHED_ANNALS => 'Publicado nos anais',
         ];
     }
 
@@ -236,6 +234,10 @@ class Work extends Model
     {
         if ($this->isAwaitingCorrectionReReview()) {
             return 'Reavaliação das correções';
+        }
+
+        if ($this->status === self::STATUS_PUBLISHED_ANNALS) {
+            return self::statusLabels()[self::STATUS_PRESENTED];
         }
 
         return self::statusLabels()[$this->status] ?? str_replace('_', ' ', ucfirst((string) $this->status));
@@ -400,7 +402,7 @@ class Work extends Model
     }
 
     /**
-     * Caminho no storage do arquivo oficial (anais/apresentações) após decisão positiva da coordenação.
+     * Caminho no storage do arquivo oficial após decisão positiva da coordenação.
      */
     public function canonicalFinalDocumentPath(): ?string
     {

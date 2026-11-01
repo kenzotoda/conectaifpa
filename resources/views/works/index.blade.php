@@ -3,26 +3,26 @@
 @section('title', 'Trabalhos do Evento')
 
 @section('content')
-<div class="min-h-screen bg-slate-50/50 overflow-x-hidden">
+<div class="dash-page min-h-screen overflow-x-hidden">
     @php
         $workTypeLabels = \App\Models\Work::workTypeLabels();
     @endphp
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 min-w-0">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div class="min-w-0 flex-1">
-                <p class="text-sm text-slate-500 mb-1">Evento</p>
-                <h1 class="font-montserrat font-bold text-2xl sm:text-3xl text-slate-900 break-words [overflow-wrap:anywhere]">{{ $event->title }}</h1>
+                <p class="dash-muted text-sm mb-1">Evento</p>
+                <h1 class="dash-title font-montserrat font-bold text-2xl sm:text-3xl break-words [overflow-wrap:anywhere]">{{ $event->title }}</h1>
             </div>
             <a href="/dashboard"
-               class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-sm font-semibold no-underline transition-colors flex-shrink-0">
+               class="dash-btn-secondary inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold no-underline transition-colors flex-shrink-0">
                 <ion-icon name="arrow-back-outline"></ion-icon>
                 Painel
             </a>
         </div>
 
-        <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 mb-6">
-            <h2 class="font-semibold text-slate-900 text-lg mb-2">Vinculação de avaliadores</h2>
-            <p class="text-sm text-slate-600 mb-4">
+        <div class="dash-card rounded-2xl p-5 sm:p-6 mb-6">
+            <h2 class="dash-title font-semibold text-lg mb-2">Vinculação de avaliadores</h2>
+            <p class="dash-text text-sm mb-4">
                 Após o encerramento do prazo de submissão, selecione os trabalhos (por tipo), escolha os avaliadores e distribua.
                 Cada trabalho marcado deve ficar com no mínimo <span class="font-semibold">{{ $minReviewers }}</span> e no máximo
                 <span class="font-semibold">{{ $maxReviewers }}</span> avaliadores.
@@ -61,14 +61,14 @@
                         @else
                             <div class="space-y-4 max-h-96 overflow-y-auto pr-1">
                                 @foreach($worksGroupedByType as $typeKey => $typeWorks)
-                                    <div class="rounded-xl border border-slate-200 p-3 bg-slate-50/50 work-type-group">
+                                    <div class="dash-panel rounded-xl p-3 work-type-group">
                                         <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
                                             <span class="text-sm font-semibold text-slate-900">{{ $workTypeLabels[$typeKey] ?? $typeKey }}</span>
                                             <span class="flex flex-wrap gap-1">
-                                                <button type="button" class="select-all-in-type text-xs font-semibold text-indigo-700 hover:text-indigo-900 px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 transition-colors">
+                                                <button type="button" class="select-all-in-type dash-badge-positive text-xs font-semibold px-2 py-1 rounded-lg transition-colors">
                                                     Marcar todos deste tipo
                                                 </button>
-                                                <button type="button" class="deselect-all-in-type text-xs font-semibold text-slate-600 hover:text-slate-900 px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors">
+                                                <button type="button" class="deselect-all-in-type dash-badge text-xs font-semibold px-2 py-1 rounded-lg transition-colors">
                                                     Desmarcar todos deste tipo
                                                 </button>
                                             </span>
@@ -81,7 +81,7 @@
                                                         name="work_ids[]"
                                                         value="{{ $w->id }}"
                                                         @checked(in_array($w->id, $oldWorkIds, true))
-                                                        class="work-id-checkbox mt-0.5 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                                                        class="dash-check work-id-checkbox mt-0.5 w-4 h-4 rounded"
                                                     >
                                                     <span class="text-sm text-slate-700 min-w-0">
                                                         <span class="font-medium break-words">{{ $w->listTitleCompact(true) }}</span>
@@ -118,7 +118,7 @@
                                     id="reviewer-search"
                                     type="text"
                                     placeholder="Buscar por nome ou e-mail..."
-                                    class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-emerald-500 outline-none text-sm"
+                                    class="dash-field w-full px-3 py-2 rounded-lg outline-none text-sm"
                                 >
                                 <div id="reviewer-checkboxes" class="max-h-64 overflow-y-auto space-y-2">
                                     @foreach($availableReviewers as $reviewer)
@@ -129,7 +129,7 @@
                                                 name="reviewer_ids[]"
                                                 value="{{ $reviewer->id }}"
                                                 @checked(in_array($reviewer->id, $oldReviewerIds, true))
-                                                class="mt-0.5 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                                                class="dash-check mt-0.5 w-4 h-4 rounded"
                                             >
                                             <span class="text-sm text-slate-700">
                                                 <span class="font-medium">{{ $reviewer->name }}</span>
@@ -161,7 +161,7 @@
                             max="{{ $maxReviewers }}"
                             value="{{ old('reviewers_per_work', $minReviewers) }}"
                             required
-                            class="w-full sm:max-w-xs px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-emerald-500 outline-none"
+                            class="dash-field w-full sm:max-w-xs px-4 py-3 rounded-xl outline-none"
                         >
                         <p class="text-xs text-slate-500 mt-1">
                             Informe um valor entre {{ $minReviewers }} e {{ $maxReviewers }}.
@@ -172,7 +172,7 @@
                     </div>
 
                     <button id="distribute-reviewers-button" type="submit"
-                            class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+                            class="dash-btn inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
                         <ion-icon name="git-network-outline"></ion-icon>
                         Distribuir avaliadores
                     </button>
@@ -260,14 +260,14 @@
 
                             if (requiredCount <= 0) {
                                 hint.textContent = 'Informe a quantidade de avaliadores por trabalho.';
-                                hint.className = 'text-xs text-amber-600 mt-1';
+                                hint.className = 'text-xs text-amber-800 mt-1';
                                 updateSummaryLabel();
                                 return;
                             }
 
                             if (!worksOk) {
                                 hint.textContent = 'Marque pelo menos um trabalho para receber avaliadores.';
-                                hint.className = 'text-xs text-amber-600 mt-1';
+                                hint.className = 'text-xs text-amber-800 mt-1';
                                 updateSummaryLabel();
                                 return;
                             }
@@ -280,7 +280,7 @@
                             }
 
                             hint.textContent = `Selecione exatamente ${requiredCount} avaliador(es). Atualmente: ${selectedCount}.`;
-                            hint.className = 'text-xs text-amber-600 mt-1';
+                            hint.className = 'text-xs text-amber-800 mt-1';
                             updateSummaryLabel();
                         };
 
@@ -316,8 +316,8 @@
             @endif
         </div>
 
-        <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 mb-6">
-            <h2 class="font-semibold text-slate-900 text-lg mb-3">Filtrar trabalhos</h2>
+        <div class="dash-card rounded-2xl p-5 sm:p-6 mb-6">
+            <h2 class="dash-title font-semibold text-lg mb-3">Filtrar trabalhos</h2>
             <form method="GET" action="{{ route('events.works.index', $event->id) }}"
                   class="flex flex-col sm:flex-row gap-3 sm:items-end">
                 <div class="flex-1">
@@ -325,7 +325,7 @@
                         Tipo de trabalho
                     </label>
                     <select id="work_type_filter" name="work_type"
-                            class="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-emerald-500 outline-none">
+                            class="dash-field w-full px-4 py-3 rounded-xl outline-none">
                         <option value="">Todos os tipos</option>
                         @foreach($availableTypes as $type)
                             <option value="{{ $type }}" @selected(($selectedType ?? '') === $type)>
@@ -336,13 +336,13 @@
                 </div>
                 <div class="flex gap-2">
                     <button type="submit"
-                            class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition-colors">
+                            class="dash-btn inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold transition-colors">
                         <ion-icon name="filter-outline"></ion-icon>
                         Filtrar
                     </button>
                     @if(!empty($selectedType))
                         <a href="{{ route('events.works.index', $event->id) }}"
-                           class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold no-underline transition-colors">
+                           class="dash-btn-secondary inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold no-underline transition-colors">
                             <ion-icon name="close-outline"></ion-icon>
                             Limpar
                         </a>
@@ -352,15 +352,15 @@
         </div>
 
         @if($works->isEmpty())
-            <div class="bg-white rounded-2xl border border-slate-200 p-8 text-center">
-                <h3 class="font-semibold text-slate-900 text-lg mb-2">
+            <div class="dash-card rounded-2xl p-8 text-center">
+                <h3 class="dash-title font-semibold text-lg mb-2">
                     @if(!empty($selectedType))
                         Nenhum trabalho deste tipo
                     @else
                         Nenhuma submissão ainda
                     @endif
                 </h3>
-                <p class="text-slate-500 m-0">
+                <p class="dash-muted m-0">
                     @if(!empty($selectedType))
                         Não há submissões para o tipo selecionado. Tente outro filtro.
                     @else
@@ -369,9 +369,9 @@
                 </p>
             </div>
         @else
-            <div class="overflow-x-auto overflow-y-auto max-h-[min(75vh,52rem)] rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div class="dash-card dash-table overflow-x-auto overflow-y-auto max-h-[min(75vh,52rem)] rounded-2xl">
                 <table class="w-full text-sm text-left min-w-[62rem]">
-                    <thead class="sticky top-0 z-10 bg-slate-100 text-slate-700 font-semibold border-b border-slate-200 shadow-sm">
+                    <thead class="sticky top-0 z-10 font-semibold border-b">
                         <tr>
                             <th scope="col" class="px-4 py-3">ID</th>
                             <th scope="col" class="px-4 py-3">Trabalho</th>
@@ -427,7 +427,7 @@
                                     @elseif($work->isAwaitingAuthorCorrection())
                                         @php $encaminhamentoTitle = $decisionTooltip ?? 'Aceito com correções — autor ainda deve enviar a versão corrigida.'; @endphp
                                         <span class="inline-flex flex-col items-center gap-0.5 max-w-[11rem] mx-auto">
-                                            <span class="inline-flex items-center gap-1 rounded-full bg-indigo-100 text-indigo-950 px-2 py-1 text-[11px] font-semibold ring-1 ring-indigo-200/80" title="{{ $encaminhamentoTitle }}">
+                                            <span class="dash-badge inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold" title="{{ $encaminhamentoTitle }}">
                                                 <ion-icon name="time-outline" aria-hidden="true" class="text-base shrink-0"></ion-icon>
                                                 Aguardando autor
                                             </span>
@@ -436,7 +436,7 @@
                                     @elseif($nReviewers === 0)
                                         <span class="text-xs text-slate-400" title="Nenhum avaliador vinculado a este trabalho.">—</span>
                                     @elseif($allReviewersResponded)
-                                        <span class="inline-flex items-center justify-center gap-1 rounded-full bg-emerald-100 text-emerald-900 px-2.5 py-1 text-xs font-semibold ring-1 ring-emerald-200/80 whitespace-nowrap" title="Todos os avaliadores já enviaram o parecer — na página Detalhes você pode registrar a decisão final da coordenação.">
+                                        <span class="dash-badge-positive inline-flex items-center justify-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap" title="Todos os avaliadores já enviaram o parecer — na página Detalhes você pode registrar a decisão final da coordenação.">
                                             <ion-icon name="checkmark-done-outline" aria-hidden="true" class="text-base shrink-0"></ion-icon>
                                             Liberada
                                         </span>
@@ -451,7 +451,7 @@
                                 </td>
                                 <td class="px-4 py-3 text-right">
                                     <a href="{{ route('works.show', $work->id) }}"
-                                       class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold no-underline transition-colors">
+                                       class="dash-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold no-underline transition-colors">
                                         <ion-icon name="eye-outline" class="text-base"></ion-icon>
                                         Detalhes
                                     </a>

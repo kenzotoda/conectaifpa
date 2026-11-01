@@ -21,15 +21,19 @@ class CreateNewUser implements CreatesNewUsers
     public function create(array $input): User
     {
         $isParticipant = ($input['role'] ?? '') === User::ROLE_PARTICIPANT;
-        $isExternalParticipant = $isParticipant && filter_var($input['is_external_participant'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $profile = $isParticipant ? (string) ($input['participant_profile'] ?? '') : '';
+        $isExternalParticipant = $isParticipant && in_array($profile, User::EXTERNAL_PARTICIPANT_PROFILES, true);
+        $requiresMatricula = $profile === User::PROFILE_DISCENTE;
+        $requiresDetail = in_array($profile, User::PROFILES_WITH_DETAIL, true);
+        $requiresOrganization = in_array($profile, User::PROFILES_WITH_REQUIRED_ORGANIZATION, true);
 
         $matriculaRules = ['nullable'];
-        if ($isParticipant && ! $isExternalParticipant) {
+        if ($requiresMatricula) {
             $matriculaRules = ['required', 'digits:12', Rule::unique('users', 'matricula')];
         }
 
         $institutionRules = ['nullable', 'string', 'max:255'];
-        if ($isParticipant && $isExternalParticipant) {
+        if ($requiresOrganization) {
             $institutionRules = ['required', 'string', 'max:255'];
         }
 
@@ -45,7 +49,11 @@ class CreateNewUser implements CreatesNewUsers
                     User::ROLE_REVIEWER,
                 ])],
 
-                'is_external_participant' => ['sometimes', 'boolean'],
+                'participant_profile' => [
+                    Rule::requiredIf($isParticipant),
+                    'nullable',
+                    Rule::in(array_keys(User::PARTICIPANT_PROFILE_LABELS)),
+                ],
 
                 'matricula' => $matriculaRules,
 
@@ -53,10 +61,10 @@ class CreateNewUser implements CreatesNewUsers
 
                 'curso' => [
                     'nullable',
-                    Rule::requiredIf($input['role'] === 'participant'),
+                    Rule::requiredIf($requiresDetail),
                     'string',
                     'max:100',
-                    'regex:/^[\pL\s]+$/u',
+                    'regex:/^[\pL\pN\s]+$/u',
                 ],
 
                 'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature()
@@ -83,19 +91,22 @@ class CreateNewUser implements CreatesNewUsers
                 'role.required' => 'O papel do usuário é obrigatório.',
                 'role.in' => 'O papel informado é inválido.',
 
+                'participant_profile.required' => 'Selecione o perfil de participação.',
+                'participant_profile.in' => 'Selecione um perfil de participação válido.',
+
                 // 🔹 MATRÍCULA
-                'matricula.required' => 'A matrícula é obrigatória.',
+                'matricula.required' => 'A matrícula é obrigatória para discentes do IFPA.',
                 'matricula.digits' => 'A matrícula deve conter exatamente 12 números.',
                 'matricula.unique' => 'Esta matrícula já está cadastrada.',
 
-                // 🔹 INSTITUIÇÃO (externo)
-                'institution.required' => 'Informe a instituição de origem.',
-                'institution.max' => 'A instituição pode ter no máximo :max caracteres.',
+                // 🔹 ORGANIZAÇÃO / ESCOLA
+                'institution.required' => 'Informe a escola, o empreendimento ou a organização.',
+                'institution.max' => 'Este campo pode ter no máximo :max caracteres.',
 
-                // 🔹 CURSO
-                'curso.required' => 'O curso é obrigatório.',
-                'curso.regex' => 'O curso deve conter apenas letras.',
-                'curso.max' => 'O curso pode ter no máximo :max caracteres.',
+                // 🔹 CURSO / ÁREA / SETOR
+                'curso.required' => 'Informe o curso, a área, o setor ou a série.',
+                'curso.regex' => 'Use apenas letras, números e espaços.',
+                'curso.max' => 'Este campo pode ter no máximo :max caracteres.',
 
                 // 🔹 TERMOS
                 'terms.required' => 'Você precisa aceitar os termos.',
@@ -108,10 +119,11 @@ class CreateNewUser implements CreatesNewUsers
             'email' => $input['email'],
             'password' => Hash::make($input['password']),
             'role' => $input['role'],
-            'matricula' => $isParticipant && ! $isExternalParticipant ? ($input['matricula'] ?? null) : null,
-            'curso' => $isParticipant ? ($input['curso'] ?? null) : null,
-            'is_external_participant' => $isParticipant && $isExternalParticipant,
-            'institution' => $isParticipant && $isExternalParticipant ? ($input['institution'] ?? null) : null,
+            'matricula' => $requiresMatricula ? ($input['matricula'] ?? null) : null,
+            'curso' => $requiresDetail ? ($input['curso'] ?? null) : null,
+            'is_external_participant' => $isExternalParticipant,
+            'participant_profile' => $isParticipant ? $profile : null,
+            'institution' => $isExternalParticipant ? ($input['institution'] ?? null) : null,
         ]);
     }
 }

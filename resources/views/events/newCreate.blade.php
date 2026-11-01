@@ -12,14 +12,14 @@
 @section('title', 'Criar Evento')
 
 @section('content')
-    
+<div class="dash-page">
     <!-- Hero Section  -->
-    <section class="bg-gradient-to-br from-green-50 to-emerald-50 py-12">
+    <section class="py-12">
         <div class="container mx-auto px-4 text-center">
-            <h1 class="font-montserrat font-black text-3xl md:text-5xl text-gray-800 mb-4 text-balance">
+            <h1 class="dash-title font-montserrat font-black text-3xl md:text-5xl mb-4 text-balance">
                 Crie seu <span class="text-primary-custom">evento</span> acadêmico
             </h1>
-            <p class="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto text-pretty">
+            <p class="dash-text text-lg mb-6 max-w-2xl mx-auto text-pretty">
                 Organize experiências de aprendizado incríveis para a comunidade acadêmica.
                 Preencha os dados abaixo e publique seu evento em minutos.
             </p>
@@ -38,7 +38,7 @@
     <section class="py-12">
         <div class="container mx-auto px-4">
             <div class="max-w-4xl mx-auto">
-                <form action="/events" method="POST" enctype="multipart/form-data" class="bg-white rounded-2xl shadow-lg p-8">
+                <form action="/events" method="POST" enctype="multipart/form-data" class="dash-card rounded-2xl p-8">
                     @csrf
                     <script>window.__DESCRIPTION_OLD_HTML__ = @json(old('description', ''));</script>
 
@@ -58,8 +58,8 @@
                         
                         <!-- Basic Information  -->
                         <div class="mb-8">
-                            <h2 class="font-montserrat font-bold text-2xl text-gray-800 mb-6 flex items-center">
-                                <div class="w-8 h-8 bg-primary-custom rounded-full flex items-center justify-center mr-3">
+                            <h2 class="dash-title font-montserrat font-bold text-2xl mb-6 flex items-center">
+                                <div class="dash-avatar w-8 h-8 rounded-full flex items-center justify-center mr-3">
                                     <span class="text-white font-bold text-sm">1</span>
                                 </div>
                                 Informações Básicas
@@ -140,22 +140,14 @@
                                         @if(old('event_type') === \App\Models\Event::SELECT_OTHER_VALUE) required @endif>
                                 </div>
                                 
-                                <!-- Capacity  -->
-                                <div>
-                                    <label class="form-label block text-sm font-montserrat mb-2">
-                                        Capacidade de participantes *
-                                    </label>
-                                    <input
-                                        id="capacity"
-                                        name="capacity"
-                                        type="number" 
-                                        class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
-                                        placeholder="Ex: 30"
-                                        min="1"
-                                        value="{{ old('capacity') }}"
-                                        required
-                                    >
-                                </div>
+                                @include('events.partials.audience-capacity-fields', [
+                                    'capacityValue' => old('capacity'),
+                                    'internalValue' => old('internal_capacity'),
+                                    'externalValue' => old('external_capacity'),
+                                    'internalRegistered' => null,
+                                    'externalRegistered' => null,
+                                    'quotasAlreadySaved' => true,
+                                ])
                                 
                                 <!-- EAD Link (conditional)  -->
                                 <div id="ead-link-container" class="hidden">
@@ -180,7 +172,7 @@
                                 Descrição do evento *
                             </label>
                             <input id="description" type="hidden" name="description" value="" required>
-                            <div id="description-editor" class="bg-white rounded-lg border border-slate-200" style="min-height: 200px;"></div>
+                            <div id="description-editor" class="dash-field rounded-lg bg-white" style="min-height: 200px;"></div>
                             <p class="text-slate-500 text-sm mt-1">Use negrito, listas e centralizar para organizar o texto.</p>
                         </div>
 
@@ -194,8 +186,8 @@
                     <div class="form-step" data-step="1">
                         <!-- Date and Time  -->
                         <div class="mb-8">
-                            <h2 class="font-montserrat font-bold text-2xl text-gray-800 mb-6 flex items-center">
-                                <div class="w-8 h-8 bg-primary-custom rounded-full flex items-center justify-center mr-3">
+                            <h2 class="dash-title font-montserrat font-bold text-2xl mb-6 flex items-center">
+                                <div class="dash-avatar w-8 h-8 rounded-full flex items-center justify-center mr-3">
                                     <span class="text-white font-bold text-sm">2</span>
                                 </div>
                                 Data e Horário
@@ -266,14 +258,14 @@
 
                         <!-- Location  -->
                         <div class="mb-8">
-                            <h2 class="font-montserrat font-bold text-2xl text-gray-800 mb-6 flex items-center">
-                                <div class="w-8 h-8 bg-primary-custom rounded-full flex items-center justify-center mr-3">
+                            <h2 class="dash-title font-montserrat font-bold text-2xl mb-6 flex items-center">
+                                <div class="dash-avatar w-8 h-8 rounded-full flex items-center justify-center mr-3">
                                     <span class="text-white font-bold text-sm">3</span>
                                 </div>
                                 Localização
                             </h2>
                             
-                            <div id="location-presencial-panel" class="rounded-xl border border-slate-200 bg-slate-50 p-5 space-y-4 {{ old('modality') === 'Online' ? 'hidden' : '' }}">
+                            <div id="location-presencial-panel" class="dash-panel rounded-xl p-5 space-y-4 {{ old('modality') === 'Online' ? 'hidden' : '' }}">
                                 <div>
                                     <p class="text-sm text-slate-500 mb-1">Local fixo (presencial / híbrido)</p>
                                     <p class="text-base font-semibold text-slate-900">{{ \App\Models\Event::FIXED_VENUE }}</p>
@@ -292,9 +284,9 @@
                                     title="Mapa do {{ \App\Models\Event::FIXED_VENUE }}"
                                 ></iframe>
                             </div>
-                            <div id="location-online-panel" class="rounded-xl border border-sky-200 bg-sky-50/80 p-5 text-sm text-sky-950 space-y-2 {{ old('modality') === 'Online' ? '' : 'hidden' }}">
-                                <p class="font-semibold m-0">Evento <span class="text-sky-900">100% online</span></p>
-                                <p class="text-sky-900/90 m-0 leading-relaxed">
+                            <div id="location-online-panel" class="rounded-xl border border-[#b7ebcf] bg-[#e7f8ef] p-5 text-sm text-[#085637] space-y-2 {{ old('modality') === 'Online' ? '' : 'hidden' }}">
+                                <p class="font-semibold m-0">Evento <span>100% online</span></p>
+                                <p class="m-0 leading-relaxed">
                                     O endereço do IFPA permanece só como referência institucional nos dados do sistema; <strong>não será mostrado como local do evento</strong> na página pública. Use o <strong>link do ambiente EAD</strong> no passo anterior para o acesso remoto.
                                 </p>
                             </div>
@@ -308,8 +300,8 @@
 
                         <!-- Course Image -->
                         <div class="mb-8">
-                            <h2 class="font-montserrat font-bold text-2xl text-gray-800 mb-6 flex items-center">
-                                <div class="w-8 h-8 bg-primary-custom rounded-full flex items-center justify-center mr-3">
+                            <h2 class="dash-title font-montserrat font-bold text-2xl mb-6 flex items-center">
+                                <div class="dash-avatar w-8 h-8 rounded-full flex items-center justify-center mr-3">
                                     <span class="text-white font-bold text-sm">4</span>
                                 </div>
                                 Imagem do evento (1980 x 1080)
@@ -350,8 +342,8 @@
                         
                         <!-- Event Organization and Contact -->
                         <div class="mb-8">
-                            <h2 class="font-montserrat font-bold text-2xl text-gray-800 mb-6 flex items-center">
-                                <div class="w-8 h-8 bg-primary-custom rounded-full flex items-center justify-center mr-3">
+                            <h2 class="dash-title font-montserrat font-bold text-2xl mb-6 flex items-center">
+                                <div class="dash-avatar w-8 h-8 rounded-full flex items-center justify-center mr-3">
                                     <span class="text-white font-bold text-sm">5</span>
                                 </div>
                                 Organização e Contato do Evento
@@ -416,8 +408,8 @@
                                 /** Mostra campo de submissão só quando o formulário marca aceite (ou erro de validação com checkbox marcado). */
                                 $acceptSubsCreateUi = filled(old('accepts_submissions'));
                             @endphp
-                            <h2 class="font-montserrat font-bold text-2xl text-gray-800 mb-6 flex items-center">
-                                <div class="w-8 h-8 bg-primary-custom rounded-full flex items-center justify-center mr-3">
+                            <h2 class="dash-title font-montserrat font-bold text-2xl mb-6 flex items-center">
+                                <div class="dash-avatar w-8 h-8 rounded-full flex items-center justify-center mr-3">
                                     <span class="text-white font-bold text-sm">6</span>
                                 </div>
                                 Configurações de Inscrição
@@ -481,8 +473,8 @@
                         </div>
 
                         <div class="mb-8" id="scientific-config-section">
-                            <h2 class="font-montserrat font-bold text-2xl text-gray-800 mb-6 flex items-center">
-                                <div class="w-8 h-8 bg-primary-custom rounded-full flex items-center justify-center mr-3">
+                            <h2 class="dash-title font-montserrat font-bold text-2xl mb-6 flex items-center">
+                                <div class="dash-avatar w-8 h-8 rounded-full flex items-center justify-center mr-3">
                                     <span class="text-white font-bold text-sm">7</span>
                                 </div>
                                 Configuração Científica
@@ -497,12 +489,12 @@
                                 </p>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                                     @foreach(($workTypes ?? []) as $workType)
-                                        <label class="inline-flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+                                        <label class="inline-flex items-center gap-2 dash-panel rounded-lg px-3 py-2">
                                             <input type="checkbox" name="accepted_work_types[]" value="{{ $workType }}" @checked(in_array($workType, old('accepted_work_types', []), true))>
                                             <span>{{ ($workTypeLabels[$workType] ?? $workType) }}</span>
                                         </label>
                                     @endforeach
-                                    <label class="inline-flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+                                    <label class="inline-flex items-center gap-2 dash-panel rounded-lg px-3 py-2">
                                         <input type="checkbox" id="accepted_work_type_other" name="accepted_work_types[]" value="__other__" @checked(in_array('__other__', old('accepted_work_types', []), true))>
                                         <span>Outro</span>
                                     </label>
@@ -568,14 +560,14 @@
 
                     <div class="form-step" data-step="3">
                         <div class="mb-8">
-                            <h2 class="font-montserrat font-bold text-2xl text-gray-800 mb-6 flex items-center">
-                                <div class="w-8 h-8 bg-primary-custom rounded-full flex items-center justify-center mr-3">
+                            <h2 class="dash-title font-montserrat font-bold text-2xl mb-6 flex items-center">
+                                <div class="dash-avatar w-8 h-8 rounded-full flex items-center justify-center mr-3">
                                     <span class="text-white font-bold text-sm">8</span>
                                 </div>
                                 Convidados
                             </h2>
 
-                            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-6">
+                            <div class="dash-panel rounded-lg p-4 mb-6">
                                 <p class="text-sm text-slate-700 m-0">
                                     Cadastre os convidados para selecionar nas atividades na próxima etapa.
                                 </p>
@@ -615,14 +607,14 @@
 
                     <div class="form-step" data-step="4">
                         <div class="mb-8">
-                            <h2 class="font-montserrat font-bold text-2xl text-gray-800 mb-6 flex items-center">
-                                <div class="w-8 h-8 bg-primary-custom rounded-full flex items-center justify-center mr-3">
+                            <h2 class="dash-title font-montserrat font-bold text-2xl mb-6 flex items-center">
+                                <div class="dash-avatar w-8 h-8 rounded-full flex items-center justify-center mr-3">
                                     <span class="text-white font-bold text-sm">9</span>
                                 </div>
                                 Atividades e Documentos
                             </h2>
 
-                            <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-6">
+                            <div class="dash-panel rounded-lg p-4 mb-6">
                                 <p class="text-sm text-slate-700 m-0">
                                     Esses itens são opcionais. Você pode adicionar agora na criação ou depois na edição do evento.
                                 </p>
@@ -668,7 +660,9 @@
                             <p><strong>Categoria:</strong> <span data-confirm="category"></span></p>
                             <p><strong>Tipo de evento científico:</strong> <span data-confirm="event_type"></span></p>
                             <p><strong>Modalidade:</strong> <span data-confirm="modality"></span></p>
-                            <p><strong>Capacidade:</strong> <span data-confirm="capacity"></span></p>
+                            <p><strong>Capacidade total:</strong> <span data-confirm="capacity"></span></p>
+                            <p><strong>Vagas internas:</strong> <span data-confirm="internal_capacity"></span></p>
+                            <p><strong>Vagas externas:</strong> <span data-confirm="external_capacity"></span></p>
                             <p><strong>Data de início:</strong> <span data-confirm="start_date"></span></p>
                             <!-- continue com os campos importantes -->
                         </div>
@@ -1189,7 +1183,7 @@
             }).join('');
 
             const row = document.createElement('div');
-            row.className = 'border border-slate-200 rounded-lg p-4 bg-white';
+            row.className = 'dash-card rounded-lg p-4';
             row.innerHTML = `
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
@@ -1360,7 +1354,7 @@
             const idx = documentCreateIndex++;
 
             const row = document.createElement('div');
-            row.className = 'border border-slate-200 rounded-lg p-4 bg-white';
+            row.className = 'dash-card rounded-lg p-4';
             row.innerHTML = `
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
@@ -1744,5 +1738,6 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 @endpush
 
+</div>
 @endsection
 

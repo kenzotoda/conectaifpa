@@ -10,8 +10,11 @@ use App\Models\Work;
 use App\Models\WorkAuthor;
 use App\Models\WorkReviewer;
 use App\Models\WorkVersion;
+use App\Notifications\WorkSubmitted;
+use App\Services\EventMailer;
 use App\Services\WorkScoreService;
 use Carbon\Carbon;
+use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -150,7 +153,7 @@ class WorkController extends Controller
         $submitter = auth()->user();
         $manualCoauthors = $this->normalizedManualCoauthors($request, $submitter);
 
-        DB::transaction(function () use ($data, $event, $filePath, $submitter, $manualCoauthors) {
+        $work = DB::transaction(function () use ($data, $event, $filePath, $submitter, $manualCoauthors) {
             $work = Work::create([
                 'event_id' => $event->id,
                 'submitter_user_id' => $submitter->id,
@@ -169,7 +172,11 @@ class WorkController extends Controller
                 changeLog: 'Versão inicial submetida pelo autor.',
                 uploadedByUserId: auth()->id()
             );
+
+            return $work;
         });
+
+        EventMailer::notify($submitter, new WorkSubmitted($work));
 
         return redirect()->route('works.my')->with('msg', 'Trabalho submetido com sucesso!');
     }
@@ -917,7 +924,7 @@ class WorkController extends Controller
         }
     }
 
-    private function fetchFileFromBuckets(string $fileName, array $buckets): ?\Illuminate\Http\Client\Response
+    private function fetchFileFromBuckets(string $fileName, array $buckets): ?Response
     {
         $serviceRole = config('services.supabase.service_role');
         $baseUrl = rtrim((string) config('services.supabase.url'), '/');

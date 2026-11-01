@@ -6,14 +6,18 @@ use App\Models\Activity;
 use App\Models\Event;
 use App\Models\EventDocument;
 use App\Models\EventGuest;
-use App\Models\WorkPresentation;
-// Acesso ao Model de eventos
 use App\Models\EventNews;
+// Acesso ao Model de eventos
 use App\Models\User;
 use App\Models\Work;
+use App\Models\WorkPresentation;
+use App\Notifications\EventRegistrationConfirmed;
+use App\Services\EventMailer;
+use App\Services\SupabaseObjectClient;
 // Acesso ao Model de novidades
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 // Acesso ao Model de usuários
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -72,6 +76,61 @@ class EventController extends Controller
         ]);
     }
 
+    /**
+     * @return array<int, mixed>
+     */
+    private function internalCapacityRules(?Event $event = null): array
+    {
+        $counts = $event?->audienceRegistrationCounts();
+
+        return [
+            'bail',
+            'required',
+            'integer',
+            'min:0',
+            function ($attribute, $value, $fail) use ($counts) {
+                if ($counts === null) {
+                    return;
+                }
+
+                if ((int) $value < $counts['internal']) {
+                    $fail('Já existem '.$counts['internal'].' participantes internos inscritos. O limite de vagas internas não pode ser menor que '.$counts['internal'].'. Remova inscritos antes de reduzir este limite.');
+                }
+            },
+        ];
+    }
+
+    /**
+     * @return array<int, mixed>
+     */
+    private function externalCapacityRules(Request $request, ?Event $event = null): array
+    {
+        $counts = $event?->audienceRegistrationCounts();
+
+        return [
+            'bail',
+            'required',
+            'integer',
+            'min:0',
+            function ($attribute, $value, $fail) use ($request, $counts) {
+                if ($counts !== null && (int) $value < $counts['external']) {
+                    $fail('Já existem '.$counts['external'].' participantes externos inscritos. O limite de vagas externas não pode ser menor que '.$counts['external'].'. Remova inscritos antes de reduzir este limite.');
+                }
+
+                if (! is_numeric($request->input('capacity')) || ! is_numeric($request->input('internal_capacity')) || ! is_numeric($value)) {
+                    return;
+                }
+
+                $capacity = (int) $request->input('capacity');
+                $internal = (int) $request->input('internal_capacity');
+                $external = (int) $value;
+                if ($internal + $external !== $capacity) {
+                    $fail('A soma das vagas internas ('.$internal.') e externas ('.$external.') deve ser igual à capacidade total ('.$capacity.').');
+                }
+            },
+        ];
+    }
+
     private function validationRules(Request $request): array
     {
         return [
@@ -82,6 +141,8 @@ class EventController extends Controller
             'event_type' => ['required', 'string', 'max:255', Rule::in(array_merge(Event::EVENT_TYPE_OPTIONS, [Event::SELECT_OTHER_VALUE]))],
             'event_type_custom' => ['nullable', 'string', 'max:255', Rule::requiredIf(fn () => $request->input('event_type') === Event::SELECT_OTHER_VALUE)],
             'capacity' => 'required|integer|min:1',
+            'internal_capacity' => $this->internalCapacityRules(),
+            'external_capacity' => $this->externalCapacityRules($request),
 
             'ead_link' => [
                 Rule::requiredIf(in_array($request->modality, ['Online', 'Híbrido'])),
@@ -308,7 +369,13 @@ class EventController extends Controller
 
             'capacity.required' => 'A capacidade é obrigatória.',
             'capacity.integer' => 'A capacidade deve ser um número inteiro.',
-            'capacity.min' => 'A capacidade deve ser no mínimo 1 aluno.',
+            'capacity.min' => 'A capacidade deve ser no mínimo 1 participante.',
+            'internal_capacity.required' => 'Informe quantas vagas são para participantes internos.',
+            'internal_capacity.integer' => 'As vagas internas devem ser um número inteiro.',
+            'internal_capacity.min' => 'As vagas internas não podem ser negativas.',
+            'external_capacity.required' => 'Informe quantas vagas são para participantes externos.',
+            'external_capacity.integer' => 'As vagas externas devem ser um número inteiro.',
+            'external_capacity.min' => 'As vagas externas não podem ser negativas.',
 
             'ead_link.url' => 'O link do EAD deve ser uma URL válida.',
 
@@ -383,6 +450,8 @@ class EventController extends Controller
                 'event_type',
                 'event_type_custom',
                 'capacity',
+                'internal_capacity',
+                'external_capacity',
                 'ead_link',
                 'description',
             ],
@@ -562,6 +631,8 @@ class EventController extends Controller
         $event->event_type = $this->resolvedEventTypeFromRequest($request);
         $event->modality_type = $this->normalizeModalityType($request->modality);
         $event->capacity = $request->capacity;
+        $event->internal_capacity = (int) $request->input('internal_capacity');
+        $event->external_capacity = (int) $request->input('external_capacity');
         $event->ead_link = $request->ead_link ?? null;
         $event->description = Purifier::clean($request->description ?? '');
 
@@ -695,9 +766,20 @@ class EventController extends Controller
         // Usa get() para executar a consulta e obter os eventos como Collection
         // $events = $user->events()->get()->toArray();
 
-        $events = $user->events;
+        $events = $user->events()
+            ->withCount([
+                'users as registered_count',
+                'users as external_registered_count' => function ($query) {
+                    $query->where('users.is_external_participant', true);
+                },
+            ])
+            ->get();
 
-        $eventsAsParticipant = $user->eventsAsParticipant;
+        $eventsAsParticipant = $user->eventsAsParticipant()
+            ->withCount([
+                'users as registered_count',
+            ])
+            ->get();
 
         // echo "<pre>"; print_r($events); echo "</pre>"; exit;
 
@@ -782,6 +864,8 @@ class EventController extends Controller
             'event_type' => ['required', 'string', 'max:255', Rule::in(array_merge(Event::EVENT_TYPE_OPTIONS, [Event::SELECT_OTHER_VALUE]))],
             'event_type_custom' => ['nullable', 'string', 'max:255', Rule::requiredIf(fn () => $request->input('event_type') === Event::SELECT_OTHER_VALUE)],
             'capacity' => 'required|integer|min:1',
+            'internal_capacity' => $this->internalCapacityRules($event),
+            'external_capacity' => $this->externalCapacityRules($request, $event),
             // EAD link: obrigatório apenas se modalidade for Online ou Híbrido
             'ead_link' => Rule::requiredIf(in_array($request->modality, ['Online', 'Híbrido'])).'|nullable|url',
 
@@ -1082,7 +1166,13 @@ class EventController extends Controller
             // Capacidade
             'capacity.required' => 'A capacidade é obrigatória.',
             'capacity.integer' => 'A capacidade deve ser um número inteiro.',
-            'capacity.min' => 'A capacidade deve ser no mínimo 1 aluno.',
+            'capacity.min' => 'A capacidade deve ser no mínimo 1 participante.',
+            'internal_capacity.required' => 'Informe quantas vagas são para participantes internos.',
+            'internal_capacity.integer' => 'As vagas internas devem ser um número inteiro.',
+            'internal_capacity.min' => 'As vagas internas não podem ser negativas.',
+            'external_capacity.required' => 'Informe quantas vagas são para participantes externos.',
+            'external_capacity.integer' => 'As vagas externas devem ser um número inteiro.',
+            'external_capacity.min' => 'As vagas externas não podem ser negativas.',
 
             // EAD
             'ead_link.url' => 'O link do EAD deve ser uma URL válida.',
@@ -1159,6 +1249,8 @@ class EventController extends Controller
         $event->event_type = $this->resolvedEventTypeFromRequest($request);
         $event->modality_type = $this->normalizeModalityType($request->modality);
         $event->capacity = $request->capacity;
+        $event->internal_capacity = (int) $request->input('internal_capacity');
+        $event->external_capacity = (int) $request->input('external_capacity');
         $event->ead_link = $request->ead_link ?? null;
         $event->description = Purifier::clean($request->description ?? '');
         $event->start_date = $request->start_date;
@@ -1518,33 +1610,44 @@ class EventController extends Controller
             );
         }
 
-        $event = Event::findOrFail($id);
+        $result = DB::transaction(function () use ($id, $user) {
+            $event = Event::query()->lockForUpdate()->findOrFail($id);
 
-        // LÓGICA QUE NÃO PERMITE O USUÁRIO CONFIRMAR PRESENÇA MAIS DE UMA VEZ NO MESMO EVENTO.
-        $userEvents = $user->eventsAsParticipant;
-
-        foreach ($userEvents as $userEvent) {
-            if ($userEvent->id == $id) {
-                return redirect('/dashboard')->with('msg', 'Você já confirmou presença neste evento!');
+            if ($event->users()->where('users.id', $user->id)->exists()) {
+                return ['status' => 'already', 'event' => $event];
             }
+
+            $reason = $event->registrationsBlockedReasonFor($user);
+            if ($reason !== null) {
+                return ['status' => 'blocked', 'reason' => $reason, 'event' => $event];
+            }
+
+            $event->users()->attach($user->id);
+
+            return ['status' => 'ok', 'event' => $event];
+        });
+
+        if ($result['status'] === 'already') {
+            return redirect('/dashboard')->with('msg', 'Você já confirmou presença neste evento!');
         }
 
-        $reason = $event->registrationsBlockedReason();
-        if ($reason !== null) {
+        if ($result['status'] === 'blocked') {
             $messages = [
                 'finalized' => 'Este evento foi finalizado. As inscrições não estão mais disponíveis.',
                 'ended' => 'O período deste evento foi encerrado.',
                 'started' => 'Este evento já está em andamento. As inscrições estão encerradas.',
                 'deadline' => 'O prazo de inscrições encerrou.',
                 'full' => 'Não há mais vagas para este evento.',
+                'internal_full' => 'Não há mais vagas para participantes internos neste evento.',
+                'external_full' => 'Não há mais vagas para participantes externos neste evento.',
             ];
 
-            return redirect()->back()->with('msg', $messages[$reason] ?? 'Não é possível se inscrever neste evento.');
+            return redirect()->back()->with('msg', $messages[$result['reason']] ?? 'Não é possível se inscrever neste evento.');
         }
 
-        $user->eventsAsParticipant()->attach($id);
+        EventMailer::notify($user, new EventRegistrationConfirmed($result['event']));
 
-        return redirect('/dashboard')->with('msg', 'Sua presença está confirmada no evento: '.$event->title);
+        return redirect('/dashboard')->with('msg', 'Sua presença está confirmada no evento: '.$result['event']->title);
 
     }
 
@@ -1617,9 +1720,16 @@ class EventController extends Controller
             return redirect('/dashboard')->with('msg', 'Este evento foi finalizado. A gestão de inscritos não está mais disponível.');
         }
 
-        $users = $event->users;
+        $users = $event->users()
+            ->orderBy('users.is_external_participant')
+            ->orderBy('users.name')
+            ->get();
 
-        return view('events.registered', ['event' => $event, 'users' => $users]);
+        return view('events.registered', [
+            'event' => $event,
+            'users' => $users,
+            'audienceCounts' => $event->audienceRegistrationCounts(),
+        ]);
     }
 
     public function exportCsv($id)
@@ -1655,13 +1765,18 @@ class EventController extends Controller
             echo "\xEF\xBB\xBF";
 
             // Cabeçalho
-            fputcsv($file, ['Nome', 'Email']);
+            fputcsv($file, ['Nome', 'E-mail', 'Categoria', 'Perfil', 'Matrícula', 'Instituição', 'Curso / área / setor']);
 
             // Dados
             foreach ($users as $user) {
                 fputcsv($file, [
                     $user->name,
                     $user->email,
+                    $user->audienceCategoryLabel(),
+                    $user->participantProfileLabel(),
+                    $user->matricula,
+                    $user->is_external_participant ? ($user->institution ?: '') : 'IFPA — Belém',
+                    $user->curso,
                 ]);
             }
 
@@ -1684,14 +1799,15 @@ class EventController extends Controller
             return back()->with('msg', 'Este evento foi finalizado. Não é possível alterar a lista de inscritos.');
         }
 
-        // garante que o user está inscrito
-        if ($event->users()->where('users.id', $userId)->exists()) {
+        $participant = $event->users()->where('users.id', $userId)->first();
+        if ($participant) {
+            $category = $participant->is_external_participant ? 'externa' : 'interna';
             $event->users()->detach($userId);
 
-            return back()->with('msg', 'Aluno removido com sucesso!');
+            return back()->with('msg', 'Participante removido. A vaga '.$category.' foi liberada.');
         }
 
-        return back()->with('msg', 'O aluno não estava inscrito neste evento.');
+        return back()->with('msg', 'Este participante não estava inscrito neste evento.');
     }
 
     public function novidades($id)
@@ -2220,38 +2336,138 @@ class EventController extends Controller
     public function annalsPublic($id)
     {
         $event = Event::findOrFail($id);
-        $works = Work::with(['authors'])
-            ->where('event_id', $event->id)
-            ->where('status', Work::STATUS_PUBLISHED_ANNALS)
-            ->whereNotNull('published_in_annals_at')
-            ->orderBy('title')
-            ->get();
 
-        return view('events.annals-public', compact('event', 'works'));
+        return view('events.annals-public', compact('event'));
     }
 
-    /**
-     * Painel do coordenador: registrar ou atualizar publicação nos anais (apenas trabalhos já apresentados).
-     */
-    public function annalsManage(Event $event)
+    public function downloadAnnals($id)
     {
-        abort_unless(
-            $event->user_id === (int) auth()->id() && auth()->user()->isCoordinator(),
-            403
-        );
+        $event = Event::findOrFail($id);
 
-        if (! $event->acceptsSubmissions()) {
-            return redirect()->route('dashboard')
-                ->with('msg', 'Este evento não possui fluxo de submissão de trabalhos.');
+        if (! $event->hasAnnalsPublication()) {
+            abort(404, 'Ainda não há anais ou e-book publicado para este evento.');
         }
 
-        $works = Work::with(['submitter', 'authors'])
-            ->where('event_id', $event->id)
-            ->whereIn('status', [Work::STATUS_PRESENTED, Work::STATUS_PUBLISHED_ANNALS])
-            ->orderByRaw("CASE WHEN title IS NOT NULL AND title <> '' THEN 0 ELSE 1 END")
-            ->orderBy('title')
-            ->get();
+        $client = app(SupabaseObjectClient::class);
+        $response = $client->fetch(
+            (string) config('services.supabase.bucket_annals'),
+            $event->annals_storage_path
+        );
 
-        return view('events.annals-manage', compact('event', 'works'));
+        if ($response === null || ! $response->successful()) {
+            abort(404, 'Não foi possível baixar o arquivo.');
+        }
+
+        $fileName = str_replace(['"', "\r", "\n"], '', (string) $event->annals_file_name);
+        if ($fileName === '') {
+            $fileName = 'publicacao.pdf';
+        }
+
+        return response($response->body(), 200, [
+            'Content-Type' => $response->header('Content-Type', 'application/pdf'),
+            'Content-Disposition' => 'attachment; filename="'.$fileName.'"',
+        ]);
+    }
+
+    public function storeAnnals(Request $request, $id)
+    {
+        $event = Event::findOrFail($id);
+        $this->assertCoordinatorOwner($event);
+
+        if (! $event->isFinalized()) {
+            return back()->with('msg', 'Publique os anais ou o e-book somente depois de finalizar o evento.');
+        }
+
+        $data = $request->validate([
+            'annals_kind' => ['required', Rule::in(array_keys(Event::annalsKindOptions()))],
+            'file' => 'required|file|mimes:pdf|mimetypes:application/pdf|max:40960',
+        ], [
+            'annals_kind.required' => 'Informe se o arquivo é de anais ou de e-book.',
+            'annals_kind.in' => 'Escolha Anais ou E-book.',
+            'file.required' => 'Envie o PDF.',
+            'file.mimes' => 'O arquivo precisa ser um PDF.',
+            'file.mimetypes' => 'O arquivo precisa ser um PDF.',
+            'file.max' => 'O PDF deve ter no máximo 40 MB.',
+        ]);
+
+        /** @var UploadedFile $uploadedFile */
+        $uploadedFile = $request->file('file');
+        $previousPath = $event->annals_storage_path;
+        $storagePath = $this->uploadAnnalsToStorage($event, $uploadedFile);
+
+        $event->annals_kind = $data['annals_kind'];
+        $event->annals_file_name = $uploadedFile->getClientOriginalName();
+        $event->annals_storage_path = $storagePath;
+        $event->annals_uploaded_at = now();
+        $event->save();
+
+        if ($previousPath && $previousPath !== $storagePath) {
+            $this->deleteAnnalsFromStorage($previousPath);
+        }
+
+        $label = $event->annalsKindLabel();
+
+        return back()->with('msg', $label.' publicado. Qualquer pessoa pode baixar o PDF na página do evento.');
+    }
+
+    public function destroyAnnals($id)
+    {
+        $event = Event::findOrFail($id);
+        $this->assertCoordinatorOwner($event);
+
+        if (! $event->isFinalized()) {
+            return back()->with('msg', 'Só é possível remover esta publicação depois que o evento estiver finalizado.');
+        }
+
+        if ($event->annals_storage_path) {
+            $this->deleteAnnalsFromStorage($event->annals_storage_path);
+        }
+
+        $event->annals_kind = null;
+        $event->annals_file_name = null;
+        $event->annals_storage_path = null;
+        $event->annals_uploaded_at = null;
+        $event->save();
+
+        return back()->with('msg', 'O PDF dos anais ou do e-book foi removido.');
+    }
+
+    private function assertCoordinatorOwner(Event $event): void
+    {
+        abort_unless(
+            auth()->check()
+            && auth()->user()->isCoordinator()
+            && (int) auth()->id() === (int) $event->user_id,
+            403
+        );
+    }
+
+    private function uploadAnnalsToStorage(Event $event, UploadedFile $file): string
+    {
+        $fileName = md5($file->getClientOriginalName().now()->timestamp.random_int(1, 99999)).'.pdf';
+        $storagePath = "events/{$event->id}/{$fileName}";
+        $client = app(SupabaseObjectClient::class);
+
+        try {
+            $client->upload(
+                (string) config('services.supabase.bucket_annals'),
+                $storagePath,
+                (string) file_get_contents($file->getRealPath()),
+                'application/pdf',
+                true
+            );
+        } catch (\RuntimeException $exception) {
+            abort(500, 'Erro ao enviar o PDF para o armazenamento.');
+        }
+
+        return $storagePath;
+    }
+
+    private function deleteAnnalsFromStorage(string $storagePath): void
+    {
+        app(SupabaseObjectClient::class)->deleteObject(
+            (string) config('services.supabase.bucket_annals'),
+            $storagePath
+        );
     }
 }

@@ -7,6 +7,7 @@ use App\Http\Controllers\EventCertificateController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventPresentationScheduleController;
 use App\Http\Controllers\MyCertificatesController;
+use App\Http\Controllers\PostEvaluationController;
 use App\Http\Controllers\PresentationController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SignatureController;
@@ -21,6 +22,7 @@ Route::get('/events/{eventId}/documentos/{documentId}/download', [EventControlle
 // ->middleware('auth') retorna por padrão para /login se não reconhecer usuário autenticado.
 Route::get('/events/create', [EventController::class, 'create'])->middleware(['auth', 'isCoordinator']);
 Route::get('/events/{id}/anais', [EventController::class, 'annalsPublic'])->name('events.annals');
+Route::get('/events/{id}/anais/download', [EventController::class, 'downloadAnnals'])->name('events.annals.download');
 Route::get('/events/{id}', [EventController::class, 'show'])->name('events.show');
 Route::post('/events', [EventController::class, 'store'])->middleware(['auth', 'isCoordinator']);
 Route::get('/dashboard', [EventController::class, 'dashboard'])->middleware('auth')->name('dashboard');
@@ -28,6 +30,8 @@ Route::delete('/events/{id}', [EventController::class, 'destroy'])->middleware([
 Route::get('/events/edit/{id}', [EventController::class, 'edit'])->middleware(['auth', 'isCoordinator']);
 Route::put('/events/update/{id}', [EventController::class, 'update'])->middleware(['auth', 'isCoordinator']);
 Route::post('/events/{id}/finalize', [EventController::class, 'finalizeEvent'])->middleware(['auth', 'isCoordinator']);
+Route::post('/events/{id}/anais', [EventController::class, 'storeAnnals'])->middleware(['auth', 'isCoordinator'])->name('events.annals.store');
+Route::delete('/events/{id}/anais', [EventController::class, 'destroyAnnals'])->middleware(['auth', 'isCoordinator'])->name('events.annals.destroy');
 Route::post('/events/join/{id}', [EventController::class, 'joinEvent'])->middleware('auth');
 Route::delete('/events/leave/{id}', [EventController::class, 'leaveEvent'])->middleware('auth');
 
@@ -60,19 +64,15 @@ Route::post('/events/validate-step', [EventController::class, 'validateStep'])
     ->name('events.validate-step');
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('/works/my-presentation', [\App\Http\Controllers\PostEvaluationController::class, 'myPresentationSchedule'])
+    Route::get('/works/my-presentation', [PostEvaluationController::class, 'myPresentationSchedule'])
         ->name('works.my-presentation');
-    Route::post('/works/{work}/post-eval/attendance', [\App\Http\Controllers\PostEvaluationController::class, 'setAttendance'])
+    Route::post('/works/{work}/post-eval/attendance', [PostEvaluationController::class, 'setAttendance'])
         ->middleware('isCoordinator')
         ->name('works.presentation.attendance');
 
     Route::get('/events/{event}/apresentacoes', [EventPresentationScheduleController::class, 'manage'])
         ->middleware('isCoordinator')
         ->name('events.presentations.manage');
-    Route::get('/events/{event}/anais/coordenacao', [EventController::class, 'annalsManage'])
-        ->middleware('isCoordinator')
-        ->name('events.annals.manage');
-
     Route::get('/works/my', [WorkController::class, 'myWorks'])->name('works.my');
     Route::get('/works/{work}', [WorkController::class, 'show'])->name('works.show');
     Route::get('/works/{work}/download', [WorkController::class, 'download'])->name('works.download');
@@ -111,12 +111,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/works/{work}/reviews/{review}/feedback/download', [ReviewController::class, 'downloadEvaluatorFeedback'])
         ->middleware('isCoordinator')
         ->name('reviews.feedback.download');
-    Route::post('/works/{work}/annals', [ReviewController::class, 'markAnnalsPublication'])
-        ->middleware('isCoordinator')
-        ->name('works.annals.publish');
-    Route::delete('/works/{work}/annals', [ReviewController::class, 'clearAnnalsPublication'])
-        ->middleware('isCoordinator')
-        ->name('works.annals.clear');
     Route::post('/works/{work}/presentation', [PresentationController::class, 'upsert'])
         ->middleware('isCoordinator')
         ->name('works.presentation.upsert');

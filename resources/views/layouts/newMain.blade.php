@@ -6,6 +6,7 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
         <title>@yield('title')</title>
+        @include('partials.favicon')
 
         <!-- Google Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,19 +19,17 @@
        
     </head>
 
-    <body class="font-open-sans bg-white text-gray-700 leading-relaxed">
+    <body class="font-open-sans dash-page leading-relaxed">
 
     <!-- Header -->
-    <header class="bg-white/95 backdrop-blur-sm border-b border-slate-200/80 sticky top-0 z-50">
+    <header class="site-header sticky top-0 z-50">
         <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {{-- Mobile: logo + hambúrguer. Acessibilidade no painel #mobile-menu. --}}
             <div class="flex items-center justify-between gap-3 min-w-0 w-full min-h-16">
                 <div class="flex items-center gap-3 sm:gap-5 min-w-0 flex-1 md:flex-initial">
                     <a href="/" class="flex items-center gap-2 sm:gap-2.5 no-underline group min-w-0 shrink-0">
-                        <div class="w-9 h-9 sm:w-10 sm:h-10 bg-primary-custom rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow shrink-0">
-                            <span class="text-white font-montserrat font-black text-lg sm:text-xl">C</span>
-                        </div>
-                        <span class="font-montserrat font-bold text-slate-800 text-base sm:text-lg md:text-xl truncate min-w-0 max-w-[11rem] sm:max-w-none">ConectaIFPA</span>
+                        @include('partials.brand-mark', ['class' => 'w-9 h-9 sm:w-10 sm:h-10'])
+                        <span class="site-brand font-montserrat font-bold text-base sm:text-lg md:text-xl truncate min-w-0 max-w-[11rem] sm:max-w-none">ConectaIFPA</span>
                     </a>
                     <div class="hidden md:block min-w-0">
                         @include('partials.nav-a11y-toolbar', ['placement' => 'header'])
@@ -40,42 +39,42 @@
                 <!-- Desktop Navigation -->
                 <div class="hidden md:flex items-center gap-1 lg:gap-2 flex-shrink-0 min-w-0">
                     <a href="/#eventos"
-                       class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 no-underline transition-colors">
+                       class="site-nav-link px-4 py-2 text-sm font-medium transition-colors">
                         Eventos
                     </a>
                     <a href="{{ route('certificates.lookup') }}"
-                       class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 no-underline transition-colors">
+                       class="site-nav-link px-4 py-2 text-sm font-medium transition-colors">
                         Validar certificado
                     </a>
 
                     @auth
                         <a href="{{ route('profile.show') }}"
-                           class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 no-underline transition-colors">
+                           class="site-nav-link px-4 py-2 text-sm font-medium transition-colors">
                             Minha conta
                         </a>
                         @if(auth()->user()->isCoordinator())
                             <a href="/dashboard"
-                               class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 no-underline transition-colors">
+                               class="site-nav-link px-4 py-2 text-sm font-medium transition-colors">
                                 Painel
                             </a>
                         @endif
                         @if(auth()->user()->isParticipant())
                             <details class="relative">
-                                <summary class="list-none px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer inline-flex items-center gap-1.5">
+                                <summary class="site-nav-link list-none px-4 py-2 text-sm font-medium transition-colors cursor-pointer inline-flex items-center gap-1.5">
                                     Área do participante
                                     <ion-icon name="chevron-down-outline" class="text-base"></ion-icon>
                                 </summary>
-                                <div class="absolute right-0 mt-2 w-56 rounded-xl border border-slate-200 bg-white shadow-lg p-1 z-50">
+                                <div class="site-menu absolute right-0 mt-2 w-56 rounded-xl p-1 z-50">
                                     <a href="/dashboard"
-                                       class="block px-3 py-2 rounded-lg text-sm text-slate-700 hover:bg-slate-100 no-underline transition-colors">
+                                       class="site-nav-link block px-3 py-2 text-sm transition-colors">
                                         Minha Área
                                     </a>
                                     <a href="{{ route('works.my-presentation') }}"
-                                       class="block px-3 py-2 rounded-lg text-sm text-slate-700 hover:bg-slate-100 no-underline transition-colors">
+                                       class="site-nav-link block px-3 py-2 text-sm transition-colors">
                                         Minha apresentação
                                     </a>
                                     <a href="{{ route('certificates.my') }}"
-                                       class="block px-3 py-2 rounded-lg text-sm text-slate-700 hover:bg-slate-100 no-underline transition-colors">
+                                       class="site-nav-link block px-3 py-2 text-sm transition-colors">
                                         Certificados
                                     </a>
                                 </div>
@@ -83,11 +82,11 @@
                         @endif
                         @if(auth()->user()->isReviewer())
                             <a href="/dashboard"
-                               class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 no-underline transition-colors">
+                               class="site-nav-link px-4 py-2 text-sm font-medium transition-colors">
                                 Painel
                             </a>
                             <a href="{{ route('reviews.assigned') }}"
-                               class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 no-underline transition-colors">
+                               class="site-nav-link px-4 py-2 text-sm font-medium transition-colors">
                                 Avaliações
                             </a>
                         @endif
@@ -104,7 +103,7 @@
                         <form method="POST" action="{{ route('logout') }}" class="ml-2">
                             @csrf
                             <button type="submit"
-                                    class="px-4 py-2 rounded-lg text-sm font-medium text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                    class="site-logout px-4 py-2 text-sm font-medium transition-colors"
                                     id="sair-desktop">
                                 Sair
                             </button>
@@ -113,18 +112,18 @@
 
                     @guest
                         <a href="/login"
-                           class="ml-2 px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 no-underline transition-colors">
+                           class="site-nav-link ml-2 px-4 py-2 text-sm font-medium transition-colors">
                             Entrar
                         </a>
                         <a href="/register"
-                           class="px-4 py-2 rounded-xl border-2 border-primary-custom text-primary-custom text-sm font-semibold no-underline hover:bg-green-50 transition-colors">
+                           class="site-nav-outline px-4 py-2 text-sm font-semibold transition-colors">
                             Criar conta
                         </a>
                     @endguest
                 </div>
 
                 <button id="menu-toggle" type="button"
-                        class="md:hidden shrink-0 p-2.5 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors touch-manipulation"
+                        class="site-icon-btn md:hidden shrink-0 p-2.5 transition-colors touch-manipulation"
                         aria-label="Menu"
                         aria-expanded="false"
                         aria-controls="mobile-menu">
@@ -135,64 +134,64 @@
             <!-- Mobile Navigation -->
             <div id="mobile-menu"
                  class="md:hidden hidden overflow-hidden transition-all duration-300 ease-out">
-                <div class="border-t border-slate-200">
-                    <div class="px-4 pt-4 pb-3 bg-slate-50/80" aria-labelledby="mobile-a11y-section-label">
-                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3 m-0" id="mobile-a11y-section-label">
+                <div class="site-drawer-rule border-t">
+                    <div class="site-drawer-tools px-4 pt-4 pb-3" aria-labelledby="mobile-a11y-section-label">
+                        <p class="site-drawer-label text-xs font-semibold uppercase tracking-wide mb-3 m-0" id="mobile-a11y-section-label">
                             Acessibilidade
                         </p>
                         @include('partials.nav-a11y-toolbar', ['placement' => 'drawer'])
                     </div>
                     <div class="py-4 space-y-1">
                     <a href="/#eventos"
-                       class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 font-medium hover:bg-slate-100 no-underline transition-colors">
-                        <ion-icon name="calendar-outline" class="text-xl text-slate-400"></ion-icon>
+                       class="site-nav-link flex items-center gap-3 px-4 py-3 font-medium transition-colors">
+                        <ion-icon name="calendar-outline" class="site-nav-icon text-xl"></ion-icon>
                         Eventos
                     </a>
                     <a href="{{ route('certificates.lookup') }}"
-                       class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 font-medium hover:bg-slate-100 no-underline transition-colors">
-                        <ion-icon name="shield-checkmark-outline" class="text-xl text-slate-400"></ion-icon>
+                       class="site-nav-link flex items-center gap-3 px-4 py-3 font-medium transition-colors">
+                        <ion-icon name="shield-checkmark-outline" class="site-nav-icon text-xl"></ion-icon>
                         Validar certificado
                     </a>
 
                     @auth
                         <a href="{{ route('profile.show') }}"
-                           class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 font-medium hover:bg-slate-100 no-underline transition-colors">
-                            <ion-icon name="person-circle-outline" class="text-xl text-slate-400"></ion-icon>
+                           class="site-nav-link flex items-center gap-3 px-4 py-3 font-medium transition-colors">
+                            <ion-icon name="person-circle-outline" class="site-nav-icon text-xl"></ion-icon>
                             Minha conta
                         </a>
                         @if(auth()->user()->isCoordinator())
                             <a href="/dashboard"
-                               class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 font-medium hover:bg-slate-100 no-underline transition-colors">
-                                <ion-icon name="grid-outline" class="text-xl text-slate-400"></ion-icon>
+                               class="site-nav-link flex items-center gap-3 px-4 py-3 font-medium transition-colors">
+                                <ion-icon name="grid-outline" class="site-nav-icon text-xl"></ion-icon>
                                 Painel
                             </a>
                         @endif
                         @if(auth()->user()->isParticipant())
                             <a href="/dashboard"
-                               class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 font-medium hover:bg-slate-100 no-underline transition-colors">
-                                <ion-icon name="person-outline" class="text-xl text-slate-400"></ion-icon>
+                               class="site-nav-link flex items-center gap-3 px-4 py-3 font-medium transition-colors">
+                                <ion-icon name="person-outline" class="site-nav-icon text-xl"></ion-icon>
                                 Minha Área
                             </a>
                             <a href="{{ route('works.my-presentation') }}"
-                               class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 font-medium hover:bg-slate-100 no-underline transition-colors">
-                                <ion-icon name="mic-outline" class="text-xl text-slate-400"></ion-icon>
+                               class="site-nav-link flex items-center gap-3 px-4 py-3 font-medium transition-colors">
+                                <ion-icon name="mic-outline" class="site-nav-icon text-xl"></ion-icon>
                                 Minha apresentação
                             </a>
                             <a href="{{ route('certificates.my') }}"
-                               class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 font-medium hover:bg-slate-100 no-underline transition-colors">
-                                <ion-icon name="ribbon-outline" class="text-xl text-slate-400"></ion-icon>
+                               class="site-nav-link flex items-center gap-3 px-4 py-3 font-medium transition-colors">
+                                <ion-icon name="ribbon-outline" class="site-nav-icon text-xl"></ion-icon>
                                 Certificados
                             </a>
                         @endif
                         @if(auth()->user()->isReviewer())
                             <a href="/dashboard"
-                               class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 font-medium hover:bg-slate-100 no-underline transition-colors">
-                                <ion-icon name="grid-outline" class="text-xl text-slate-400"></ion-icon>
+                               class="site-nav-link flex items-center gap-3 px-4 py-3 font-medium transition-colors">
+                                <ion-icon name="grid-outline" class="site-nav-icon text-xl"></ion-icon>
                                 Painel
                             </a>
                             <a href="{{ route('reviews.assigned') }}"
-                               class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-700 font-medium hover:bg-slate-100 no-underline transition-colors">
-                                <ion-icon name="clipboard-outline" class="text-xl text-slate-400"></ion-icon>
+                               class="site-nav-link flex items-center gap-3 px-4 py-3 font-medium transition-colors">
+                                <ion-icon name="clipboard-outline" class="site-nav-icon text-xl"></ion-icon>
                                 Avaliações
                             </a>
                         @endif
@@ -207,14 +206,14 @@
                     @endif
 
                     @guest
-                        <div class="pt-3 mt-3 border-t border-slate-200 space-y-2">
+                        <div class="site-drawer-rule pt-3 mt-3 border-t space-y-2">
                             <a href="/login"
-                               class="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-slate-700 font-medium bg-slate-100 hover:bg-slate-200 no-underline transition-colors">
+                               class="site-nav-link flex items-center justify-center gap-2 px-4 py-3 font-medium transition-colors">
                                 <ion-icon name="log-in-outline"></ion-icon>
                                 Entrar
                             </a>
                             <a href="/register"
-                               class="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-primary-custom text-primary-custom font-semibold no-underline hover:bg-green-50 transition-colors">
+                               class="site-nav-outline flex items-center justify-center gap-2 px-4 py-3 font-semibold transition-colors">
                                 <ion-icon name="person-add-outline"></ion-icon>
                                 Criar conta
                             </a>
@@ -222,11 +221,11 @@
                     @endguest
 
                     @auth
-                        <div class="pt-3 mt-3 border-t border-slate-200">
+                        <div class="site-drawer-rule pt-3 mt-3 border-t">
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
                                 <button type="submit"
-                                        class="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-slate-500 font-medium hover:bg-red-50 hover:text-red-600 transition-colors text-left"
+                                        class="site-logout flex items-center gap-3 w-full px-4 py-3 font-medium transition-colors text-left"
                                         id="sair-mobile">
                                     <ion-icon name="log-out-outline" class="text-xl"></ion-icon>
                                     Sair
@@ -258,29 +257,27 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-slate-900 text-white mt-auto">
+    <footer class="site-footer mt-auto">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
                 <div class="flex items-center gap-2.5">
-                    <div class="w-9 h-9 bg-primary-custom rounded-lg flex items-center justify-center">
-                        <span class="font-montserrat font-black text-lg text-white">C</span>
-                    </div>
-                    <span class="font-montserrat font-bold text-lg">ConectaIFPA</span>
+                    @include('partials.brand-mark', ['class' => 'w-10 h-10'])
+                    <span class="site-brand font-montserrat font-bold text-lg">ConectaIFPA</span>
                 </div>
                 <div class="flex flex-wrap gap-6 text-sm">
-                    <a href="/#eventos" class="text-slate-400 hover:text-white transition-colors no-underline">
+                    <a href="/#eventos" class="site-footer-link transition-colors">
                         Eventos
                     </a>
-                    <a href="{{ route('certificates.lookup') }}" class="text-slate-400 hover:text-white transition-colors no-underline">
+                    <a href="{{ route('certificates.lookup') }}" class="site-footer-link transition-colors">
                         Validar certificado
                     </a>
-                    <a href="/" class="text-slate-400 hover:text-white transition-colors no-underline">
+                    <a href="/" class="site-footer-link transition-colors">
                         Início
                     </a>
                 </div>
             </div>
-            <div class="mt-8 pt-8 border-t border-slate-700/50">
-                <p class="text-slate-500 text-sm m-0">
+            <div class="site-footer-rule mt-8 pt-8">
+                <p class="site-footer-copy text-sm m-0">
                     © {{ date('Y') }} ConectaIFPA. Todos os direitos reservados. Feito com carinho para a comunidade universitária.
                 </p>
             </div>

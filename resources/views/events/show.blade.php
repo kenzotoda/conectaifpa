@@ -38,7 +38,7 @@
 #eventDescription .ql-size-huge { font-size: 2.5em; }
 /* Fundo do banner (áreas vazias) */
 .banner-bg {
-    background: linear-gradient(135deg, #f1f5f9 0%, #f8fafc 60%, #ecfdf5 100%);
+    background: var(--dash-canvas);
 }
 </style>
 @endpush
@@ -47,7 +47,7 @@
 
 @section('content')
 <!-- ===== CONTAINER PRINCIPAL ===== -->
-<div class="min-h-screen bg-white overflow-x-hidden">
+<div class="dash-page min-h-screen overflow-x-hidden">
 
     @php
         $imageUrl = config('services.supabase.url') . '/storage/v1/object/public/' . config('services.supabase.bucket_events') . '/events/' . $event->image;
@@ -68,121 +68,199 @@
 
     <!-- ===== BOX TÍTULO + INFO + INSCRIÇÃO (estilo Even3) ===== -->
     <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 relative z-10">
-        <div class="bg-white rounded-lg sm:rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8 lg:p-10">
-            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 lg:gap-8">
+        <div class="dash-card rounded-lg sm:rounded-xl p-6 sm:p-8 lg:p-10">
+            <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 lg:gap-8">
                 <!-- Título e informações -->
                 <div class="flex-1 min-w-0">
-                    <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 break-words [overflow-wrap:anywhere] mb-3">
+                    <h1 class="dash-title text-2xl sm:text-3xl lg:text-4xl font-bold break-words [overflow-wrap:anywhere] mb-3">
                         {{ $event->title }}
                     </h1>
-                    <div class="space-y-1.5 text-slate-600 text-sm sm:text-base">
-                        @php
-                            $locationSummary = collect([$event->venue, $event->campus, $event->building])
-                                ->filter(fn ($value) => filled($value))
-                                ->map(fn ($value) => trim((string) $value))
-                                ->unique()
-                                ->implode(' · ');
-                            $modalityIsOnlineOnly = $event->modality === 'Online';
-                            $modalityIsHybrid = $event->modality === 'Híbrido';
-                        @endphp
-                        <p class="flex items-center gap-2">
-                            <ion-icon name="calendar-outline" class="text-slate-500 flex-shrink-0"></ion-icon>
-                            <span>
-                                {{ $event->start_date->format('d/m/Y') }}
-                                @if($event->end_date)
-                                    até {{ $event->end_date->format('d/m/Y') }}
-                                @endif
-                                @if($event->scheduleIsComplete())
-                                    · {{ \Carbon\Carbon::parse($event->start_time)->format('H:i') }}
-                                    às {{ \Carbon\Carbon::parse($event->end_time)->format('H:i') }}
-                                @else
-                                    · horário a definir
-                                @endif
+                    @php
+                        $locationSummary = collect([$event->venue, $event->campus, $event->building])
+                            ->filter(fn ($value) => filled($value))
+                            ->map(fn ($value) => trim((string) $value))
+                            ->unique()
+                            ->implode(' · ');
+                        $modalityIsOnlineOnly = $event->modality === 'Online';
+                        $modalityIsHybrid = $event->modality === 'Híbrido';
+                        $seesVacancyDetails = auth()->check()
+                            && auth()->user()->isCoordinator()
+                            && (int) auth()->id() === (int) $event->user_id;
+                        $audienceCounts = $event->audienceRegistrationCounts();
+                        $viewer = auth()->user();
+                        if ($viewer && $viewer->isParticipant() && $event->hasAudienceQuotas()) {
+                            $viewerSideFull = $viewer->is_external_participant
+                                ? $audienceCounts['external'] >= (int) $event->external_capacity
+                                : $audienceCounts['internal'] >= (int) $event->internal_capacity;
+                            $simpleVacancyLabel = $viewerSideFull
+                                ? 'Não há vagas para o seu perfil'
+                                : 'Há vagas para o seu perfil';
+                        } else {
+                            $spotsOpen = $event->hasAudienceQuotas()
+                                ? ($audienceCounts['internal'] < (int) $event->internal_capacity || $audienceCounts['external'] < (int) $event->external_capacity)
+                                : $audienceCounts['total'] < (int) $event->capacity;
+                            $simpleVacancyLabel = $spotsOpen ? 'Há vagas' : 'Vagas esgotadas';
+                        }
+                    @endphp
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        @if(filled($event->category))
+                            <span class="dash-badge-positive inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold">{{ $event->category }}</span>
+                        @endif
+                        @if(filled($event->modality))
+                            <span class="dash-badge inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold">{{ $event->modality }}</span>
+                        @endif
+                        @if(filled($event->event_type))
+                            <span class="dash-badge inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold">{{ $event->event_type }}</span>
+                        @endif
+                    </div>
+                    <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-sm">
+                        <div class="dash-panel flex gap-3 rounded-xl px-3.5 py-3 min-w-0">
+                            <span class="dash-icon-well flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">
+                                <ion-icon name="calendar-outline" class="text-lg" aria-hidden="true"></ion-icon>
                             </span>
-                        </p>
-                        @if($modalityIsOnlineOnly)
-                            <p class="flex items-start gap-2">
-                                <ion-icon name="globe-outline" class="text-slate-500 flex-shrink-0 mt-0.5"></ion-icon>
-                                <span class="break-words [overflow-wrap:anywhere]">
-                                    <span class="font-medium text-slate-800">Evento online</span>
-                                    — não há local físico de realização ao público; o acesso é remoto.
-                                    @if($event->ead_link)
-                                        <a href="{{ $event->ead_link }}" target="_blank" rel="noopener noreferrer" class="text-emerald-700 hover:text-emerald-800 font-semibold ml-1">Link do ambiente</a>
+                            <div class="min-w-0">
+                                <p class="dash-muted m-0 text-[11px] font-semibold uppercase tracking-wide">Quando</p>
+                                <p class="dash-title m-0 mt-0.5 font-medium">
+                                    {{ $event->start_date->format('d/m/Y') }}
+                                    @if($event->end_date)
+                                        até {{ $event->end_date->format('d/m/Y') }}
                                     @endif
-                                </span>
-                            </p>
-                        @else
-                            <p class="flex items-center gap-2">
-                                <ion-icon name="location-outline" class="text-slate-500 flex-shrink-0"></ion-icon>
-                                <span class="break-words [overflow-wrap:anywhere]">{{ $locationSummary }}</span>
-                            </p>
-                            @if($modalityIsHybrid)
-                                <p class="flex items-start gap-2 m-0 text-slate-600 text-sm">
-                                    <ion-icon name="globe-outline" class="text-slate-500 flex-shrink-0 mt-0.5"></ion-icon>
-                                    <span class="[overflow-wrap:anywhere]">Modalidade <strong class="text-slate-800">híbrida</strong>: há participação presencial no campus e acesso remoto.@if($event->ead_link) <a href="{{ $event->ead_link }}" target="_blank" rel="noopener noreferrer" class="text-emerald-700 hover:text-emerald-800 font-semibold">Link do ambiente online</a>@endif</span>
                                 </p>
-                            @endif
-                        @endif
-                        <p class="flex items-center gap-2 text-slate-500">
-                            <span>{{ $event->category }} · {{ $event->modality }}</span>
-                        </p>
-                        @if($event->event_type)
-                            <p class="flex items-center gap-2">
-                                <ion-icon name="pricetag-outline" class="text-slate-500 flex-shrink-0"></ion-icon>
-                                <span>
-                                    <span class="text-slate-500">Tipo de evento:</span>
-                                    <span class="text-slate-700 font-medium">{{ $event->event_type }}</span>
-                                </span>
-                            </p>
-                        @endif
+                                <p class="dash-muted m-0 mt-0.5 text-xs">
+                                    @if($event->scheduleIsComplete())
+                                        {{ \Carbon\Carbon::parse($event->start_time)->format('H:i') }}
+                                        às {{ \Carbon\Carbon::parse($event->end_time)->format('H:i') }}
+                                    @else
+                                        Horário a definir
+                                    @endif
+                                </p>
+                            </div>
+                        </div>
                         @if($event->datetime_registration)
-                            <p class="flex items-center gap-2">
-                                <ion-icon name="alarm-outline" class="text-slate-500 flex-shrink-0"></ion-icon>
-                                <span>
-                                    <span class="text-slate-500">Prazo de inscrição:</span>
-                                    <span id="eventRegistrationPeriod" class="text-slate-700 font-medium">{{ $event->datetime_registration->format('d/m/Y') }} às {{ $event->datetime_registration->format('H:i') }}</span>
+                            <div class="dash-panel flex gap-3 rounded-xl px-3.5 py-3 min-w-0">
+                                <span class="dash-icon-well flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">
+                                    <ion-icon name="alarm-outline" class="text-lg" aria-hidden="true"></ion-icon>
                                 </span>
-                            </p>
+                                <div class="min-w-0">
+                                    <p class="dash-muted m-0 text-[11px] font-semibold uppercase tracking-wide">Inscrições até</p>
+                                    <p id="eventRegistrationPeriod" class="dash-title m-0 mt-0.5 font-medium">{{ $event->datetime_registration->format('d/m/Y') }} às {{ $event->datetime_registration->format('H:i') }}</p>
+                                </div>
+                            </div>
+                        @endif
+                        <div class="dash-panel flex gap-3 rounded-xl px-3.5 py-3 min-w-0 sm:col-span-2">
+                            <span class="dash-icon-well flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">
+                                <ion-icon name="{{ $modalityIsOnlineOnly ? 'globe-outline' : 'location-outline' }}" class="text-lg" aria-hidden="true"></ion-icon>
+                            </span>
+                            <div class="min-w-0">
+                                <p class="dash-muted m-0 text-[11px] font-semibold uppercase tracking-wide">{{ $modalityIsOnlineOnly ? 'Acesso' : 'Onde' }}</p>
+                                @if($modalityIsOnlineOnly)
+                                    <p class="dash-title m-0 mt-0.5 font-medium leading-relaxed [overflow-wrap:anywhere]">
+                                        Evento online. O acesso é remoto, sem local físico para o público.
+                                        @if($event->ead_link)
+                                            <a href="{{ $event->ead_link }}" target="_blank" rel="noopener noreferrer" class="dash-link font-semibold">Link do ambiente</a>
+                                        @endif
+                                    </p>
+                                @else
+                                    <p class="dash-title m-0 mt-0.5 font-medium leading-relaxed [overflow-wrap:anywhere]">{{ $locationSummary }}</p>
+                                    @if($modalityIsHybrid)
+                                        <p class="dash-muted m-0 mt-1 text-xs leading-relaxed [overflow-wrap:anywhere]">
+                                            Há participação presencial no campus e acesso remoto.
+                                            @if($event->ead_link)
+                                                <a href="{{ $event->ead_link }}" target="_blank" rel="noopener noreferrer" class="dash-link font-semibold">Link do ambiente online</a>
+                                            @endif
+                                        </p>
+                                    @endif
+                                @endif
+                            </div>
+                        </div>
+                        @if($seesVacancyDetails)
+                            @if($event->hasAudienceQuotas())
+                                @php
+                                    $internalRemaining = max(0, (int) $event->internal_capacity - $audienceCounts['internal']);
+                                    $externalRemaining = max(0, (int) $event->external_capacity - $audienceCounts['external']);
+                                @endphp
+                                <div class="dash-panel rounded-xl px-3.5 py-3 min-w-0">
+                                    <p class="dash-muted m-0 text-[11px] font-semibold uppercase tracking-wide">Vagas internas</p>
+                                    <p class="dash-title m-0 mt-1 text-base font-semibold">{{ $internalRemaining }} restantes</p>
+                                    <p class="dash-muted m-0 mt-0.5 text-xs">{{ $audienceCounts['internal'] }} de {{ (int) $event->internal_capacity }} ocupadas</p>
+                                </div>
+                                <div class="dash-panel rounded-xl px-3.5 py-3 min-w-0">
+                                    <p class="dash-muted m-0 text-[11px] font-semibold uppercase tracking-wide">Vagas externas</p>
+                                    <p class="dash-title m-0 mt-1 text-base font-semibold">{{ $externalRemaining }} restantes</p>
+                                    <p class="dash-muted m-0 mt-0.5 text-xs">{{ $audienceCounts['external'] }} de {{ (int) $event->external_capacity }} ocupadas</p>
+                                </div>
+                            @else
+                                <div class="dash-panel rounded-xl px-3.5 py-3 min-w-0 sm:col-span-2">
+                                    <p class="dash-muted m-0 text-[11px] font-semibold uppercase tracking-wide">Vagas</p>
+                                    <p class="dash-title m-0 mt-1 text-base font-semibold">{{ $audienceCounts['total'] }} de {{ (int) $event->capacity }} ocupadas</p>
+                                </div>
+                            @endif
+                        @else
+                            <div class="dash-panel flex gap-3 rounded-xl px-3.5 py-3 min-w-0 sm:col-span-2">
+                                <span class="dash-icon-well flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">
+                                    <ion-icon name="people-outline" class="text-lg" aria-hidden="true"></ion-icon>
+                                </span>
+                                <div class="min-w-0">
+                                    <p class="dash-muted m-0 text-[11px] font-semibold uppercase tracking-wide">Vagas</p>
+                                    <p class="dash-title m-0 mt-0.5 font-medium">{{ $simpleVacancyLabel }}</p>
+                                </div>
+                            </div>
                         @endif
                     </div>
                 </div>
 
                 <!-- Área de inscrição -->
                 <div id="inscricoes" class="flex-shrink-0 w-full lg:w-auto lg:min-w-[280px] flex flex-col items-stretch lg:items-end justify-center gap-3">
-                    @if($event->accepts_submissions)
-                    <a href="{{ route('events.annals', $event->id) }}"
-                       class="w-full lg:w-auto text-center lg:text-right inline-flex items-center justify-center gap-2 text-indigo-700 hover:text-indigo-900 font-semibold text-sm no-underline order-first lg:order-none">
-                        <ion-icon name="book-outline" class="text-lg"></ion-icon>
-                        Anais do evento
+                    @if($event->hasAnnalsPublication())
+                    <a href="{{ route('events.annals.download', $event->id) }}"
+                       class="dash-link w-full lg:w-auto text-center lg:text-right inline-flex items-center justify-center gap-2 font-semibold text-sm no-underline order-first lg:order-none">
+                        <ion-icon name="download-outline" class="text-lg"></ion-icon>
+                        Baixar {{ $event->annalsKindLabel() }}
                     </a>
                     @endif
                     @php
-                        $bloqueio = $event->registrationsBlockedReason();
+                        $bloqueio = $event->registrationsBlockedReasonFor(auth()->user());
+                        $alreadyRegistered = auth()->check() && $event->users()->where('users.id', auth()->id())->exists();
                     @endphp
-                    @if ($bloqueio === 'finalized')
-                        <p class="text-slate-600 text-sm m-0 inline-flex items-start gap-2 max-w-md lg:text-right lg:justify-end">
-                            <ion-icon name="lock-closed-outline" class="text-lg text-slate-500 shrink-0 mt-0.5"></ion-icon>
+                    @if ($alreadyRegistered)
+                        <p class="dash-text text-sm m-0 inline-flex items-start gap-2 max-w-md lg:text-right lg:justify-end">
+                            <ion-icon name="checkmark-circle-outline" class="text-lg text-primary-custom shrink-0 mt-0.5"></ion-icon>
+                            <span>Você já está inscrito neste evento.</span>
+                        </p>
+                    @elseif ($bloqueio === 'finalized')
+                        <p class="dash-text text-sm m-0 inline-flex items-start gap-2 max-w-md lg:text-right lg:justify-end">
+                            <ion-icon name="lock-closed-outline" class="dash-muted text-lg shrink-0 mt-0.5"></ion-icon>
                             <span>Este evento foi finalizado pelo coordenador.</span>
                         </p>
                     @elseif ($bloqueio === 'ended')
-                        <p class="text-slate-600 text-sm m-0 inline-flex items-start gap-2 max-w-md lg:text-right lg:justify-end">
-                            <ion-icon name="flag-outline" class="text-lg text-slate-500 shrink-0 mt-0.5"></ion-icon>
+                        <p class="dash-text text-sm m-0 inline-flex items-start gap-2 max-w-md lg:text-right lg:justify-end">
+                            <ion-icon name="flag-outline" class="dash-muted text-lg shrink-0 mt-0.5"></ion-icon>
                             <span>O período deste evento foi encerrado.</span>
                         </p>
                     @elseif ($bloqueio === 'started')
-                        <p class="text-slate-600 text-sm m-0 inline-flex items-start gap-2 max-w-md lg:text-right lg:justify-end">
-                            <ion-icon name="play-circle-outline" class="text-lg text-slate-500 shrink-0 mt-0.5"></ion-icon>
+                        <p class="dash-text text-sm m-0 inline-flex items-start gap-2 max-w-md lg:text-right lg:justify-end">
+                            <ion-icon name="play-circle-outline" class="dash-muted text-lg shrink-0 mt-0.5"></ion-icon>
                             <span>Este evento está em andamento. As inscrições estão encerradas.</span>
                         </p>
                     @elseif ($bloqueio === 'deadline')
-                        <p class="text-slate-600 text-sm m-0 inline-flex items-start gap-2 max-w-md lg:text-right lg:justify-end">
-                            <ion-icon name="alarm-outline" class="text-lg text-slate-500 shrink-0 mt-0.5"></ion-icon>
+                        <p class="dash-text text-sm m-0 inline-flex items-start gap-2 max-w-md lg:text-right lg:justify-end">
+                            <ion-icon name="alarm-outline" class="dash-muted text-lg shrink-0 mt-0.5"></ion-icon>
                             <span>Prazo de inscrições encerrado.</span>
                         </p>
                     @elseif ($bloqueio === 'full')
-                        <p class="text-slate-600 text-sm m-0 inline-flex items-start gap-2 max-w-md lg:text-right lg:justify-end">
-                            <ion-icon name="close-circle-outline" class="text-lg text-slate-500 shrink-0 mt-0.5"></ion-icon>
+                        <p class="dash-text text-sm m-0 inline-flex items-start gap-2 max-w-md lg:text-right lg:justify-end">
+                            <ion-icon name="close-circle-outline" class="dash-muted text-lg shrink-0 mt-0.5"></ion-icon>
                             <span>Inscrições indisponíveis: lotação esgotada.</span>
+                        </p>
+                    @elseif ($bloqueio === 'internal_full')
+                        <p class="dash-text text-sm m-0 inline-flex items-start gap-2 max-w-md lg:text-right lg:justify-end">
+                            <ion-icon name="close-circle-outline" class="dash-muted text-lg shrink-0 mt-0.5"></ion-icon>
+                            <span>As vagas para participantes internos estão esgotadas.</span>
+                        </p>
+                    @elseif ($bloqueio === 'external_full')
+                        <p class="dash-text text-sm m-0 inline-flex items-start gap-2 max-w-md lg:text-right lg:justify-end">
+                            <ion-icon name="close-circle-outline" class="dash-muted text-lg shrink-0 mt-0.5"></ion-icon>
+                            <span>As vagas para participantes externos estão esgotadas.</span>
                         </p>
                     @else
                         @php
@@ -192,17 +270,17 @@
                             <form action="/events/join/{{ $event['id'] }}" method="POST" class="w-full lg:w-auto">
                                 @csrf
                                 <button type="submit" id="event-submit"
-                                    class="w-full lg:w-auto min-w-[260px] inline-flex items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-semibold px-8 py-4 text-base shadow-lg shadow-emerald-500/25 border border-emerald-400/30 transition-all duration-200 hover:shadow-xl hover:shadow-emerald-500/30 hover:-translate-y-0.5 active:translate-y-0">
+                                    class="dash-btn w-full lg:w-auto min-w-[260px] inline-flex items-center justify-center gap-2.5 rounded-2xl font-semibold px-8 py-4 text-base">
                                     <ion-icon name="person-add-outline" class="text-2xl shrink-0" aria-hidden="true"></ion-icon>
                                     <span>Realizar inscrição</span>
                                 </button>
                             </form>
                         @elseif(auth()->check() && auth()->user()->isCoordinator())
-                            <p class="text-slate-500 text-sm leading-relaxed m-0 max-w-sm lg:text-right border border-slate-200 rounded-xl px-4 py-3 bg-slate-50">
+                            <p class="dash-panel dash-text text-sm leading-relaxed m-0 max-w-sm lg:text-right rounded-xl px-4 py-3">
                                 Coordenadores não fazem inscrição em evento. Para se inscrever, entre com uma conta de participante.
                             </p>
                         @elseif(auth()->check() && auth()->user()->isReviewer())
-                            <p class="text-slate-500 text-sm leading-relaxed m-0 max-w-sm lg:text-right border border-slate-200 rounded-xl px-4 py-3 bg-slate-50">
+                            <p class="dash-panel dash-text text-sm leading-relaxed m-0 max-w-sm lg:text-right rounded-xl px-4 py-3">
                                 Avaliadores não fazem inscrição em evento. Para se inscrever, entre com uma conta de participante.
                             </p>
                         @endif
@@ -212,19 +290,20 @@
 
                     @auth
                 @if(auth()->user()->isCoordinator() && auth()->id() === $event->user_id)
-                    <div class="mt-6 pt-6 border-t border-slate-200">
-                        <h3 class="text-sm font-semibold text-slate-900 m-0 mb-3">Coordenação</h3>
+                    <div class="dash-rule mt-6 pt-6 border-t">
+                        <h3 class="dash-title text-sm font-semibold m-0 mb-3">Coordenação</h3>
                         @if($event->isFinalized())
-                            <p class="text-sm text-slate-600 max-w-2xl">
+                            <p class="dash-text text-sm max-w-2xl mb-4">
                                 Evento finalizado: não é possível editar, gerenciar inscritos ou novidades. A página permanece visível ao público e você pode excluir o evento no painel.
                             </p>
+                            @include('events.partials.annals-upload-form', ['event' => $event])
                         @elseif($event->calendarEnded() || config('app.allow_early_event_finalize'))
                             @if(! $event->calendarEnded() && config('app.allow_early_event_finalize'))
                                 <p class="text-sm text-amber-900 mb-3 max-w-2xl rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
                                     Modo de teste: a finalização antes do horário de fim está ativa (<code class="text-xs bg-amber-100/80 px-1 rounded">EVENT_ALLOW_EARLY_FINALIZE</code> no <code class="text-xs bg-amber-100/80 px-1 rounded">.env</code>). Use para validar certificados e fluxos pós evento; desligue em produção.
                                 </p>
                             @else
-                                <p class="text-sm text-slate-600 mb-3 max-w-2xl">
+                                <p class="dash-text text-sm mb-3 max-w-2xl">
                                     O período do evento já terminou conforme data e horário de fim. Para encerrar de forma definitiva (sem edição nem gestão), finalize abaixo.
                                 </p>
                             @endif
@@ -233,15 +312,15 @@
                                       onsubmit="return confirm('Finalizar definitivamente? Você não poderá mais editar o evento, novidades ou inscritos.');">
                                     @csrf
                                     <button type="submit"
-                                        class="inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition-colors">
+                                        class="dash-btn inline-flex items-center justify-center gap-2 font-semibold px-4 py-2.5 rounded-xl text-sm">
                                         <ion-icon name="checkmark-done-outline" class="text-lg"></ion-icon>
                                         Finalizar evento
                                     </button>
                                 </form>
                             </div>
                         @else
-                            <p class="text-sm text-slate-500 max-w-2xl">
-                                Datas, horários e prazos de inscrição e de submissão podem ser ajustados na edição até a finalização. Se a mudança deixar uma atividade ou uma apresentação fora do novo período, o salvamento é recusado e a mensagem lista o que corrigir. Sem horário de início e de fim, as inscrições seguem pelo prazo de inscrição, o evento não aparece como encerrado e não pode ser finalizado, e apresentações não podem ser agendadas. Quando os dois horários existem, novas inscrições encerram na data e hora de início. Quando o período terminar, esta área mostra a opção de <span class="text-slate-700 font-medium">finalizar</span> o evento.
+                            <p class="dash-muted text-sm max-w-2xl">
+                                Datas, horários e prazos de inscrição e de submissão podem ser ajustados na edição até a finalização. Se a mudança deixar uma atividade ou uma apresentação fora do novo período, o salvamento é recusado e a mensagem lista o que corrigir. Sem horário de início e de fim, as inscrições seguem pelo prazo de inscrição, o evento não aparece como encerrado e não pode ser finalizado, e apresentações não podem ser agendadas. Quando os dois horários existem, novas inscrições encerram na data e hora de início. Quando o período terminar, esta área mostra a opção de <span class="dash-title font-medium">finalizar</span> o evento.
                             </p>
                         @endif
                     </div>
@@ -251,16 +330,16 @@
     </section>
 
     <!-- ===== CONTEÚDO PRINCIPAL ===== -->
-    <section class="bg-slate-50/50 py-12 sm:py-16 lg:py-20 overflow-x-hidden">
+    <section class="py-12 sm:py-16 lg:py-20 overflow-x-hidden">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-w-0">
         <div id="eventPage" class="space-y-12">
 
             <!-- ===== SEÇÃO: SOBRE O EVENTO ===== -->
             <div class="space-y-6">
-                <h2 class="text-xl sm:text-2xl font-bold text-slate-900 border-l-4 border-emerald-500 pl-4">Sobre o Evento</h2>
+                <h2 class="dash-heading text-xl sm:text-2xl font-bold">Sobre o Evento</h2>
                 
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 lg:p-10 overflow-hidden">
-                    <div id="eventDescription" class="text-slate-600 leading-relaxed break-words [overflow-wrap:anywhere] text-[15px] [&_p]:mb-4 [&_p:last-child]:mb-0 [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:mb-3 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-4 [&_li]:mb-1 [&_a]:text-emerald-600 [&_a]:hover:text-emerald-700">
+                <div class="dash-card rounded-2xl p-6 sm:p-8 lg:p-10 overflow-hidden">
+                    <div id="eventDescription" class="dash-text leading-relaxed break-words [overflow-wrap:anywhere] text-[15px] [&_p]:mb-4 [&_p:last-child]:mb-0 [&_h1]:text-2xl [&_h1]:font-semibold [&_h1]:mb-3 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mb-2 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-4 [&_li]:mb-1">
                         {!! \Mews\Purifier\Facades\Purifier::clean($event->description) !!}
                     </div>
                 </div>
@@ -268,56 +347,55 @@
 
             <!-- ===== SEÇÃO: LOCALIZAÇÃO / ACESSO ===== -->
             <div class="space-y-6 min-w-0 overflow-hidden">
-                <h2 class="text-xl sm:text-2xl font-bold text-slate-900 border-l-4 border-emerald-500 pl-4">
+                <h2 class="dash-heading text-xl sm:text-2xl font-bold">
                     @if($event->modality === 'Online')
                         Acesso ao evento
                     @else
                         Localização
                     @endif
                 </h2>
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 lg:p-10 min-w-0 overflow-hidden">
+                <div class="dash-card rounded-2xl p-6 sm:p-8 lg:p-10 min-w-0 overflow-hidden">
                     @if($event->modality === 'Online')
-                        <div class="text-sm text-slate-700 space-y-4 max-w-2xl">
+                        <div class="dash-text text-sm space-y-4 max-w-2xl">
                             <p class="m-0 leading-relaxed">
-                                Este evento é <strong class="text-slate-900">100% online</strong>. Não há sede física de realização divulgada nesta página — o acesso é remoto (meet, plataforma EAD, etc.).
+                                Este evento é <strong class="dash-title">100% online</strong>. Não há sede física de realização divulgada nesta página — o acesso é remoto (meet, plataforma EAD, etc.).
                             </p>
                             @if($event->ead_link)
                                 <p class="m-0">
-                                    <a href="{{ $event->ead_link }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-emerald-600 hover:text-emerald-700 font-semibold">
+                                    <a href="{{ $event->ead_link }}" target="_blank" rel="noopener noreferrer" class="dash-link inline-flex items-center gap-1.5 font-semibold">
                                         Abrir link do ambiente <ion-icon name="open-outline" class="text-base"></ion-icon>
                                     </a>
                                 </p>
                             @else
-                                <p class="text-slate-500 m-0">O link do ambiente ainda não foi informado na ficha do evento.</p>
+                                <p class="dash-muted m-0">O link do ambiente ainda não foi informado na ficha do evento.</p>
                             @endif
                         </div>
                     @else
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                             <ul class="space-y-3 text-sm">
                                 <li>
-                                    <span class="text-slate-500 block">Local fixo @if($event->modality === 'Híbrido') (presencial)@endif</span>
-                                    <span class="text-slate-800 font-semibold">{{ \App\Models\Event::FIXED_VENUE }}</span>
+                                    <span class="dash-muted block">Local fixo @if($event->modality === 'Híbrido') (presencial)@endif</span>
+                                    <span class="dash-title font-semibold">{{ \App\Models\Event::FIXED_VENUE }}</span>
                                 </li>
                                 <li class="min-w-0 overflow-hidden">
-                                    <span class="text-slate-500 block">Endereço</span>
-                                    <span class="text-slate-800 font-medium break-words [overflow-wrap:anywhere]">{{ \App\Models\Event::FIXED_ADDRESS }}</span>
+                                    <span class="dash-muted block">Endereço</span>
+                                    <span class="dash-title font-medium break-words [overflow-wrap:anywhere]">{{ \App\Models\Event::FIXED_ADDRESS }}</span>
                                 </li>
                                 <li>
-                                    <a href="https://www.google.com/maps/search/?api=1&query={{ urlencode(\App\Models\Event::FIXED_ADDRESS) }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-700 font-medium">
+                                    <a href="https://www.google.com/maps/search/?api=1&query={{ urlencode(\App\Models\Event::FIXED_ADDRESS) }}" target="_blank" rel="noopener noreferrer" class="dash-link inline-flex items-center gap-1 font-medium">
                                         Abrir no Google Maps <ion-icon name="open-outline" class="text-sm"></ion-icon>
                                     </a>
                                 </li>
                                 @if($event->modality === 'Híbrido')
-                                    <li class="pt-2 border-t border-slate-100">
-                                        <span class="text-slate-500 block mb-1">Modalidade híbrida</span>
-                                        <span class="text-slate-800">Há transmissão ou atividades online além do presencial no campus.@if($event->ead_link) Consulte também o <a href="{{ $event->ead_link }}" target="_blank" rel="noopener noreferrer" class="text-emerald-600 hover:text-emerald-700 font-semibold">ambiente EAD</a>.@endif</span>
+                                    <li class="dash-rule pt-2 border-t">
+                                        <span class="dash-muted block mb-1">Modalidade híbrida</span>
+                                        <span class="dash-title">Há transmissão ou atividades online além do presencial no campus.@if($event->ead_link) Consulte também o <a href="{{ $event->ead_link }}" target="_blank" rel="noopener noreferrer" class="dash-link font-semibold">ambiente EAD</a>.@endif</span>
                                     </li>
                                 @endif
                             </ul>
                             <iframe
                                 src="{{ \App\Models\Event::FIXED_MAP_EMBED_URL }}"
-                                class="w-full h-72 rounded-lg border border-slate-200"
-                                style="border:0;"
+                                class="dash-preview w-full h-72 rounded-lg"
                                 loading="lazy"
                                 referrerpolicy="no-referrer-when-downgrade"
                                 allowfullscreen
@@ -330,27 +408,27 @@
 
             <!-- ===== SEÇÃO: ORGANIZAÇÃO E CONTATO ===== -->
             <div class="space-y-6 min-w-0 overflow-hidden">
-                <h2 class="text-xl sm:text-2xl font-bold text-slate-900 border-l-4 border-emerald-500 pl-4">Organização e contato</h2>
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 lg:p-10 min-w-0 overflow-hidden">
+                <h2 class="dash-heading text-xl sm:text-2xl font-bold">Organização e contato</h2>
+                <div class="dash-card rounded-2xl p-6 sm:p-8 lg:p-10 min-w-0 overflow-hidden">
                     <ul class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <li>
-                            <span class="text-slate-500 block">Organizado por</span>
-                            <span id="eventCoordinator" class="text-slate-800 font-medium">{{ $event->coordinator_name }}</span>
+                            <span class="dash-muted block">Organizado por</span>
+                            <span id="eventCoordinator" class="dash-title font-medium">{{ $event->coordinator_name }}</span>
                         </li>
                         @if(filled($event->coordinator_phone))
                         <li>
-                            <span class="text-slate-500 block">Contato</span>
-                            <span id="eventPhone" class="text-slate-800 font-medium">{{ $event->coordinator_phone }}</span>
+                            <span class="dash-muted block">Contato</span>
+                            <span id="eventPhone" class="dash-title font-medium">{{ $event->coordinator_phone }}</span>
                         </li>
                         @endif
                         <li class="md:col-span-2">
-                            <span class="text-slate-500 block">Entrar em contato</span>
-                            <a href="mailto:{{ $event->coordinator_email }}" id="eventEmail" class="text-emerald-600 hover:text-emerald-700 font-medium break-all">{{ $event->coordinator_email }}</a>
+                            <span class="dash-muted block">Entrar em contato</span>
+                            <a href="mailto:{{ $event->coordinator_email }}" id="eventEmail" class="dash-link font-medium break-all">{{ $event->coordinator_email }}</a>
                         </li>
                         @if($event->ead_link)
                         <li class="md:col-span-2">
-                            <span class="text-slate-500 block">Ambiente EAD</span>
-                            <a href="{{ $event->ead_link }}" id="eventEADLink" target="_blank" class="text-emerald-600 hover:text-emerald-700 font-medium inline-flex items-center gap-1">
+                            <span class="dash-muted block">Ambiente EAD</span>
+                            <a href="{{ $event->ead_link }}" id="eventEADLink" target="_blank" class="dash-link font-medium inline-flex items-center gap-1">
                                 Acessar <ion-icon name="open-outline" class="text-sm"></ion-icon>
                             </a>
                         </li>
@@ -361,9 +439,9 @@
 
             <!-- ===== SEÇÃO: ATIVIDADES ===== -->
             <div class="space-y-6">
-                <h2 class="text-xl sm:text-2xl font-bold text-slate-900 border-l-4 border-emerald-500 pl-4">Atividades</h2>
+                <h2 class="dash-heading text-xl sm:text-2xl font-bold">Atividades</h2>
 
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 lg:p-10">
+                <div class="dash-card rounded-2xl p-6 sm:p-8 lg:p-10">
                     @php
                         $activities = $event->activities->sortBy('start_at')->values();
                         $activitiesByDay = $activities->groupBy(function ($activity) {
@@ -372,9 +450,9 @@
                         $firstDayKey = $activitiesByDay->keys()->first();
                     @endphp
                     @if($activities->isEmpty())
-                        <p class="text-slate-600 text-sm m-0">A programação ainda não possui atividades cadastradas.</p>
+                        <p class="dash-text text-sm m-0">A programação ainda não possui atividades cadastradas.</p>
                     @else
-                        <div class="border-b border-slate-200 mb-4">
+                        <div class="dash-rule border-b mb-4">
                             <div class="flex gap-2 overflow-x-auto pb-2">
                                 @foreach($activitiesByDay as $dayKey => $dayActivities)
                                     @php
@@ -382,7 +460,7 @@
                                     @endphp
                                     <button
                                         type="button"
-                                        class="activity-day-tab px-4 py-2 rounded-lg border text-sm font-medium whitespace-nowrap transition-colors {{ $dayKey === $firstDayKey ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50' }}"
+                                        class="activity-day-tab px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors {{ $dayKey === $firstDayKey ? 'is-active' : '' }}"
                                         data-day="{{ $dayKey }}"
                                     >
                                         {{ $dayDate->locale('pt_BR')->translatedFormat('l, d/m') }}
@@ -400,7 +478,7 @@
                                     @endphp
                                     <button
                                         type="button"
-                                        class="activity-open-modal w-full text-left p-4 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors"
+                                        class="activity-open-modal dash-panel w-full text-left p-4 rounded-xl transition-colors hover:border-[var(--dash-brand)]"
                                         data-title="{{ $activity->title }}"
                                         data-type="{{ ($activityTypeLabels ?? [])[$activity->type] ?? ucfirst($activity->type) }}"
                                         data-location="{{ $activity->location ?? 'Não informado' }}"
@@ -429,8 +507,8 @@
                                         data-speakers="{{ json_encode($speakersForModal, JSON_UNESCAPED_UNICODE) }}"
                                     >
                                         <div class="flex items-start justify-between gap-3">
-                                            <p class="font-semibold text-slate-900 m-0 break-words">{{ $activity->title }}</p>
-                                            <span class="text-sm text-slate-600 font-semibold">{{ $timeLabel }}</span>
+                                            <p class="dash-title font-semibold m-0 break-words">{{ $activity->title }}</p>
+                                            <span class="dash-muted text-sm font-semibold">{{ $timeLabel }}</span>
                                         </div>
                                     </button>
                                 @endforeach
@@ -442,11 +520,11 @@
 
             <!-- ===== SEÇÃO: CONVIDADOS ===== -->
             <div class="space-y-6 min-w-0 overflow-hidden">
-                <h2 class="text-xl sm:text-2xl font-bold text-slate-900 border-l-4 border-emerald-500 pl-4">Convidados</h2>
+                <h2 class="dash-heading text-xl sm:text-2xl font-bold">Convidados</h2>
 
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 lg:p-10 min-w-0 overflow-hidden">
+                <div class="dash-card rounded-2xl p-6 sm:p-8 lg:p-10 min-w-0 overflow-hidden">
                     @if($event->guests->isEmpty())
-                        <p class="text-slate-600 text-sm m-0">Nenhum convidado cadastrado neste evento ainda.</p>
+                        <p class="dash-text text-sm m-0">Nenhum convidado cadastrado neste evento ainda.</p>
                     @else
                         <ul class="grid grid-cols-1 sm:grid-cols-2 gap-4 list-none m-0 p-0">
                             @foreach($event->guests as $guest)
@@ -456,20 +534,20 @@
                                         $guestFn = ucfirst((string) $guest->role_type);
                                     }
                                 @endphp
-                                <li class="flex gap-3 p-4 rounded-xl border border-slate-200 bg-slate-50/80 min-w-0">
-                                    <div class="w-10 h-10 rounded-lg bg-slate-900 flex items-center justify-center flex-shrink-0">
-                                        <ion-icon name="person-outline" class="text-white text-lg" aria-hidden="true"></ion-icon>
+                                <li class="dash-panel flex gap-3 p-4 rounded-xl min-w-0">
+                                    <div class="dash-avatar w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <ion-icon name="person-outline" class="text-lg" aria-hidden="true"></ion-icon>
                                     </div>
                                     <div class="min-w-0 flex-1">
-                                        <p class="font-semibold text-slate-900 m-0 text-sm sm:text-base break-words [overflow-wrap:anywhere]">
+                                        <p class="dash-title font-semibold m-0 text-sm sm:text-base break-words [overflow-wrap:anywhere]">
                                             {{ $guest->name }}
                                         </p>
                                         @if(filled($guestFn))
-                                            <p class="text-slate-600 text-xs sm:text-sm m-0 mt-1">{{ $guestFn }}</p>
+                                            <p class="dash-text text-xs sm:text-sm m-0 mt-1">{{ $guestFn }}</p>
                                         @endif
                                         @if(filled($guest->role))
-                                            <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500 m-0 mt-3">Formação</p>
-                                            <p class="text-slate-600 text-xs sm:text-sm m-0 mt-1 leading-relaxed whitespace-pre-line break-words [overflow-wrap:anywhere]">
+                                            <p class="dash-muted text-[11px] font-semibold uppercase tracking-wide m-0 mt-3">Formação</p>
+                                            <p class="dash-text text-xs sm:text-sm m-0 mt-1 leading-relaxed whitespace-pre-line break-words [overflow-wrap:anywhere]">
                                                 {{ $guest->role }}
                                             </p>
                                         @endif
@@ -484,15 +562,15 @@
             <!-- ===== SEÇÃO: PÚBLICO-ALVO ===== -->
             @if($event->target_audience && count($event->target_audience) > 0)
             <div class="space-y-6 min-w-0 overflow-hidden">
-                <h2 class="text-xl sm:text-2xl font-bold text-slate-900 border-l-4 border-emerald-500 pl-4">Público-Alvo</h2>
+                <h2 class="dash-heading text-xl sm:text-2xl font-bold">Público-Alvo</h2>
 
                 <div class="flex flex-wrap gap-3 min-w-0">
                     @foreach($event->target_audience as $audience)
                         @php
                             $a = is_string($audience) ? json_decode($audience, true) : $audience;
                         @endphp
-                        <span class="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-slate-200 text-slate-700 text-sm min-w-0 max-w-full overflow-hidden">
-                            <ion-icon name="checkmark" class="text-emerald-500 text-base flex-shrink-0"></ion-icon>
+                        <span class="dash-badge inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm min-w-0 max-w-full overflow-hidden">
+                            <ion-icon name="checkmark" class="text-primary-custom text-base flex-shrink-0"></ion-icon>
                             <span class="min-w-0 break-words [overflow-wrap:anywhere]">{{ $a['name'] ?? $a ?? '' }}</span>
                         </span>
                     @endforeach
@@ -503,16 +581,16 @@
             <!-- ===== SEÇÃO: PRÉ-REQUISITOS ===== -->
             @if($event->prerequisites && count($event->prerequisites) > 0)
             <div class="space-y-6 min-w-0 overflow-hidden">
-                <h2 class="text-xl sm:text-2xl font-bold text-slate-900 border-l-4 border-emerald-500 pl-4">Pré-Requisitos</h2>
+                <h2 class="dash-heading text-xl sm:text-2xl font-bold">Pré-Requisitos</h2>
 
                 <ul class="space-y-3 min-w-0">
                     @foreach($event->prerequisites as $prereq)
                         @php
                             $p = is_string($prereq) ? json_decode($prereq, true) : $prereq;
                         @endphp
-                        <li class="flex items-start gap-3 p-4 bg-white rounded-xl border border-slate-200 min-w-0 overflow-hidden">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 flex-shrink-0"></span>
-                            <span class="text-slate-700 text-sm leading-relaxed break-words min-w-0">{{ $p['name'] ?? $p ?? '' }}</span>
+                        <li class="dash-card flex items-start gap-3 p-4 rounded-xl min-w-0 overflow-hidden">
+                            <span class="w-1.5 h-1.5 rounded-full bg-primary-custom mt-2 flex-shrink-0"></span>
+                            <span class="dash-text text-sm leading-relaxed break-words min-w-0">{{ $p['name'] ?? $p ?? '' }}</span>
                         </li>
                     @endforeach
                 </ul>
@@ -521,21 +599,21 @@
 
             @if($event->acceptsSubmissions() || ($acceptedWorkTypes ?? collect())->isNotEmpty())
             <div class="space-y-6 min-w-0 overflow-hidden">
-                <h2 class="text-xl sm:text-2xl font-bold text-slate-900 border-l-4 border-emerald-500 pl-4">Submissões Científicas</h2>
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 lg:p-10">
+                <h2 class="dash-heading text-xl sm:text-2xl font-bold">Submissões Científicas</h2>
+                <div class="dash-card rounded-2xl p-6 sm:p-8 lg:p-10">
                     @if(!$event->acceptsSubmissions())
-                        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                            <p class="text-slate-700 m-0">
+                        <div class="dash-panel rounded-xl p-4">
+                            <p class="dash-text m-0">
                                 Este evento está configurado para participação/aprendizado e não recebe submissão de trabalhos.
                             </p>
                         </div>
                     @else
                         @if($event->submission_deadline_at)
-                            <div class="flex flex-wrap items-start gap-3 p-4 rounded-xl border border-slate-200 bg-slate-50 mb-6">
-                                <ion-icon name="calendar-clear-outline" class="text-slate-600 text-xl shrink-0 mt-0.5" aria-hidden="true"></ion-icon>
+                            <div class="dash-panel flex flex-wrap items-start gap-3 p-4 rounded-xl mb-6">
+                                <ion-icon name="calendar-clear-outline" class="dash-muted text-xl shrink-0 mt-0.5" aria-hidden="true"></ion-icon>
                                 <div class="min-w-0">
-                                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 m-0">Prazo de submissão</p>
-                                    <p class="text-slate-800 font-medium m-0 mt-1 text-sm sm:text-base">
+                                    <p class="dash-muted text-xs font-semibold uppercase tracking-wide m-0">Prazo de submissão</p>
+                                    <p class="dash-title font-medium m-0 mt-1 text-sm sm:text-base">
                                         {{ $event->submission_deadline_at->format('d/m/Y') }} às {{ $event->submission_deadline_at->format('H:i') }}
                                     </p>
                                 </div>
@@ -544,10 +622,10 @@
 
                         @if(($acceptedWorkTypes ?? collect())->isNotEmpty())
                             <div class="mb-6">
-                                <h3 class="font-semibold text-slate-900 mb-3">Tipos de trabalho aceitos</h3>
+                                <h3 class="dash-title font-semibold mb-3">Tipos de trabalho aceitos</h3>
                                 <div class="flex flex-wrap gap-2">
                                     @foreach($acceptedWorkTypes as $workType)
-                                        <span class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-sm">
+                                        <span class="dash-badge px-3 py-1 rounded-full text-sm">
                                             {{ \App\Models\Work::workTypeLabels()[$workType] ?? $workType }}
                                         </span>
                                     @endforeach
@@ -561,25 +639,25 @@
 
             <!-- ===== SEÇÃO: DOCUMENTOS E ANEXOS ===== -->
             <div class="space-y-6">
-                <h2 class="text-xl sm:text-2xl font-bold text-slate-900 border-l-4 border-emerald-500 pl-4">Documentos e Anexos</h2>
+                <h2 class="dash-heading text-xl sm:text-2xl font-bold">Documentos e Anexos</h2>
 
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 lg:p-10">
+                <div class="dash-card rounded-2xl p-6 sm:p-8 lg:p-10">
                     @if($event->documents->isEmpty())
-                        <p class="text-slate-600 text-sm m-0">Ainda não há documentos publicados para este evento.</p>
+                        <p class="dash-text text-sm m-0">Ainda não há documentos publicados para este evento.</p>
                     @else
                         <div class="space-y-3">
                             @foreach($event->documents as $document)
-                                <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                <div class="dash-panel p-4 rounded-xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                                     <div>
-                                        <p class="font-semibold text-slate-900 m-0">{{ $document->title }}</p>
-                                        <p class="text-sm text-slate-600 mt-1 mb-0">
+                                        <p class="dash-title font-semibold m-0">{{ $document->title }}</p>
+                                        <p class="dash-muted text-sm mt-1 mb-0">
                                             {{ $documentTypeLabels[$document->document_type] ?? 'Documento' }}
                                             • Publicado em {{ $document->created_at->format('d/m/Y H:i') }}
                                         </p>
                                     </div>
                                     <div class="flex flex-wrap items-center gap-2">
                                         <a href="{{ route('events.documents.download', [$event->id, $document->id]) }}"
-                                           class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium no-underline transition-colors">
+                                           class="dash-btn inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium no-underline">
                                             <ion-icon name="download-outline"></ion-icon>
                                             Baixar
                                         </a>
@@ -593,27 +671,28 @@
 
             <!-- ===== SEÇÃO: NOVIDADES ===== -->
             <div class="space-y-6">
-                <h2 class="text-xl sm:text-2xl font-bold text-slate-900 border-l-4 border-emerald-500 pl-4">Novidades</h2>
+                <h2 class="dash-heading text-xl sm:text-2xl font-bold">Novidades</h2>
 
                 @if($event->eventNews->isNotEmpty())
                     <div class="space-y-4">
                         @foreach($event->eventNews as $novidade)
-                            <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm border-l-4 border-l-emerald-500 min-w-0 overflow-hidden">
-                                <div class="flex items-start gap-4 min-w-0">
-                                    <div class="w-10 h-10 bg-slate-900 rounded-lg flex items-center justify-center flex-shrink-0">
-                                        <ion-icon name="megaphone-outline" class="text-white text-lg"></ion-icon>
+                            <div class="dash-card relative rounded-xl p-6 min-w-0 overflow-hidden">
+                                <span class="dash-rail" aria-hidden="true"></span>
+                                <div class="flex items-start gap-4 min-w-0 pl-2">
+                                    <div class="dash-avatar w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <ion-icon name="megaphone-outline" class="text-lg"></ion-icon>
                                     </div>
                                     <div class="min-w-0 flex-1">
-                                        <h3 class="font-semibold text-slate-900 mb-1 break-words">{{ $novidade->title }}</h3>
-                                        <p class="text-slate-600 leading-relaxed text-sm break-words [overflow-wrap:anywhere]">{{ $novidade->content }}</p>
-                                        <span class="text-slate-400 text-xs mt-2 block">{{ $novidade->created_at->format('d/m/Y') }}</span>
+                                        <h3 class="dash-title font-semibold mb-1 break-words">{{ $novidade->title }}</h3>
+                                        <p class="dash-text leading-relaxed text-sm break-words [overflow-wrap:anywhere]">{{ $novidade->content }}</p>
+                                        <span class="dash-muted text-xs mt-2 block">{{ $novidade->created_at->format('d/m/Y') }}</span>
                                     </div>
                                 </div>
                             </div>
                         @endforeach
                     </div>
                 @else
-                    <p class="text-slate-600 text-sm">Este evento ainda não possui novidades.</p>
+                    <p class="dash-text text-sm">Este evento ainda não possui novidades.</p>
                 @endif
             </div>
 
@@ -623,36 +702,36 @@
 </div>
 
 <div id="activityDetailModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 px-4">
-    <div class="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-auto shadow-2xl">
-        <div class="p-4 sm:p-5 border-b border-slate-200 flex items-start justify-between gap-3">
-            <h3 id="activityModalTitle" class="text-base sm:text-lg font-semibold text-slate-900 leading-snug m-0 pr-2"></h3>
-            <button type="button" id="activityModalCloseTop" class="text-slate-400 hover:text-slate-600 text-2xl leading-none shrink-0" aria-label="Fechar">&times;</button>
+    <div class="dash-card rounded-2xl w-full max-w-lg max-h-[90vh] overflow-auto">
+        <div class="dash-rule p-4 sm:p-5 border-b flex items-start justify-between gap-3">
+            <h3 id="activityModalTitle" class="dash-title text-base sm:text-lg font-semibold leading-snug m-0 pr-2"></h3>
+            <button type="button" id="activityModalCloseTop" class="dash-muted hover:text-[var(--dash-title)] text-2xl leading-none shrink-0" aria-label="Fechar">&times;</button>
         </div>
         <div class="p-4 sm:p-5 space-y-4 text-sm">
             <div id="activityModalSpeakersWrap" class="hidden">
-                <h4 class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Convidados</h4>
+                <h4 class="dash-muted text-xs font-semibold uppercase tracking-wide mb-2">Convidados</h4>
                 <div id="activityModalSpeakers" class="space-y-2"></div>
             </div>
 
             <div>
-                <h4 class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Tipo</h4>
-                <p id="activityModalType" class="text-slate-800 text-sm m-0"></p>
+                <h4 class="dash-muted text-xs font-semibold uppercase tracking-wide mb-1">Tipo</h4>
+                <p id="activityModalType" class="dash-title text-sm m-0"></p>
             </div>
             <div>
-                <h4 class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Local</h4>
-                <p id="activityModalLocation" class="text-slate-800 text-sm m-0"></p>
+                <h4 class="dash-muted text-xs font-semibold uppercase tracking-wide mb-1">Local</h4>
+                <p id="activityModalLocation" class="dash-title text-sm m-0"></p>
             </div>
             <div>
-                <h4 class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Data e horário</h4>
-                <p id="activityModalDatetime" class="text-slate-800 text-sm m-0"></p>
+                <h4 class="dash-muted text-xs font-semibold uppercase tracking-wide mb-1">Data e horário</h4>
+                <p id="activityModalDatetime" class="dash-title text-sm m-0"></p>
             </div>
             <div id="activityModalDescriptionWrap" class="hidden">
-                <h4 class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Descrição</h4>
-                <p id="activityModalDescription" class="text-slate-600 text-sm leading-relaxed whitespace-pre-line m-0"></p>
+                <h4 class="dash-muted text-xs font-semibold uppercase tracking-wide mb-1">Descrição</h4>
+                <p id="activityModalDescription" class="dash-text text-sm leading-relaxed whitespace-pre-line m-0"></p>
             </div>
         </div>
         <div class="p-4 sm:px-5 sm:pb-5 pt-0 flex justify-end">
-            <button type="button" id="activityModalCloseBottom" class="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm hover:bg-slate-50">
+            <button type="button" id="activityModalCloseBottom" class="dash-btn-secondary px-4 py-2 rounded-lg text-sm">
                 Fechar
             </button>
         </div>
@@ -668,11 +747,9 @@ document.addEventListener('DOMContentLoaded', function () {
         tab.addEventListener('click', () => {
             const day = tab.dataset.day;
             tabs.forEach((item) => {
-                item.classList.remove('bg-slate-900', 'text-white', 'border-slate-900');
-                item.classList.add('bg-white', 'text-slate-700', 'border-slate-300');
+                item.classList.remove('is-active');
             });
-            tab.classList.add('bg-slate-900', 'text-white', 'border-slate-900');
-            tab.classList.remove('bg-white', 'text-slate-700', 'border-slate-300');
+            tab.classList.add('is-active');
 
             panels.forEach((panel) => {
                 panel.classList.toggle('hidden', panel.dataset.dayPanel !== day);
@@ -729,10 +806,10 @@ document.addEventListener('DOMContentLoaded', function () {
             if (Array.isArray(speakers) && speakers.length > 0) {
                 speakers.forEach((speaker) => {
                     const line = document.createElement('div');
-                    line.className = 'p-2.5 rounded-lg border border-slate-200 bg-slate-50';
+                    line.className = 'dash-panel p-2.5 rounded-lg';
 
                     const name = document.createElement('p');
-                    name.className = 'font-medium text-slate-800 text-sm m-0';
+                    name.className = 'dash-title font-medium text-sm m-0';
                     name.textContent = speaker?.name || 'Convidado';
                     line.appendChild(name);
 
@@ -741,7 +818,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         : '';
                     if (roleText) {
                         const fn = document.createElement('p');
-                        fn.className = 'text-xs text-slate-600 m-0 mt-1 leading-snug';
+                        fn.className = 'dash-muted text-xs m-0 mt-1 leading-snug';
                         fn.textContent = roleText;
                         line.appendChild(fn);
                     }

@@ -3,6 +3,8 @@ import './a11y.js'
 
 /* Bootstrap */
 import 'bootstrap/dist/css/bootstrap.min.css'
+import '../css/app-select.css'
+import './app-select.js'
 import { Tooltip } from 'bootstrap'
 
 /* DataTables Bootstrap 5 */
@@ -117,12 +119,31 @@ document.addEventListener('DOMContentLoaded', function () {
     const participantsTable = document.getElementById('participantsTable')
     if (!participantsTable) return
 
-    new DataTable(participantsTable, {
+    let audienceFilter = 'all'
+    const audienceButtons = document.querySelectorAll('[data-audience-filter]')
+
+    DataTable.ext.search.push((settings, data) => {
+        if (settings.nTable !== participantsTable || audienceFilter === 'all') {
+            return true
+        }
+
+        const category = String(data[3] || '').toLowerCase()
+        if (audienceFilter === 'internal') {
+            return category.includes('interno')
+        }
+        if (audienceFilter === 'external') {
+            return category.includes('externo')
+        }
+
+        return true
+    })
+
+    const table = new DataTable(participantsTable, {
         responsive: true,
         pageLength: 10,
         lengthMenu: [10, 25, 50, 100],
         columnDefs: [
-            { orderable: false, targets: 5 } // coluna Ações
+            { orderable: false, targets: -1 }
         ],
         language: {
             decimal: "",
@@ -147,5 +168,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 sortDescending: ": ativar para ordenar a coluna de forma decrescente"
             }
         }
+    })
+
+    audienceButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            audienceFilter = button.getAttribute('data-audience-filter') || 'all'
+            audienceButtons.forEach((item) => {
+                item.classList.toggle('is-active', item === button)
+            })
+            table.draw()
+        })
     })
 })

@@ -8,9 +8,14 @@ use App\Models\User;
 use App\Models\Work;
 use App\Models\WorkReviewer;
 use App\Models\WorkVersion;
+use App\Notifications\ReviewerAssigned;
+use App\Notifications\WorkDecisionRecorded;
+use App\Services\EventMailer;
 use App\Services\WorkScoreService;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -332,7 +337,7 @@ class ReviewController extends Controller
     /**
      * @throws \RuntimeException
      */
-    private function uploadReviewerRefinedCorrectionFile(\Illuminate\Http\UploadedFile $file, Work $work, int $reviewerUserId): string
+    private function uploadReviewerRefinedCorrectionFile(UploadedFile $file, Work $work, int $reviewerUserId): string
     {
         $extension = strtolower($file->getClientOriginalExtension() ?: 'pdf');
         $fileName = 'corr-w'.$work->id.'-r'.$reviewerUserId.'-'.md5($file->getClientOriginalName().now()->timestamp.rand()).'.'.$extension;
@@ -364,7 +369,7 @@ class ReviewController extends Controller
     /**
      * @throws \RuntimeException
      */
-    private function uploadOfficialWorkFile(\Illuminate\Http\UploadedFile $file): string
+    private function uploadOfficialWorkFile(UploadedFile $file): string
     {
         $extension = strtolower($file->getClientOriginalExtension() ?: 'pdf');
         $fileName = 'official-'.md5($file->getClientOriginalName().now()->timestamp.rand()).'.'.$extension;
@@ -422,7 +427,7 @@ class ReviewController extends Controller
         }
     }
 
-    private function fetchEvaluatorFeedbackFromStorage(string $fileName): ?\Illuminate\Http\Client\Response
+    private function fetchEvaluatorFeedbackFromStorage(string $fileName): ?Response
     {
         foreach ([
             (string) config('services.supabase.bucket_corrected_works'),
@@ -568,7 +573,8 @@ class ReviewController extends Controller
 
         $rotationOrder = $validReviewerIds->values();
         $rotationIndex = 0;
-        DB::transaction(function () use ($works, $rotationOrder, $reviewersPerWork, &$rotationIndex) {
+        $newlyAssignedReviewerIds = [];
+        DB::transaction(function () use ($works, $rotationOrder, $reviewersPerWork, &$rotationIndex, &$newlyAssignedReviewerIds) {
             foreach ($works as $work) {
                 $eligibleForWork = $rotationOrder
                     ->reject(fn (int $id) => $id === (int) $work->submitter_user_id)
@@ -630,6 +636,7 @@ class ReviewController extends Controller
                             'assigned_at' => now(),
                             'status' => WorkReviewer::STATUS_ASSIGNED,
                         ]);
+                        $newlyAssignedReviewerIds[] = [(int) $work->id, (int) $reviewerId];
 
                         continue;
                     }
@@ -649,6 +656,8 @@ class ReviewController extends Controller
             }
         });
 
+        $this->notifyNewlyAssignedReviewers($newlyAssignedReviewerIds);
+
         $worksCount = $works->count();
         $label = $worksCount > 1 ? 'trabalhos' : 'trabalho';
 
@@ -656,6 +665,22 @@ class ReviewController extends Controller
             'msg',
             "Distribuição concluída para {$worksCount} {$label}. Cada trabalho ficou com {$reviewersPerWork} avaliadores."
         );
+    }
+
+    /**
+     * @param  list<array{0: int, 1: int}>  $pairs
+     */
+    private function notifyNewlyAssignedReviewers(array $pairs): void
+    {
+        foreach ($pairs as [$workId, $reviewerId]) {
+            $work = Work::with('event')->find($workId);
+            $reviewer = User::find($reviewerId);
+            if (! $work || ! $reviewer) {
+                continue;
+            }
+
+            EventMailer::notify($reviewer, new ReviewerAssigned($work));
+        }
     }
 
     public function decide(Request $request, $workId)
@@ -779,8 +804,8 @@ class ReviewController extends Controller
                 'version_number' => $nextOfficialVersion,
                 'file_path' => $work->final_version_file_path,
                 'change_log' => $approvalAfterCorrectionReReview
-                    ? 'Versão oficial final validada pela coordenação após correções do autor e reavaliação (apresentações e anais).'
-                    : 'Versão oficial final validada pela coordenação no aceite direto na decisão final (apresentações e anais).',
+                    ? 'Versão oficial final validada pela coordenação após correções do autor e reavaliação.'
+                    : 'Versão oficial final validada pela coordenação no aceite direto na decisão final.',
                 'uploaded_by_user_id' => auth()->id(),
                 'submitted_at' => now(),
             ]);
@@ -816,6 +841,16 @@ class ReviewController extends Controller
         $work->final_score_is_manual = true;
 
         $work->save();
+
+        $work->loadMissing('submitter');
+        if ($work->submitter) {
+            $outcome = match ($data['status']) {
+                Work::STATUS_APPROVED_FINAL => WorkDecisionRecorded::ACCEPTED,
+                Work::STATUS_ACCEPTED_WITH_CORRECTIONS => WorkDecisionRecorded::CORRECTIONS,
+                default => WorkDecisionRecorded::REJECTED,
+            };
+            EventMailer::notify($work->submitter, new WorkDecisionRecorded($work, $outcome));
+        }
 
         $successMsg = 'Decisão final registrada com sucesso.';
         if ($data['status'] === Work::STATUS_APPROVED_FINAL) {
@@ -939,7 +974,7 @@ class ReviewController extends Controller
         return 'Falha de conexão com o armazenamento de arquivos. Tente novamente ou entre em contato com o suporte técnico.';
     }
 
-    private function fetchFileFromBucket(string $fileName, string $bucket): ?\Illuminate\Http\Client\Response
+    private function fetchFileFromBucket(string $fileName, string $bucket): ?Response
     {
         if (empty($bucket)) {
             return null;
@@ -984,64 +1019,6 @@ class ReviewController extends Controller
         };
     }
 
-    public function markAnnalsPublication(Request $request, $workId)
-    {
-        $work = Work::with('event')->findOrFail($workId);
-        $this->ensureCoordinatorOwner($work);
-
-        $manage = redirect()->route('events.annals.manage', $work->event_id);
-
-        if (! in_array($work->status, [Work::STATUS_PRESENTED, Work::STATUS_PUBLISHED_ANNALS], true)) {
-            return $manage->with('msg', 'Somente trabalhos já registrados como apresentados podem ser incluídos nos anais.');
-        }
-
-        if ($work->final_version_validated_at === null) {
-            return $manage->with('msg', 'A versão final precisa estar validada antes da publicação nos anais.');
-        }
-
-        $data = $request->validate([
-            'annals_url' => 'nullable|url|max:255',
-            'annals_note' => 'nullable|string|max:2000',
-        ], [
-            'annals_url.url' => 'Informe uma URL válida para o registro nos anais.',
-            'annals_note.max' => 'A observação dos anais deve ter no máximo 2000 caracteres.',
-        ]);
-
-        if ($work->status === Work::STATUS_PUBLISHED_ANNALS) {
-            $work->annals_url = $data['annals_url'] ?? null;
-            $work->annals_note = $data['annals_note'] ?? null;
-            $work->save();
-
-            return $manage->with('msg', 'Dados da publicação nos anais foram atualizados.');
-        }
-
-        $work->published_in_annals_at = now();
-        $work->annals_url = $data['annals_url'] ?? null;
-        $work->annals_note = $data['annals_note'] ?? null;
-        $work->status = Work::STATUS_PUBLISHED_ANNALS;
-        $work->save();
-
-        return $manage->with('msg', 'Publicação nos anais registrada com sucesso.');
-    }
-
-    public function clearAnnalsPublication($workId)
-    {
-        $work = Work::with('event')->findOrFail($workId);
-        $this->ensureCoordinatorOwner($work);
-
-        $work->published_in_annals_at = null;
-        $work->annals_url = null;
-        $work->annals_note = null;
-        if ($work->status === Work::STATUS_PUBLISHED_ANNALS) {
-            $work->status = Work::STATUS_PRESENTED;
-        }
-        $work->save();
-
-        return redirect()
-            ->route('events.annals.manage', $work->event_id)
-            ->with('msg', 'Registro de publicação nos anais removido. O trabalho permanece como apresentado.');
-    }
-
     public function exportEventReportCsv($eventId)
     {
         $event = Event::findOrFail($eventId);
@@ -1075,8 +1052,6 @@ class ReviewController extends Controller
                 'Qtd avaliações',
                 'Recomendacoes',
                 'Apresentacao',
-                'Publicado em anais',
-                'URL anais',
             ]);
 
             foreach ($works as $work) {
@@ -1094,8 +1069,6 @@ class ReviewController extends Controller
                     $work->reviews->count(),
                     $recommendations,
                     $work->presentation?->presentation_type ?? '',
-                    $work->published_in_annals_at ? 'Sim' : 'Não',
-                    $work->annals_url ?? '',
                 ]);
             }
             fclose($file);

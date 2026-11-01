@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Work;
 use App\Models\WorkAuthor;
 use App\Models\WorkPresentation;
+use App\Notifications\CertificateAvailable;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -147,6 +148,8 @@ class CertificateIssuer
             'data_emissao' => now(),
         ]);
 
+        $this->notifyCertificateAvailable($user, $event, Certificate::TYPE_PARTICIPATION, null, null);
+
         return true;
     }
 
@@ -209,6 +212,8 @@ class CertificateIssuer
             'codigo_validacao' => $code,
             'data_emissao' => now(),
         ]);
+
+        $this->notifyCertificateAvailable($user, $event, Certificate::TYPE_ACTIVITY, $activity->id, null);
 
         return true;
     }
@@ -309,6 +314,8 @@ class CertificateIssuer
             ]);
         }
 
+        $this->notifyCertificateAvailable($user, $event, Certificate::TYPE_PRESENTATION, null, $work->id);
+
         return true;
     }
 
@@ -376,6 +383,27 @@ class CertificateIssuer
         $mainId = $this->mainPresenterUserId($work);
 
         return $mainId !== null && (int) $user->id === $mainId;
+    }
+
+    private function notifyCertificateAvailable(User $user, Event $event, string $tipo, ?int $activityId, ?int $workId): void
+    {
+        $certificate = Certificate::query()
+            ->where('user_id', $user->id)
+            ->where('tipo', $tipo)
+            ->where('event_id', $event->id)
+            ->when($activityId !== null, fn ($q) => $q->where('activity_id', $activityId))
+            ->when($activityId === null, fn ($q) => $q->whereNull('activity_id'))
+            ->when($workId !== null, fn ($q) => $q->where('work_id', $workId))
+            ->when($workId === null, fn ($q) => $q->whereNull('work_id'))
+            ->latest('id')
+            ->first();
+
+        if (! $certificate) {
+            return;
+        }
+
+        $certificate->setRelation('event', $event);
+        EventMailer::notify($user, new CertificateAvailable($certificate));
     }
 
     private function uniqueValidationCode(): string

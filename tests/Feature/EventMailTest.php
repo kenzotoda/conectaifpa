@@ -35,21 +35,18 @@ class EventMailTest extends TestCase
         Notification::fake();
     }
 
-    public function test_resend_config_uses_the_cloud_key_and_local_example_stays_on_log(): void
+    public function test_mail_example_points_at_gmail_smtp_without_secrets(): void
     {
-        $services = file_get_contents(config_path('services.php'));
         $example = file_get_contents(base_path('.env.example'));
 
-        $this->assertIsString($services);
-        $this->assertStringContainsString("env('RESEND_API_KEY')", $services);
-        $this->assertStringNotContainsString("env('RESEND_KEY')", $services);
-        $this->assertSame('resend', config('mail.mailers.resend.transport'));
-        $this->assertNull(config('services.resend.key'));
-
         $this->assertIsString($example);
-        $this->assertStringContainsString('MAIL_MAILER=log', $example);
-        $this->assertStringContainsString('dev@example.com', $example);
+        $this->assertStringContainsString('MAIL_MAILER=smtp', $example);
+        $this->assertStringContainsString('MAIL_SCHEME=smtp', $example);
+        $this->assertStringContainsString('smtp.gmail.com', $example);
+        $this->assertStringContainsString('MAIL_PORT=587', $example);
+        $this->assertMatchesRegularExpression('/^MAIL_PASSWORD=$/m', $example);
         $this->assertStringNotContainsString('RESEND_API_KEY=re_', $example);
+        $this->assertDoesNotMatchRegularExpression('/MAIL_PASSWORD=\S+/', $example);
     }
 
     public function test_registration_email_goes_only_to_a_new_participant(): void

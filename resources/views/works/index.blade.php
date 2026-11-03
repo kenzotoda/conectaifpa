@@ -23,20 +23,36 @@
         <div class="dash-card rounded-2xl p-5 sm:p-6 mb-6">
             <h2 class="dash-title font-semibold text-lg mb-2">Vinculação de avaliadores</h2>
             <p class="dash-text text-sm mb-4">
-                Após o encerramento do prazo de submissão, selecione os trabalhos (por tipo), escolha os avaliadores e distribua.
+                Depois do prazo de submissão e dentro do prazo de avaliação, selecione os trabalhos (por tipo), escolha os avaliadores e distribua.
+                Trabalhos recusados na triagem ficam fora desta lista.
                 Cada trabalho marcado deve ficar com no mínimo <span class="font-semibold">{{ $minReviewers }}</span> e no máximo
                 <span class="font-semibold">{{ $maxReviewers }}</span> avaliadores.
+                @if($event->review_deadline_at)
+                    Prazo de avaliação: <span class="font-semibold">{{ $event->review_deadline_at->format('d/m/Y H:i') }}</span>.
+                @endif
             </p>
 
             @if(!$distributionAllowed)
                 <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm mb-4">
-                    <p class="font-medium m-0 mb-1">Distribuição ainda bloqueada</p>
-                    <p class="m-0">
-                        Enquanto o prazo de submissão estiver aberto, os autores podem alterar os arquivos. A distribuição só é liberada depois do encerramento.
-                        @if($event->submission_deadline_at)
-                            Prazo de submissão: <span class="font-semibold">{{ $event->submission_deadline_at->format('d/m/Y H:i') }}</span>.
-                        @endif
-                    </p>
+                    @if(!$event->workSubmissionDeadlinePassed())
+                        <p class="font-medium m-0 mb-1">Distribuição ainda bloqueada</p>
+                        <p class="m-0">
+                            Enquanto o prazo de submissão estiver aberto, os autores podem alterar os arquivos. A distribuição só é liberada depois do encerramento.
+                            @if($event->submission_deadline_at)
+                                Prazo de submissão: <span class="font-semibold">{{ $event->submission_deadline_at->format('d/m/Y H:i') }}</span>.
+                            @endif
+                        </p>
+                    @else
+                        <p class="font-medium m-0 mb-1">Prazo de avaliação encerrado</p>
+                        <p class="m-0">
+                            Não é mais possível distribuir avaliadores.
+                            @if($event->review_deadline_at)
+                                O prazo terminou em <span class="font-semibold">{{ $event->review_deadline_at->format('d/m/Y H:i') }}</span>.
+                            @else
+                                Neste evento a avaliação acompanha o fim do período.
+                            @endif
+                        </p>
+                    @endif
                 </div>
             @endif
 
@@ -455,6 +471,31 @@
                                         <ion-icon name="eye-outline" class="text-base"></ion-icon>
                                         Detalhes
                                     </a>
+                                    @if($work->canBeDeskRejected())
+                                        <form action="{{ route('works.desk-reject', $work->id) }}" method="POST" class="mt-3 space-y-2 text-left">
+                                            @csrf
+                                            <input type="hidden" name="_desk_work_id" value="{{ $work->id }}">
+                                            <label class="block text-xs font-medium text-slate-600" for="desk-reason-{{ $work->id }}">Recusar na triagem</label>
+                                            <textarea
+                                                id="desk-reason-{{ $work->id }}"
+                                                name="author_feedback"
+                                                rows="2"
+                                                required
+                                                maxlength="5000"
+                                                placeholder="Motivo, visível para o autor"
+                                                class="dash-field w-full min-w-[12rem] px-3 py-2 rounded-lg text-xs"
+                                            >{{ (string) old('_desk_work_id') === (string) $work->id ? old('author_feedback') : '' }}</textarea>
+                                            @if((string) old('_desk_work_id') === (string) $work->id)
+                                                @error('author_feedback')
+                                                    <p class="text-xs text-red-600 m-0">{{ $message }}</p>
+                                                @enderror
+                                            @endif
+                                            <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-50 text-red-900 ring-1 ring-red-200">
+                                                <ion-icon name="close-circle-outline" class="text-base"></ion-icon>
+                                                Recusar na triagem
+                                            </button>
+                                        </form>
+                                    @endif
                                 </td>
                             </tr>
                         @endforeach

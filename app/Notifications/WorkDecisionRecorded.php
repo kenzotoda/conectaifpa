@@ -14,6 +14,8 @@ class WorkDecisionRecorded extends Notification
 
     public const REJECTED = 'rejected';
 
+    public const DESK_REJECTED = 'desk_rejected';
+
     public function __construct(public Work $work, public string $outcome) {}
 
     /**
@@ -44,6 +46,9 @@ class WorkDecisionRecorded extends Notification
             if ($deadline) {
                 $message->line('Envie a versão corrigida até '.$deadline.'.');
             }
+        } elseif ($this->outcome === self::DESK_REJECTED) {
+            $message->subject('Trabalho recusado na triagem: '.$event)
+                ->line('Seu trabalho "'.$title.'" foi recusado na triagem do evento '.$event.' e não seguirá para avaliação.');
         } else {
             $message->subject('Trabalho não aceito: '.$event)
                 ->line('Seu trabalho "'.$title.'" não foi aceito no evento '.$event.'.');

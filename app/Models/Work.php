@@ -216,6 +216,24 @@ class Work extends Model
     /**
      * A coordenação ainda pode registrar uma decisão (primeira rodada, conflito ou pós-reavaliação da correção).
      */
+    /** Triagem: só um trabalho submetido e ainda sem avaliador pode ser recusado fora de escopo. */
+    public function canBeDeskRejected(): bool
+    {
+        if ($this->status !== self::STATUS_SUBMITTED) {
+            return false;
+        }
+
+        if ($this->relationLoaded('reviewerAssignments')) {
+            return $this->reviewerAssignments->isEmpty();
+        }
+
+        if (array_key_exists('reviewer_assignments_count', $this->attributes)) {
+            return (int) $this->reviewer_assignments_count === 0;
+        }
+
+        return ! $this->reviewerAssignments()->exists();
+    }
+
     public function coordinatorCanRegisterNewDecision(): bool
     {
         if ($this->coordinatorDecisionIsTerminal()) {

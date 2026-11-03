@@ -191,7 +191,9 @@
                         @if($work->coordinatorDecisionIsTerminal())
                             <div class="space-y-2 rounded-xl border border-emerald-100 bg-emerald-50/35 px-4 py-3 ring-1 ring-emerald-100/80">
                                 <p class="text-[11px] font-bold uppercase tracking-wider text-emerald-950/85 m-0">Decisão registrada em {{ $work->decision_at->format('d/m/Y H:i') }}@if($work->decisionByUser)<span class="font-medium normal-case text-emerald-900"> · {{ $work->decisionByUser->name }}</span>@endif</p>
-                                @if($work->status === \App\Models\Work::STATUS_REJECTED || $work->status === \App\Models\Work::STATUS_DESK_REJECTED)
+                                @if($work->status === \App\Models\Work::STATUS_DESK_REJECTED)
+                                    <p class="text-sm font-medium text-emerald-950 m-0 leading-relaxed">O trabalho foi <strong>recusado na triagem</strong> e não seguiu para os avaliadores.</p>
+                                @elseif($work->status === \App\Models\Work::STATUS_REJECTED)
                                     <p class="text-sm font-medium text-emerald-950 m-0 leading-relaxed">O trabalho foi <strong>reprovado</strong> nesta decisão da coordenação.</p>
                                 @else
                                     <p class="text-sm font-medium text-emerald-950 m-0 leading-relaxed">O trabalho foi <strong>aceito</strong> nesta decisão{{ $work->final_version_source === \App\Models\Work::FINAL_VERSION_SOURCE_CORRECTED ? ', com a versão corrigida aprovada após reavaliação.' : '.' }}</p>
@@ -516,6 +518,16 @@
                                 </p>
                                 <p class="font-bold text-slate-900 tabular-nums text-[13px] m-0 leading-snug">{{ $work->event->submission_deadline_at->format('d/m/Y H:i') }}</p>
                                 <p class="text-[11px] text-slate-600 mt-2 m-0 leading-relaxed">{{ $work->event->workSubmissionDeadlinePassed() ? 'Prazo encerrado — avaliações em curso conforme cada evento.' : 'O autor ainda pode ajustar o arquivo conforme esta data.' }}</p>
+                            </div>
+                        @endif
+                        @if($work->event->review_deadline_at)
+                            <div class="rounded-xl bg-slate-50 px-4 py-3 ring-1 ring-slate-200/80">
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1.5 m-0 flex items-center gap-1">
+                                    <ion-icon name="hourglass-outline" class="text-base"></ion-icon>
+                                    Prazo de avaliação
+                                </p>
+                                <p class="font-bold text-slate-900 tabular-nums text-[13px] m-0 leading-snug">{{ $work->event->review_deadline_at->format('d/m/Y H:i') }}</p>
+                                <p class="text-[11px] text-slate-600 mt-2 m-0 leading-relaxed">{{ $work->event->reviewDeadlinePassed() ? 'Prazo encerrado. Novos pareceres ficam bloqueados.' : 'Os pareceres precisam ser enviados até este horário.' }}</p>
                             </div>
                         @endif
                         @if($work->presentation && ($work->presentation->scheduled_start || $work->presentation->scheduled_end || $work->presentation->location))

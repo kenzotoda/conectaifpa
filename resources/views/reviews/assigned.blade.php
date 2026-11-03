@@ -67,13 +67,24 @@
                                     @if($canSendNewReview)
                                         <span class="block text-emerald-800 font-semibold text-sm">Pode baixar e avaliar</span>
                                         <span class="block text-slate-500 mt-1 leading-snug">
-                                            Submissões encerradas e dentro do período do evento (até
-                                            <strong class="text-slate-700">{{ $eventModel->calendarEndAt()->format('d/m/Y H:i') }}</strong>).
+                                            @if($eventModel->hasReviewDeadline())
+                                                Submissões encerradas. Pareceres até
+                                                <strong class="text-slate-700">{{ $eventModel->review_deadline_at->format('d/m/Y H:i') }}</strong>.
+                                            @elseif($eventModel->scheduleIsComplete())
+                                                Submissões encerradas e dentro do período do evento (até
+                                                <strong class="text-slate-700">{{ $eventModel->calendarEndAt()->format('d/m/Y H:i') }}</strong>).
+                                            @else
+                                                Submissões encerradas. Este evento ainda fecha a avaliação no fim do período.
+                                            @endif
                                         </span>
                                     @elseif($canReviewNow && ! $evaluationWindowOpen)
                                         <span class="block text-rose-800 font-semibold text-sm">Prazo de avaliação encerrado</span>
                                         <span class="block text-slate-600 mt-1 leading-snug">
-                                            O período do evento já terminou
+                                            @if($eventModel->hasReviewDeadline())
+                                                O prazo de avaliação terminou em {{ $eventModel->review_deadline_at->format('d/m/Y H:i') }}
+                                            @else
+                                                O período do evento já terminou
+                                            @endif
                                             @if($reviewCompleted)
                                                 — você pode ver o parecer enviado.
                                             @else
@@ -107,7 +118,9 @@
                                                 $dlBlockedTitle = ! $canReviewNow
                                                     ? 'Disponível após o encerramento do prazo de submissão dos autores.'
                                                     : (! $reviewCompleted
-                                                        ? 'O período do evento encerrou. Não é mais possível baixar para nova avaliação.'
+                                                        ? ($eventModel->hasReviewDeadline()
+                                                            ? 'O prazo de avaliação encerrou. Não é mais possível baixar para nova avaliação.'
+                                                            : 'O período do evento encerrou. Não é mais possível baixar para nova avaliação.')
                                                         : '');
                                             @endphp
                                             <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-200 text-slate-500 text-xs font-medium cursor-not-allowed"
@@ -132,7 +145,9 @@
                                             @php
                                                 $blockedTitle = ! $canReviewNow
                                                     ? 'A avaliação só pode ser enviada depois que o prazo de submissão dos autores terminar.'
-                                                    : 'O período do evento encerrou. Não é mais possível enviar avaliações.';
+                                                    : ($eventModel->hasReviewDeadline()
+                                                        ? 'O prazo de avaliação encerrou. Não é mais possível enviar avaliações.'
+                                                        : 'O período do evento encerrou. Não é mais possível enviar avaliações.');
                                             @endphp
                                             <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-200 text-slate-500 text-xs font-medium cursor-not-allowed"
                                                   title="{{ $blockedTitle }}">

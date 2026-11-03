@@ -140,6 +140,16 @@ class EventController extends Controller
             'modality' => 'required|string|max:255',
             'event_type' => ['required', 'string', 'max:255', Rule::in(array_merge(Event::EVENT_TYPE_OPTIONS, [Event::SELECT_OTHER_VALUE]))],
             'event_type_custom' => ['nullable', 'string', 'max:255', Rule::requiredIf(fn () => $request->input('event_type') === Event::SELECT_OTHER_VALUE)],
+            'natureza' => ['required', 'string', Rule::in(array_keys(Event::NATURE_OPTIONS))],
+            'abrangencia' => ['required', 'string', Rule::in(array_keys(Event::SCOPE_OPTIONS))],
+            'periodicidade' => ['required', 'string', Rule::in(array_keys(Event::PERIODICITY_OPTIONS))],
+            'edicao' => [
+                Rule::requiredIf(fn () => $request->input('periodicidade') !== Event::PERIODICITY_UNIQUE),
+                'nullable',
+                'integer',
+                'min:1',
+                'max:999',
+            ],
             'capacity' => 'required|integer|min:1',
             'internal_capacity' => $this->internalCapacityRules(),
             'external_capacity' => $this->externalCapacityRules($request),
@@ -218,6 +228,7 @@ class EventController extends Controller
                     );
                 },
             ],
+            'review_deadline_at' => $this->reviewDeadlineRules($request),
             'accepts_submissions' => 'nullable|boolean',
             'accepted_work_types' => 'exclude_unless:accepts_submissions,1|required|array|min:1',
             'accepted_work_types.*' => 'string|max:255',
@@ -366,6 +377,16 @@ class EventController extends Controller
             'event_type.in' => 'Selecione um tipo de evento válido.',
             'event_type_custom.required' => 'Informe o tipo de evento ao selecionar "Outro".',
             'event_type_custom.max' => 'O tipo de evento não pode ter mais de 255 caracteres.',
+            'natureza.required' => 'A natureza do evento é obrigatória.',
+            'natureza.in' => 'Selecione uma natureza válida.',
+            'abrangencia.required' => 'A abrangência do evento é obrigatória.',
+            'abrangencia.in' => 'Selecione uma abrangência válida.',
+            'periodicidade.required' => 'A periodicidade do evento é obrigatória.',
+            'periodicidade.in' => 'Selecione uma periodicidade válida.',
+            'edicao.required' => 'Informe o número da edição.',
+            'edicao.integer' => 'O número da edição deve ser um inteiro.',
+            'edicao.min' => 'O número da edição começa em 1.',
+            'edicao.max' => 'O número da edição não pode passar de 999.',
 
             'capacity.required' => 'A capacidade é obrigatória.',
             'capacity.integer' => 'A capacidade deve ser um número inteiro.',
@@ -415,6 +436,8 @@ class EventController extends Controller
             'datetime_registration.before_or_equal' => 'O prazo de inscrição não pode ser posterior à data e hora de início do evento.',
             'submission_deadline_at.required_if' => 'O prazo de submissão é obrigatório quando o evento aceita submissões.',
             'submission_deadline_at.date' => 'O prazo de submissão deve ser uma data válida.',
+            'review_deadline_at.required_if' => 'O prazo de avaliação é obrigatório quando o evento aceita submissões.',
+            'review_deadline_at.date' => 'O prazo de avaliação deve ser uma data válida.',
             'accepts_submissions.boolean' => 'O campo de submissão precisa ser verdadeiro ou falso.',
             'accepted_work_types.required' => 'Selecione ao menos um tipo de trabalho quando o evento aceitar submissões.',
             'accepted_work_types.required_if' => 'Selecione ao menos um tipo de trabalho quando o evento aceitar submissões.',
@@ -449,6 +472,10 @@ class EventController extends Controller
                 'modality',
                 'event_type',
                 'event_type_custom',
+                'natureza',
+                'abrangencia',
+                'periodicidade',
+                'edicao',
                 'capacity',
                 'internal_capacity',
                 'external_capacity',
@@ -477,6 +504,7 @@ class EventController extends Controller
                 'coordinator_phone',
                 'datetime_registration',
                 'submission_deadline_at',
+                'review_deadline_at',
                 'accepts_submissions',
                 'accepted_work_types',
                 'accepted_work_types_custom',
@@ -490,6 +518,54 @@ class EventController extends Controller
                 'activities_new',
                 'documents_new',
             ],
+        ];
+    }
+
+    /**
+     * @return list<mixed>
+     */
+    private function reviewDeadlineRules(Request $request): array
+    {
+        return [
+            'required_if:accepts_submissions,1',
+            'nullable',
+            'date',
+            function ($attribute, $value, $fail) use ($request) {
+                if (! $request->boolean('accepts_submissions') || empty($value)) {
+                    return;
+                }
+
+                $submission = $request->input('submission_deadline_at');
+                if (filled($submission)) {
+                    try {
+                        $reviewAt = Carbon::parse($value, config('app.timezone'));
+                        $submissionAt = Carbon::parse($submission, config('app.timezone'));
+                        if ($reviewAt->lessThanOrEqualTo($submissionAt)) {
+                            $fail('O prazo de avaliação deve ser posterior ao prazo de submissão.');
+
+                            return;
+                        }
+                    } catch (\Throwable) {
+                        return;
+                    }
+                }
+
+                $startDate = trim((string) $request->input('start_date', ''));
+                if ($startDate === '') {
+                    return;
+                }
+
+                try {
+                    $limit = Event::deadlineLimitFromSchedule($startDate, $request->input('start_time'));
+                    $reviewAt = Carbon::parse($value, config('app.timezone'));
+                } catch (\Throwable) {
+                    return;
+                }
+
+                if ($reviewAt->greaterThanOrEqualTo($limit)) {
+                    $fail('O prazo de avaliação precisa terminar antes do início do evento.');
+                }
+            },
         ];
     }
 
@@ -560,6 +636,17 @@ class EventController extends Controller
         return trim((string) $request->input('event_type', ''));
     }
 
+    private function applyAbntClassification(Event $event, Request $request): void
+    {
+        $event->natureza = $request->input('natureza');
+        $event->abrangencia = $request->input('abrangencia');
+        $event->periodicidade = $request->input('periodicidade');
+        $event->edicao = $request->input('periodicidade') === Event::PERIODICITY_UNIQUE
+            ? null
+            : ($request->filled('edicao') ? (int) $request->input('edicao') : null);
+        $event->acesso = Event::ACCESS_FREE;
+    }
+
     /**
      * Verdadeiro se a atividade estiver fora do período do evento conforme datas/horários do request.
      * Sem data de início ou sem os dois horários, não restringe: a atividade é conferida quando o período oficial for gravado.
@@ -616,7 +703,10 @@ class EventController extends Controller
     public function store(Request $request)
     {
         if (! $request->boolean('accepts_submissions')) {
-            $request->merge(['submission_deadline_at' => null]);
+            $request->merge([
+                'submission_deadline_at' => null,
+                'review_deadline_at' => null,
+            ]);
         }
 
         $request->validate(
@@ -630,6 +720,7 @@ class EventController extends Controller
         $event->modality = $request->modality;
         $event->event_type = $this->resolvedEventTypeFromRequest($request);
         $event->modality_type = $this->normalizeModalityType($request->modality);
+        $this->applyAbntClassification($event, $request);
         $event->capacity = $request->capacity;
         $event->internal_capacity = (int) $request->input('internal_capacity');
         $event->external_capacity = (int) $request->input('external_capacity');
@@ -656,6 +747,7 @@ class EventController extends Controller
 
         $event->datetime_registration = $request->datetime_registration ?? null;
         $event->submission_deadline_at = $request->submission_deadline_at ?? null;
+        $event->review_deadline_at = $request->review_deadline_at ?? null;
         $event->accepts_submissions = $request->boolean('accepts_submissions');
         $event->reviewers_min_per_work = $request->boolean('accepts_submissions')
             ? (int) $request->input('reviewers_min_per_work', 1)
@@ -852,7 +944,10 @@ class EventController extends Controller
 
         // Sem trabalhos/submissões: não persiste data de encerramento de submissões.
         if (! $request->boolean('accepts_submissions')) {
-            $request->merge(['submission_deadline_at' => null]);
+            $request->merge([
+                'submission_deadline_at' => null,
+                'review_deadline_at' => null,
+            ]);
         }
 
         // Validação
@@ -863,6 +958,16 @@ class EventController extends Controller
             'modality' => 'required|string|max:255',
             'event_type' => ['required', 'string', 'max:255', Rule::in(array_merge(Event::EVENT_TYPE_OPTIONS, [Event::SELECT_OTHER_VALUE]))],
             'event_type_custom' => ['nullable', 'string', 'max:255', Rule::requiredIf(fn () => $request->input('event_type') === Event::SELECT_OTHER_VALUE)],
+            'natureza' => ['required', 'string', Rule::in(array_keys(Event::NATURE_OPTIONS))],
+            'abrangencia' => ['required', 'string', Rule::in(array_keys(Event::SCOPE_OPTIONS))],
+            'periodicidade' => ['required', 'string', Rule::in(array_keys(Event::PERIODICITY_OPTIONS))],
+            'edicao' => [
+                Rule::requiredIf(fn () => $request->input('periodicidade') !== Event::PERIODICITY_UNIQUE),
+                'nullable',
+                'integer',
+                'min:1',
+                'max:999',
+            ],
             'capacity' => 'required|integer|min:1',
             'internal_capacity' => $this->internalCapacityRules($event),
             'external_capacity' => $this->externalCapacityRules($request, $event),
@@ -944,6 +1049,7 @@ class EventController extends Controller
                     );
                 },
             ],
+            'review_deadline_at' => $this->reviewDeadlineRules($request),
             'accepts_submissions' => 'nullable|boolean',
             'accepted_work_types' => 'exclude_unless:accepts_submissions,1|required|array|min:1',
             'accepted_work_types.*' => 'string|max:255',
@@ -1162,6 +1268,16 @@ class EventController extends Controller
             'event_type.in' => 'Selecione um tipo de evento válido.',
             'event_type_custom.required' => 'Informe o tipo de evento ao selecionar "Outro".',
             'event_type_custom.max' => 'O tipo de evento não pode ter mais de 255 caracteres.',
+            'natureza.required' => 'A natureza do evento é obrigatória.',
+            'natureza.in' => 'Selecione uma natureza válida.',
+            'abrangencia.required' => 'A abrangência do evento é obrigatória.',
+            'abrangencia.in' => 'Selecione uma abrangência válida.',
+            'periodicidade.required' => 'A periodicidade do evento é obrigatória.',
+            'periodicidade.in' => 'Selecione uma periodicidade válida.',
+            'edicao.required' => 'Informe o número da edição.',
+            'edicao.integer' => 'O número da edição deve ser um inteiro.',
+            'edicao.min' => 'O número da edição começa em 1.',
+            'edicao.max' => 'O número da edição não pode passar de 999.',
 
             // Capacidade
             'capacity.required' => 'A capacidade é obrigatória.',
@@ -1221,6 +1337,8 @@ class EventController extends Controller
             'datetime_registration.before_or_equal' => 'O prazo de inscrição não pode ser posterior à data e hora de início do evento.',
             'submission_deadline_at.required_if' => 'O prazo de submissão é obrigatório quando o evento aceita submissões.',
             'submission_deadline_at.date' => 'O prazo de submissão deve ser uma data válida.',
+            'review_deadline_at.required_if' => 'O prazo de avaliação é obrigatório quando o evento aceita submissões.',
+            'review_deadline_at.date' => 'O prazo de avaliação deve ser uma data válida.',
             'accepts_submissions.boolean' => 'O campo de submissão precisa ser verdadeiro ou falso.',
             'accepted_work_types.required' => 'Selecione ao menos um tipo de trabalho quando o evento aceitar submissões.',
             'accepted_work_types.required_if' => 'Selecione ao menos um tipo de trabalho quando o evento aceitar submissões.',
@@ -1248,6 +1366,7 @@ class EventController extends Controller
         $event->modality = $request->modality;
         $event->event_type = $this->resolvedEventTypeFromRequest($request);
         $event->modality_type = $this->normalizeModalityType($request->modality);
+        $this->applyAbntClassification($event, $request);
         $event->capacity = $request->capacity;
         $event->internal_capacity = (int) $request->input('internal_capacity');
         $event->external_capacity = (int) $request->input('external_capacity');
@@ -1267,6 +1386,7 @@ class EventController extends Controller
         $event->coordinator_phone = $request->filled('coordinator_phone') ? trim($request->coordinator_phone) : null;
         $event->datetime_registration = $request->datetime_registration ?? null;
         $event->submission_deadline_at = $request->submission_deadline_at ?? null;
+        $event->review_deadline_at = $request->review_deadline_at ?? null;
         $event->accepts_submissions = $request->boolean('accepts_submissions');
         $event->reviewers_min_per_work = $request->boolean('accepts_submissions')
             ? (int) $request->input('reviewers_min_per_work', 1)

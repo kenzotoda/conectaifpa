@@ -25,8 +25,7 @@ return [
     ],
 
     'resend' => [
-        // O Laravel Cloud injeta RESEND_API_KEY ao conectar o Resend.
-        // Esqueletos anteriores ao Laravel 12.10 liam RESEND_KEY, que o Cloud não define.
+        // O envio em uso é o SMTP do Gmail (MAIL_MAILER=smtp). Esta chave só entra se o mailer for resend.
         'key' => env('RESEND_API_KEY'),
     ],
 

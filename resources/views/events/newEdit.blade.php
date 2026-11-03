@@ -168,7 +168,13 @@
                                     @if($eventTypeSelectValue === \App\Models\Event::SELECT_OTHER_VALUE) required @endif>
                             </div>
 
-                            
+                            @include('events.partials.abnt-classification-fields', [
+                                'natureza' => $event->natureza,
+                                'abrangencia' => $event->abrangencia,
+                                'periodicidade' => $event->periodicidade,
+                                'edicao' => $event->edicao,
+                            ])
+
                             @php
                                 $audienceCounts = $event->audienceRegistrationCounts();
                                 $suggestedAudiences = $event->suggestedAudienceCapacities();
@@ -500,6 +506,19 @@
                                     value="{{ old('submission_deadline_at', $event->submission_deadline_at ? $event->submission_deadline_at->format('Y-m-d\TH:i') : '') }}"
                                 >
                                 <p class="text-[11px] text-slate-500 mt-1.5 m-0">Obrigatório enquanto o evento aceita trabalhos. Pode ser ajustado até a finalização.</p>
+                            </div>
+                            <div id="review-deadline-field-wrap" class="md:col-span-2 {{ $acceptSubsForEditUi ? '' : 'hidden' }}">
+                                <label class="form-label block text-sm font-montserrat mb-2" for="review_deadline_at">
+                                    Prazo de avaliação <span class="text-red-500">*</span>
+                                </label>
+                                <input
+                                    id="review_deadline_at"
+                                    name="review_deadline_at"
+                                    type="datetime-local"
+                                    class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
+                                    value="{{ old('review_deadline_at', $event->review_deadline_at ? $event->review_deadline_at->format('Y-m-d\TH:i') : '') }}"
+                                >
+                                <p class="text-[11px] text-slate-500 mt-1.5 m-0">Depois do prazo de submissão e antes do início do evento. Eventos antigos passam a usar este prazo quando forem salvos.</p>
                             </div>
                         </div>
                     </div>
@@ -986,10 +1005,15 @@
             const enabled = acceptsSubmissionsCheckbox.checked;
             const submissionDeadlineInput = document.getElementById('submission_deadline_at');
             const submissionDeadlineWrap = document.getElementById('submission-deadline-field-wrap');
+            const reviewDeadlineInput = document.getElementById('review_deadline_at');
+            const reviewDeadlineWrap = document.getElementById('review-deadline-field-wrap');
             const registrationDeadlineCell = document.getElementById('registration-deadline-cell');
 
             if (submissionDeadlineWrap) {
                 submissionDeadlineWrap.classList.toggle('hidden', !enabled);
+            }
+            if (reviewDeadlineWrap) {
+                reviewDeadlineWrap.classList.toggle('hidden', !enabled);
             }
             if (registrationDeadlineCell) {
                 registrationDeadlineCell.classList.toggle('md:col-span-2', !enabled);
@@ -999,12 +1023,16 @@
                 submissionDeadlineInput.disabled = !enabled;
                 submissionDeadlineInput.required = enabled;
             }
+            if (reviewDeadlineInput) {
+                reviewDeadlineInput.disabled = !enabled;
+                reviewDeadlineInput.required = enabled;
+            }
             scientificConfigSection.style.opacity = enabled ? '1' : '0.5';
             scientificConfigSection.querySelectorAll('input, select, textarea').forEach((input) => {
                 if (input.name === 'accepts_submissions') {
                     return;
                 }
-                if (input.name === 'submission_deadline_at') {
+                if (input.name === 'submission_deadline_at' || input.name === 'review_deadline_at') {
                     return;
                 }
                 if (

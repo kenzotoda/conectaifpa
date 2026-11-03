@@ -112,7 +112,22 @@
                         @if(filled($event->event_type))
                             <span class="dash-badge inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold">{{ $event->event_type }}</span>
                         @endif
+                        @if($event->natureLabel())
+                            <span class="dash-badge inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold">{{ $event->natureLabel() }}</span>
+                        @endif
+                        <span class="dash-badge inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold">{{ $event->porteLabel() }}</span>
+                        <span class="dash-badge inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold">{{ $event->accessLabel() }}</span>
                     </div>
+                    <dl class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                        @if($event->scopeLabel())
+                            <div><dt class="dash-muted inline">Abrangência:</dt> <dd class="dash-title inline">{{ $event->scopeLabel() }}</dd></div>
+                        @endif
+                        @if($event->periodicityDisplay())
+                            <div><dt class="dash-muted inline">Periodicidade:</dt> <dd class="dash-title inline">{{ $event->periodicityDisplay() }}</dd></div>
+                        @endif
+                        <div><dt class="dash-muted inline">Porte:</dt> <dd class="dash-title inline">{{ $event->porteLabel() }} ({{ $event->audienceCapacityTotal() }} vagas)</dd></div>
+                        <div><dt class="dash-muted inline">Acesso:</dt> <dd class="dash-title inline">{{ $event->accessLabel() }}</dd></div>
+                    </dl>
                     <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-sm">
                         <div class="dash-panel flex gap-3 rounded-xl px-3.5 py-3 min-w-0">
                             <span class="dash-icon-well flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">
@@ -615,6 +630,17 @@
                                     <p class="dash-muted text-xs font-semibold uppercase tracking-wide m-0">Prazo de submissão</p>
                                     <p class="dash-title font-medium m-0 mt-1 text-sm sm:text-base">
                                         {{ $event->submission_deadline_at->format('d/m/Y') }} às {{ $event->submission_deadline_at->format('H:i') }}
+                                    </p>
+                                </div>
+                            </div>
+                        @endif
+                        @if($event->review_deadline_at)
+                            <div class="dash-panel flex flex-wrap items-start gap-3 p-4 rounded-xl mb-6">
+                                <ion-icon name="hourglass-outline" class="dash-muted text-xl shrink-0 mt-0.5" aria-hidden="true"></ion-icon>
+                                <div class="min-w-0">
+                                    <p class="dash-muted text-xs font-semibold uppercase tracking-wide m-0">Prazo de avaliação</p>
+                                    <p class="dash-title font-medium m-0 mt-1 text-sm sm:text-base">
+                                        {{ $event->review_deadline_at->format('d/m/Y') }} às {{ $event->review_deadline_at->format('H:i') }}
                                     </p>
                                 </div>
                             </div>

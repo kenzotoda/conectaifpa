@@ -12,6 +12,7 @@ use App\Notifications\ReviewerAssigned;
 use App\Notifications\WorkDecisionRecorded;
 use App\Services\EventMailer;
 use App\Services\WorkScoreService;
+use Carbon\Carbon;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
@@ -85,9 +86,9 @@ class ReviewController extends Controller
                 ->with('msg', 'A avaliação só pode ser realizada após o encerramento do prazo de submissão.');
         }
 
-        if ($work->event->calendarEnded()) {
+        if (! $work->event->reviewersEvaluationWindowOpen()) {
             return redirect()->route('reviews.assigned')
-                ->with('msg', 'O período do evento já encerrou. Não é mais possível enviar avaliações (incluindo reavaliação após correções).');
+                ->with('msg', $work->event->evaluationWindowClosedMessage());
         }
 
         $isCorrectionReReview = $work->isAwaitingCorrectionReReview();
@@ -124,8 +125,8 @@ class ReviewController extends Controller
             return back()->with('msg', 'A avaliação só pode ser enviada após o encerramento do prazo de submissão.');
         }
 
-        if ($work->event->calendarEnded()) {
-            return back()->with('msg', 'O período do evento já encerrou. Não é mais possível enviar avaliações (incluindo reavaliação após correções).');
+        if (! $work->event->reviewersEvaluationWindowOpen()) {
+            return back()->with('msg', $work->event->evaluationWindowClosedMessage());
         }
 
         $alreadySubmitted = Review::query()
@@ -484,6 +485,13 @@ class ReviewController extends Controller
             );
         }
 
+        if (! $event->reviewersEvaluationWindowOpen()) {
+            return back()->with(
+                'msg',
+                'A distribuição de avaliadores só é permitida dentro do prazo de avaliação.'
+            );
+        }
+
         $minReviewers = $event->minReviewersPerWork();
         $maxReviewers = $event->maxReviewersPerWork();
 
@@ -755,6 +763,25 @@ class ReviewController extends Controller
             'coordinator_final_score.max' => 'A nota final não pode ultrapassar 999,99.',
         ]);
 
+        if ($data['status'] === Work::STATUS_ACCEPTED_WITH_CORRECTIONS && $work->event->hasReviewDeadline()) {
+            if ($work->event->reviewDeadlinePassed()) {
+                return back()
+                    ->withErrors([
+                        'correction_deadline_at' => 'O prazo de avaliação já encerrou. Não é possível pedir correções que precisem de nova avaliação.',
+                    ])
+                    ->withInput();
+            }
+
+            $correctionAt = Carbon::parse($data['correction_deadline_at']);
+            if ($correctionAt->greaterThanOrEqualTo(Carbon::parse($work->event->review_deadline_at))) {
+                return back()
+                    ->withErrors([
+                        'correction_deadline_at' => 'O prazo de correção precisa ser anterior ao prazo de avaliação do evento.',
+                    ])
+                    ->withInput();
+            }
+        }
+
         if ($data['status'] === Work::STATUS_ACCEPTED_WITH_CORRECTIONS) {
             $hasNewCoordinatorFile = $request->hasFile('coordinator_feedback_file')
                 && $request->file('coordinator_feedback_file')->isValid();
@@ -858,6 +885,39 @@ class ReviewController extends Controller
         }
 
         return back()->with('msg', $successMsg);
+    }
+
+    public function deskReject(Request $request, $workId)
+    {
+        $work = Work::with(['event', 'submitter', 'reviewerAssignments'])->findOrFail($workId);
+        $this->ensureCoordinatorOwner($work);
+
+        if (! $work->canBeDeskRejected()) {
+            return back()->with('msg', 'Só é possível recusar na triagem um trabalho ainda não distribuído a avaliadores.');
+        }
+
+        $request->merge([
+            'author_feedback' => trim((string) $request->input('author_feedback')),
+        ]);
+
+        $data = $request->validate([
+            'author_feedback' => ['required', 'string', 'max:5000'],
+        ], [
+            'author_feedback.required' => 'Informe o motivo da recusa na triagem.',
+            'author_feedback.max' => 'O motivo da triagem pode ter no máximo 5000 caracteres.',
+        ]);
+
+        $work->status = Work::STATUS_DESK_REJECTED;
+        $work->author_feedback = $data['author_feedback'];
+        $work->decision_at = now();
+        $work->decision_by = auth()->id();
+        $work->save();
+
+        if ($work->submitter) {
+            EventMailer::notify($work->submitter, new WorkDecisionRecorded($work, WorkDecisionRecorded::DESK_REJECTED));
+        }
+
+        return back()->with('msg', 'Trabalho recusado na triagem. O autor foi avisado por e-mail.');
     }
 
     public function downloadMyEvaluatorFeedback($workId)

@@ -139,7 +139,9 @@
                                         placeholder="Ex.: Mostra de trabalhos, Hackathon…"
                                         @if(old('event_type') === \App\Models\Event::SELECT_OTHER_VALUE) required @endif>
                                 </div>
-                                
+
+                                @include('events.partials.abnt-classification-fields')
+
                                 @include('events.partials.audience-capacity-fields', [
                                     'capacityValue' => old('capacity'),
                                     'internalValue' => old('internal_capacity'),
@@ -469,6 +471,19 @@
                                     >
                                     <p class="text-[11px] text-slate-500 mt-1.5 m-0">Exibido e obrigatório apenas quando há submissão de trabalhos.</p>
                                 </div>
+                                <div id="review-deadline-field-wrap" class="md:col-span-2 {{ $acceptSubsCreateUi ? '' : 'hidden' }}">
+                                    <label class="form-label block text-sm font-montserrat mb-2" for="review_deadline_at">
+                                        Prazo de avaliação <span class="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        id="review_deadline_at"
+                                        name="review_deadline_at"
+                                        type="datetime-local"
+                                        class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
+                                        value="{{ old('review_deadline_at') }}"
+                                    >
+                                    <p class="text-[11px] text-slate-500 mt-1.5 m-0">Depois do prazo de submissão e antes do início do evento. Os pareceres só podem ser enviados até este horário.</p>
+                                </div>
                             </div>
                         </div>
 
@@ -660,6 +675,13 @@
                             <p><strong>Categoria:</strong> <span data-confirm="category"></span></p>
                             <p><strong>Tipo de evento científico:</strong> <span data-confirm="event_type"></span></p>
                             <p><strong>Modalidade:</strong> <span data-confirm="modality"></span></p>
+                            <p><strong>Natureza:</strong> <span data-confirm="natureza"></span></p>
+                            <p><strong>Abrangência:</strong> <span data-confirm="abrangencia"></span></p>
+                            <p><strong>Periodicidade:</strong> <span data-confirm="periodicidade"></span></p>
+                            <p><strong>Edição:</strong> <span data-confirm="edicao"></span></p>
+                            <p><strong>Porte:</strong> <span data-confirm="porte"></span></p>
+                            <p><strong>Acesso:</strong> <span data-confirm="acesso"></span></p>
+                            <p><strong>Prazo de avaliação:</strong> <span data-confirm="review_deadline_at"></span></p>
                             <p><strong>Capacidade total:</strong> <span data-confirm="capacity"></span></p>
                             <p><strong>Vagas internas:</strong> <span data-confirm="internal_capacity"></span></p>
                             <p><strong>Vagas externas:</strong> <span data-confirm="external_capacity"></span></p>
@@ -769,10 +791,15 @@
             const enabled = acceptsSubmissionsCheckbox.checked;
             const submissionDeadlineInput = document.getElementById('submission_deadline_at');
             const submissionDeadlineWrap = document.getElementById('submission-deadline-field-wrap');
+            const reviewDeadlineInput = document.getElementById('review_deadline_at');
+            const reviewDeadlineWrap = document.getElementById('review-deadline-field-wrap');
             const registrationDeadlineCell = document.getElementById('registration-deadline-cell');
 
             if (submissionDeadlineWrap) {
                 submissionDeadlineWrap.classList.toggle('hidden', !enabled);
+            }
+            if (reviewDeadlineWrap) {
+                reviewDeadlineWrap.classList.toggle('hidden', !enabled);
             }
             if (registrationDeadlineCell) {
                 registrationDeadlineCell.classList.toggle('md:col-span-2', !enabled);
@@ -782,13 +809,17 @@
                 submissionDeadlineInput.disabled = !enabled;
                 submissionDeadlineInput.required = enabled;
             }
+            if (reviewDeadlineInput) {
+                reviewDeadlineInput.disabled = !enabled;
+                reviewDeadlineInput.required = enabled;
+            }
 
             scientificConfigSection.style.opacity = enabled ? '1' : '0.5';
             scientificConfigSection.querySelectorAll('input, select, textarea').forEach((input) => {
                 if (input.name === 'accepts_submissions') {
                     return;
                 }
-                if (input.name === 'submission_deadline_at') {
+                if (input.name === 'submission_deadline_at' || input.name === 'review_deadline_at') {
                     return;
                 }
                 if (
@@ -932,6 +963,7 @@
                 /^coordinator_/,
                 /^datetime_registration/,
                 /^submission_deadline_at/,
+                /^review_deadline_at/,
                 /^accepted_work_types/,
                 /^accepted_work_types_custom/,
                 /^reviewers_min_per_work/,
@@ -1473,6 +1505,37 @@
                 const custom = document.querySelector('[name="event_type_custom"]');
                 if (!sel) { el.textContent = '-'; return; }
                 el.textContent = sel.value === SELECT_OTHER ? (custom?.value?.trim() || '-') : (sel.selectedOptions[0]?.text || sel.value || '-');
+                return;
+            }
+            if (name === 'natureza' || name === 'abrangencia' || name === 'periodicidade') {
+                const sel = document.querySelector(`[name="${name}"]`);
+                el.textContent = sel?.value ? (sel.selectedOptions[0]?.text || sel.value) : '-';
+                return;
+            }
+            if (name === 'edicao') {
+                const periodicity = document.querySelector('[name="periodicidade"]')?.value;
+                const edition = document.querySelector('[name="edicao"]');
+                el.textContent = periodicity && periodicity !== 'unico' ? (edition?.value || '-') : 'Não se aplica';
+                return;
+            }
+            if (name === 'porte') {
+                const internal = Number(document.querySelector('[name="internal_capacity"]')?.value || 0);
+                const external = Number(document.querySelector('[name="external_capacity"]')?.value || 0);
+                const capacity = Number(document.querySelector('[name="capacity"]')?.value || 0);
+                const total = (internal > 0 || external > 0) ? internal + external : capacity;
+                el.textContent = window.abntPorteLabel ? window.abntPorteLabel(total) : '-';
+                return;
+            }
+            if (name === 'acesso') {
+                el.textContent = 'Gratuito';
+                return;
+            }
+            if (name === 'review_deadline_at') {
+                const accepts = document.querySelector('[name="accepts_submissions"]')?.checked;
+                const reviewDeadline = document.querySelector('[name="review_deadline_at"]');
+                el.textContent = accepts && reviewDeadline?.value
+                    ? reviewDeadline.value.replace('T', ' ')
+                    : 'Não se aplica';
                 return;
             }
 

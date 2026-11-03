@@ -108,6 +108,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/works/{work}/decision', [ReviewController::class, 'decide'])
         ->middleware('isCoordinator')
         ->name('works.decision');
+    Route::post('/works/{work}/desk-reject', [ReviewController::class, 'deskReject'])
+        ->middleware('isCoordinator')
+        ->name('works.desk-reject');
     Route::get('/works/{work}/reviews/{review}/feedback/download', [ReviewController::class, 'downloadEvaluatorFeedback'])
         ->middleware('isCoordinator')
         ->name('reviews.feedback.download');

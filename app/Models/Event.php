@@ -39,9 +39,11 @@ class Event extends Model
         'end_date' => 'date',
         'datetime_registration' => 'datetime',
         'submission_deadline_at' => 'datetime',
+        'review_deadline_at' => 'datetime',
         'finalized_at' => 'datetime',
         'annals_uploaded_at' => 'datetime',
         'certificate_total_hours' => 'decimal:2',
+        'edicao' => 'integer',
     ];
 
     public const ANNALS_KIND_ANAIS = 'anais';
@@ -198,6 +200,36 @@ class Event extends Model
         'Artes',
     ];
 
+    public const NATURE_OPTIONS = [
+        'cientifico' => 'Científico',
+        'educativo' => 'Educativo',
+        'tecnico' => 'Técnico',
+        'cultural' => 'Cultural',
+        'artistico' => 'Artístico',
+        'assistencial' => 'Assistencial',
+        'civico' => 'Cívico',
+        'desportivo' => 'Desportivo',
+        'social' => 'Social',
+    ];
+
+    public const SCOPE_OPTIONS = [
+        'local' => 'Local',
+        'regional' => 'Regional',
+        'nacional' => 'Nacional',
+        'internacional' => 'Internacional',
+    ];
+
+    public const PERIODICITY_UNIQUE = 'unico';
+
+    public const PERIODICITY_OPTIONS = [
+        self::PERIODICITY_UNIQUE => 'Único',
+        'regular' => 'Regular',
+        'sazonal' => 'Sazonal',
+        'esporadico' => 'Esporádico',
+    ];
+
+    public const ACCESS_FREE = 'gratuito';
+
     public const EVENT_TYPE_OPTIONS = [
         'Congresso',
         'Simpósio',
@@ -213,6 +245,77 @@ class Event extends Model
         'Escola de Verão/Inverno',
         'Curso/Minicurso',
     ];
+
+    public function natureLabel(): ?string
+    {
+        return self::NATURE_OPTIONS[$this->natureza] ?? null;
+    }
+
+    public function scopeLabel(): ?string
+    {
+        return self::SCOPE_OPTIONS[$this->abrangencia] ?? null;
+    }
+
+    public function periodicityLabel(): ?string
+    {
+        return self::PERIODICITY_OPTIONS[$this->periodicidade] ?? null;
+    }
+
+    public function periodicityDisplay(): ?string
+    {
+        $label = $this->periodicityLabel();
+        if ($label === null) {
+            return null;
+        }
+
+        if ($this->periodicidade !== self::PERIODICITY_UNIQUE && $this->edicao) {
+            return $label.', edição '.$this->edicao;
+        }
+
+        return $label;
+    }
+
+    public function accessLabel(): string
+    {
+        return 'Gratuito';
+    }
+
+    /** Soma usada na faixa de porte: vagas internas e externas, ou a capacidade total quando ainda não há divisão. */
+    public function audienceCapacityTotal(): int
+    {
+        if ($this->hasAudienceQuotas()) {
+            return (int) $this->internal_capacity + (int) $this->external_capacity;
+        }
+
+        return (int) $this->capacity;
+    }
+
+    /**
+     * Faixas da NBR 16004: micro até 100, pequeno 101–500, médio 501–5.000, grande 5.001–40.000, mega acima disso.
+     */
+    public function porteKey(): string
+    {
+        $total = $this->audienceCapacityTotal();
+
+        return match (true) {
+            $total <= 100 => 'micro',
+            $total <= 500 => 'pequeno',
+            $total <= 5000 => 'medio',
+            $total <= 40000 => 'grande',
+            default => 'mega',
+        };
+    }
+
+    public function porteLabel(): string
+    {
+        return match ($this->porteKey()) {
+            'micro' => 'Microevento',
+            'pequeno' => 'Pequeno porte',
+            'medio' => 'Médio porte',
+            'grande' => 'Grande porte',
+            default => 'Megaevento',
+        };
+    }
 
     public function acceptsSubmissions(): bool
     {
@@ -244,11 +347,25 @@ class Event extends Model
         return Carbon::now()->lessThan(Carbon::parse($this->submission_deadline_at));
     }
 
+    public function hasReviewDeadline(): bool
+    {
+        return $this->review_deadline_at !== null;
+    }
+
+    /** Prazo próprio de avaliação já passou. Evento antigo, sem esse prazo, não usa esta trava. */
+    public function reviewDeadlinePassed(): bool
+    {
+        if (! $this->hasReviewDeadline()) {
+            return false;
+        }
+
+        return Carbon::now()->greaterThanOrEqualTo(Carbon::parse($this->review_deadline_at));
+    }
+
     /**
-     * Avaliadores podem enviar novo parecer: submissões já encerradas e período do evento
-     * (até data/hora de término) ainda não concluído.
-     *
-     * Aplica-se à primeira avaliação e à reavaliação após correção do autor — sem exceção após o fim do evento.
+     * Avaliadores podem enviar parecer: submissões encerradas e a janela ainda aberta.
+     * Com prazo próprio, fecha em review_deadline_at. Sem ele, fecha no fim do evento.
+     * Vale para a primeira avaliação e para a reavaliação após correção.
      */
     public function reviewersEvaluationWindowOpen(): bool
     {
@@ -256,7 +373,20 @@ class Event extends Model
             return false;
         }
 
+        if ($this->hasReviewDeadline()) {
+            return ! $this->reviewDeadlinePassed();
+        }
+
         return ! $this->calendarEnded();
+    }
+
+    public function evaluationWindowClosedMessage(): string
+    {
+        if ($this->hasReviewDeadline()) {
+            return 'O prazo de avaliação deste evento já encerrou. Não é mais possível enviar avaliações (incluindo reavaliação após correções).';
+        }
+
+        return 'O período do evento já encerrou. Não é mais possível enviar avaliações (incluindo reavaliação após correções).';
     }
 
     public function minReviewersPerWork(): int

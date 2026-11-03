@@ -66,7 +66,7 @@ class WorkController extends Controller
             ->paginate(self::WORK_LIST_PER_PAGE)
             ->withQueryString();
 
-        $distributionAllowed = $event->workSubmissionDeadlinePassed();
+        $distributionAllowed = $event->reviewersEvaluationWindowOpen();
 
         $eligibleForDistributionStatuses = [
             Work::STATUS_SUBMITTED,
@@ -252,7 +252,9 @@ class WorkController extends Controller
                 ->whereNotNull('submitted_at')
                 ->exists();
             if (! $completed) {
-                abort(403, 'O período do evento encerrou. Não é mais possível baixar o trabalho para nova avaliação.');
+                abort(403, $work->event->hasReviewDeadline()
+                    ? 'O prazo de avaliação encerrou. Não é mais possível baixar o trabalho para nova avaliação.'
+                    : 'O período do evento encerrou. Não é mais possível baixar o trabalho para nova avaliação.');
             }
         }
 

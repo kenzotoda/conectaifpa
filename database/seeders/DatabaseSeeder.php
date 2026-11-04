@@ -15,12 +15,17 @@ class DatabaseSeeder extends Seeder
     {
         $password = (string) (env('ADMIN_INITIAL_PASSWORD') ?: '12345678');
 
+        // Essas caixas não existem. A data de verificação deixa o login entrar direto,
+        // sem o aviso nem o e-mail de confirmação.
+        $verified = ['email_verified_at' => now()];
+
         User::updateOrCreate([
             'email' => 'admin@conectaifpa.com',
         ], [
             'name' => 'Administrador Inicial',
             'password' => Hash::make($password),
             'role' => User::ROLE_COORDINATOR,
+            ...$verified,
         ]);
 
         User::updateOrCreate([
@@ -29,6 +34,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Avaliador Inicial',
             'password' => Hash::make($password),
             'role' => User::ROLE_REVIEWER,
+            ...$verified,
         ]);
 
         User::updateOrCreate([
@@ -37,6 +43,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Aluno Inicial',
             'password' => Hash::make($password),
             'role' => User::ROLE_PARTICIPANT,
+            ...$verified,
         ]);
 
     }

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
@@ -73,5 +74,24 @@ class EmailVerificationTest extends TestCase
         $this->actingAs($user)->get($verificationUrl);
 
         $this->assertFalse($user->fresh()->hasVerifiedEmail());
+    }
+
+    public function test_seeded_accounts_enter_without_email_verification(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        foreach ([
+            'admin@conectaifpa.com',
+            'reviewer@conectaifpa.com',
+            'aluno@conectaifpa.com',
+        ] as $email) {
+            $user = User::query()->where('email', $email)->firstOrFail();
+
+            $this->assertTrue($user->hasVerifiedEmail());
+
+            $this->actingAs($user)
+                ->get('/dashboard')
+                ->assertOk();
+        }
     }
 }

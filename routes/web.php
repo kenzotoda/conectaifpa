@@ -59,6 +59,9 @@ Route::delete('/events/{eventId}/remove/{userId}', [EventController::class, 'rem
 Route::get('/events/{id}/novidades', [EventController::class, 'novidades'])->middleware(['auth', 'isCoordinator']);
 Route::post('/events/{id}/novidades', [EventController::class, 'storeNovidade'])->middleware(['auth', 'isCoordinator']);
 Route::delete('/events/{eventId}/novidades/{novidadeId}', [EventController::class, 'destroyNovidade'])->middleware(['auth', 'isCoordinator']);
+Route::get('/events/{id}/patrocinadores', [EventController::class, 'patrocinadores'])->middleware(['auth', 'isCoordinator']);
+Route::post('/events/{id}/patrocinadores', [EventController::class, 'storePatrocinador'])->middleware(['auth', 'isCoordinator']);
+Route::delete('/events/{eventId}/patrocinadores/{sponsorId}', [EventController::class, 'destroyPatrocinador'])->middleware(['auth', 'isCoordinator']);
 Route::post('/events/{eventId}/documentos', [EventController::class, 'storeDocument'])->middleware(['auth', 'isCoordinator'])->name('events.documents.store');
 Route::delete('/events/{eventId}/documentos/{documentId}', [EventController::class, 'destroyDocument'])->middleware(['auth', 'isCoordinator'])->name('events.documents.destroy');
 Route::post('/events/{eventId}/atividades', [EventController::class, 'storeActivity'])->middleware(['auth', 'isCoordinator'])->name('events.activities.store');

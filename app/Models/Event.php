@@ -117,6 +117,11 @@ class Event extends Model
         return $this->hasMany(EventNews::class)->orderBy('created_at', 'desc');
     }
 
+    public function sponsors()
+    {
+        return $this->hasMany(EventSponsor::class)->orderBy('id');
+    }
+
     public function documents()
     {
         return $this->hasMany(EventDocument::class)

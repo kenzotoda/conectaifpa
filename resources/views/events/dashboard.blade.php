@@ -129,6 +129,11 @@
                                                 <ion-icon name="newspaper-outline" class="text-xl shrink-0" aria-hidden="true"></ion-icon>
                                                 <span class="flex-1 min-w-0 text-left leading-snug break-words [overflow-wrap:anywhere]">Novidades</span>
                                             </a>
+                                            <a href="/events/{{ $event['id'] }}/patrocinadores"
+                                               class="dash-tile group relative inline-flex flex-row items-center justify-start gap-2 px-3 py-2.5 sm:py-3 min-h-[44px] rounded-xl text-sm font-medium transition-all no-underline min-w-0">
+                                                <ion-icon name="business-outline" class="text-xl shrink-0" aria-hidden="true"></ion-icon>
+                                                <span class="flex-1 min-w-0 text-left leading-snug break-words [overflow-wrap:anywhere]">Patrocinadores</span>
+                                            </a>
                                             @if($event->acceptsSubmissions())
                                             <a href="{{ route('events.works.index', $event->id) }}"
                                                class="dash-tile group relative inline-flex flex-row items-center justify-start gap-2 px-3 py-2.5 sm:py-3 min-h-[44px] rounded-xl text-sm font-medium transition-all no-underline min-w-0">

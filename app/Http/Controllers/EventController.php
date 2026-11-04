@@ -7,6 +7,7 @@ use App\Models\Event;
 use App\Models\EventDocument;
 use App\Models\EventGuest;
 use App\Models\EventNews;
+use App\Models\EventSponsor;
 // Acesso ao Model de eventos
 use App\Models\User;
 use App\Models\Work;
@@ -805,7 +806,7 @@ class EventController extends Controller
 
     public function show($id)
     {
-        $event = Event::with(['eventNews', 'documents', 'activities.parentActivity', 'activities.guest', 'activities.eventGuests', 'guests'])->findOrFail($id);
+        $event = Event::with(['eventNews', 'sponsors', 'documents', 'activities.parentActivity', 'activities.guest', 'activities.eventGuests', 'guests'])->findOrFail($id);
 
         // Retorna o usuário dono do evento usando o método user() do Model Event.
         $eventOwner = $event->user()->first();
@@ -1821,7 +1822,7 @@ class EventController extends Controller
 
         return redirect()->back()->with(
             'msg',
-            'Evento finalizado. Não será mais possível editar, gerenciar inscritos ou novidades; você ainda pode excluir o evento se precisar.'
+            'Evento finalizado. Não será mais possível editar, gerenciar inscritos, novidades ou patrocinadores; você ainda pode excluir o evento se precisar.'
         );
     }
 
@@ -2003,6 +2004,70 @@ class EventController extends Controller
         $novidade->delete();
 
         return redirect("/events/{$event->id}/novidades")->with('msg', 'Novidade removida com sucesso!');
+    }
+
+    public function patrocinadores($id)
+    {
+        $event = Event::findOrFail($id);
+
+        if (auth()->id() != $event->user_id) {
+            return redirect('/dashboard');
+        }
+
+        if ($event->isFinalized()) {
+            return redirect('/dashboard')->with('msg', 'Este evento foi finalizado. Patrocinadores não podem mais ser alterados.');
+        }
+
+        $sponsors = $event->sponsors()->get();
+
+        return view('events.patrocinadores', ['event' => $event, 'sponsors' => $sponsors]);
+    }
+
+    public function storePatrocinador(Request $request, $id)
+    {
+        $event = Event::findOrFail($id);
+
+        if (auth()->id() != $event->user_id) {
+            return redirect('/dashboard');
+        }
+
+        if ($event->isFinalized()) {
+            return redirect('/dashboard')->with('msg', 'Este evento foi finalizado. Não é possível adicionar patrocinadores.');
+        }
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'website' => ['nullable', 'string', 'max:255', 'regex:/^https?:\/\/\S+$/i'],
+        ], [
+            'name.required' => 'O nome do patrocinador é obrigatório.',
+            'website.regex' => 'O site precisa começar com http:// ou https://.',
+        ]);
+
+        EventSponsor::create([
+            'event_id' => $event->id,
+            'name' => $request->name,
+            'website' => $request->website,
+        ]);
+
+        return redirect("/events/{$event->id}/patrocinadores")->with('msg', 'Patrocinador adicionado.');
+    }
+
+    public function destroyPatrocinador($eventId, $sponsorId)
+    {
+        $event = Event::findOrFail($eventId);
+
+        if (auth()->id() != $event->user_id) {
+            return redirect('/dashboard');
+        }
+
+        if ($event->isFinalized()) {
+            return redirect('/dashboard')->with('msg', 'Este evento foi finalizado. Não é possível remover patrocinadores.');
+        }
+
+        $sponsor = EventSponsor::where('event_id', $eventId)->where('id', $sponsorId)->firstOrFail();
+        $sponsor->delete();
+
+        return redirect("/events/{$event->id}/patrocinadores")->with('msg', 'Patrocinador removido.');
     }
 
     public function storeDocument(Request $request, $eventId)

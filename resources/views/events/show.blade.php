@@ -309,7 +309,7 @@
                         <h3 class="dash-title text-sm font-semibold m-0 mb-3">Coordenação</h3>
                         @if($event->isFinalized())
                             <p class="dash-text text-sm max-w-2xl mb-4">
-                                Evento finalizado: não é possível editar, gerenciar inscritos ou novidades. A página permanece visível ao público e você pode excluir o evento no painel.
+                                Evento finalizado: não é possível editar, gerenciar inscritos, novidades ou patrocinadores. A página permanece visível ao público e você pode excluir o evento no painel.
                             </p>
                             @include('events.partials.annals-upload-form', ['event' => $event])
                         @elseif($event->calendarEnded() || config('app.allow_early_event_finalize'))
@@ -324,7 +324,7 @@
                             @endif
                             <div class="flex flex-wrap gap-3 items-center">
                                 <form action="{{ url('/events/'.$event->id.'/finalize') }}" method="POST" class="inline"
-                                      onsubmit="return confirm('Finalizar definitivamente? Você não poderá mais editar o evento, novidades ou inscritos.');">
+                                      onsubmit="return confirm('Finalizar definitivamente? Você não poderá mais editar o evento, novidades, patrocinadores ou inscritos.');">
                                     @csrf
                                     <button type="submit"
                                         class="dash-btn inline-flex items-center justify-center gap-2 font-semibold px-4 py-2.5 rounded-xl text-sm">
@@ -694,6 +694,28 @@
                     @endif
                 </div>
             </div>
+
+            @if($event->sponsors->isNotEmpty())
+            <div class="space-y-6">
+                <h2 class="dash-heading text-xl sm:text-2xl font-bold">Patrocinadores</h2>
+
+                <div class="dash-card rounded-2xl p-6 sm:p-8 lg:p-10">
+                    <ul class="flex flex-wrap gap-3 m-0 p-0 list-none">
+                        @foreach($event->sponsors as $sponsor)
+                            <li class="dash-panel rounded-xl px-4 py-3 min-w-0">
+                                @if($sponsor->website)
+                                    <a href="{{ $sponsor->website }}" target="_blank" rel="noopener noreferrer" class="dash-title font-semibold no-underline break-words">
+                                        {{ $sponsor->name }}
+                                    </a>
+                                @else
+                                    <span class="dash-title font-semibold break-words">{{ $sponsor->name }}</span>
+                                @endif
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+            @endif
 
             <!-- ===== SEÇÃO: NOVIDADES ===== -->
             <div class="space-y-6">

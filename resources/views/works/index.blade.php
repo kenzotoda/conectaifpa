@@ -101,7 +101,7 @@
                                                     >
                                                     <span class="text-sm text-slate-700 min-w-0">
                                                         <span class="font-medium break-words">{{ $w->listTitleCompact(true) }}</span>
-                                                        <span class="text-slate-500"> — {{ $w->submitter->name ?? 'não informado' }}</span>
+                                                        <span class="text-slate-500">, {{ $w->submitter->name ?? 'não informado' }}</span>
                                                         <span class="text-xs text-slate-500 block">Avaliadores atuais: {{ $w->reviewer_assignments_count }}</span>
                                                     </span>
                                                 </label>
@@ -423,15 +423,15 @@
                                     $nCompleted = (int) ($work->reviewer_assignments_completed_count ?? 0);
                                     $allReviewersResponded = $nReviewers > 0 && $nCompleted === $nReviewers;
                                     $decisionTooltip = $work->decision_at
-                                        ? 'Decisão registrada em '.$work->decision_at->format('d/m/Y H:i').' — '.$work->statusLabel().($work->decisionByUser ? ' · '.$work->decisionByUser->name : '')
+                                        ? 'Decisão registrada em '.$work->decision_at->format('d/m/Y H:i').'. '.$work->statusLabel().($work->decisionByUser ? ' · '.$work->decisionByUser->name : '')
                                         : null;
                                 @endphp
                                 <td class="px-4 py-3 text-center align-middle">
                                     @if(!$distributionAllowed)
-                                        <span class="text-xs text-slate-400 cursor-default" title="Após encerrar o prazo de submissão você verá quando todos os pareceres foram enviados.">—</span>
+                                        <span class="text-xs text-slate-400 cursor-default" title="Após encerrar o prazo de submissão você verá quando todos os pareceres foram enviados.">-</span>
                                     @elseif($work->coordinatorDecisionIsTerminal())
                                         @php
-                                            $regTitle = $decisionTooltip ?? ('Situação fechada para novas decisões da coordenação — '.$work->statusLabel());
+                                            $regTitle = $decisionTooltip ?? ('Situação fechada para novas decisões da coordenação. '.$work->statusLabel());
                                         @endphp
                                         <span class="inline-flex items-center justify-center gap-1 rounded-full bg-slate-200/90 text-slate-900 px-2.5 py-1 text-xs font-semibold ring-1 ring-slate-300/80 whitespace-nowrap" title="{{ $regTitle }}">
                                             <ion-icon name="shield-checkmark-outline" aria-hidden="true" class="text-base shrink-0"></ion-icon>
@@ -441,7 +441,7 @@
                                             <span class="block text-[10px] text-slate-500 mt-1 font-normal leading-tight">{{ $work->decision_at->format('d/m/Y') }}</span>
                                         @endif
                                     @elseif($work->isAwaitingAuthorCorrection())
-                                        @php $encaminhamentoTitle = $decisionTooltip ?? 'Aceito com correções — autor ainda deve enviar a versão corrigida.'; @endphp
+                                        @php $encaminhamentoTitle = $decisionTooltip ?? 'Aceito com correções. O autor ainda deve enviar a versão corrigida.'; @endphp
                                         <span class="inline-flex flex-col items-center gap-0.5 max-w-[11rem] mx-auto">
                                             <span class="dash-badge inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold" title="{{ $encaminhamentoTitle }}">
                                                 <ion-icon name="time-outline" aria-hidden="true" class="text-base shrink-0"></ion-icon>
@@ -450,9 +450,9 @@
                                             <span class="text-[10px] leading-tight text-slate-500 text-center normal-case font-normal px-1">Versão corrigida</span>
                                         </span>
                                     @elseif($nReviewers === 0)
-                                        <span class="text-xs text-slate-400" title="Nenhum avaliador vinculado a este trabalho.">—</span>
+                                        <span class="text-xs text-slate-400" title="Nenhum avaliador vinculado a este trabalho.">-</span>
                                     @elseif($allReviewersResponded)
-                                        <span class="dash-badge-positive inline-flex items-center justify-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap" title="Todos os avaliadores já enviaram o parecer — na página Detalhes você pode registrar a decisão final da coordenação.">
+                                        <span class="dash-badge-positive inline-flex items-center justify-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap" title="Todos os avaliadores já enviaram o parecer. Na página Detalhes você pode registrar a decisão final da coordenação.">
                                             <ion-icon name="checkmark-done-outline" aria-hidden="true" class="text-base shrink-0"></ion-icon>
                                             Liberada
                                         </span>

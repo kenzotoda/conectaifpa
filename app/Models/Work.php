@@ -96,6 +96,25 @@ class Work extends Model
     /** Status antigo de catálogo por trabalho. Mantido só para registros ainda não migrados. */
     public const STATUS_PUBLISHED_ANNALS = 'published_annals';
 
+    /**
+     * @return list<string>
+     */
+    public static function annalsCertificateStatuses(): array
+    {
+        return [
+            self::STATUS_FINAL_VALIDATED,
+            self::STATUS_SCHEDULED,
+            self::STATUS_PRESENTED,
+            self::STATUS_ABSENT,
+            self::STATUS_PUBLISHED_ANNALS,
+        ];
+    }
+
+    public function qualifiesForAnnalsCertificate(): bool
+    {
+        return in_array($this->status, self::annalsCertificateStatuses(), true);
+    }
+
     public const TYPE_RESUMO_SIMPLES = 'resumo_simples';
 
     public const TYPE_RESUMO_EXPANDIDO = 'resumo_expandido';
@@ -170,7 +189,7 @@ class Work extends Model
             self::STATUS_WITHDRAWN => 'Retirado',
             self::STATUS_CANCELLED => 'Cancelado',
             self::STATUS_DESK_REJECTED => 'Rejeitado na triagem',
-            self::STATUS_FINAL_VALIDATED => 'Aprovado — versão final definida',
+            self::STATUS_FINAL_VALIDATED => 'Aprovado (versão final definida)',
             self::STATUS_SCHEDULED => 'Agendado',
             self::STATUS_PRESENTED => 'Apresentado',
             self::STATUS_ABSENT => 'Ausente',
@@ -297,13 +316,13 @@ class Work extends Model
         }
 
         $typeLabel = self::workTypeLabels()[$this->work_type] ?? $this->work_type;
-        $base = 'Submissão — '.$typeLabel;
+        $base = 'Submissão: '.$typeLabel;
 
         return $includeCoordinatorNumber ? $base.' #'.$this->id : $base;
     }
 
     /**
-     * Rótulo curto para tabelas/cabeçalhos: sem o prefixo "Submissão —" quando só há tipo.
+     * Rótulo curto para tabelas/cabeçalhos: sem o prefixo "Submissão:" quando só há tipo.
      * Evita redundância com colunas já nomeadas "Submissão" ou "Trabalho".
      */
     public function listTitleCompact(bool $includeCoordinatorNumber = false): string
@@ -320,7 +339,7 @@ class Work extends Model
 
     /**
      * Texto do trabalho no certificado de apresentação e na validação: preferencialmente uma linha, definido na tela de certificados (seção 4),
-     * depois o título da submissão; se vazios, apenas o rótulo do tipo (sem prefixo "Submissão —").
+     * depois o título da submissão; se vazios, apenas o rótulo do tipo (sem prefixo "Submissão:").
      */
     public function displayTitleForPresentationCertificate(): string
     {
@@ -335,7 +354,7 @@ class Work extends Model
     }
 
     /**
-     * Compatibilidade com blades/views compiladas antigas. Não pré-preenche com título da submissão — só repete o valor já salvo para o certificado.
+     * Compatibilidade com blades/views compiladas antigas. Não pré-preenche com título da submissão. Só repete o valor já salvo para o certificado.
      */
     public function defaultCertificatePresentationTitleForCoordinatorForm(): string
     {
@@ -396,7 +415,7 @@ class Work extends Model
 
     /**
      * Trabalhos já aceitos na decisão final (incluindo fluxo com correção / versão final definida)
-     * e estado posterior — aptos a ter data, horário e local da apresentação definidos pelo coordenador.
+     * e estado posterior, aptos a ter data, horário e local da apresentação definidos pelo coordenador.
      */
     public function scopeEligibleForCoordinatorPresentationScheduling(Builder $query): Builder
     {

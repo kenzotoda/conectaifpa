@@ -41,8 +41,17 @@ class Event extends Model
         'submission_deadline_at' => 'datetime',
         'review_deadline_at' => 'datetime',
         'finalized_at' => 'datetime',
+        'satisfaction_invited_at' => 'datetime',
         'annals_uploaded_at' => 'datetime',
         'certificate_total_hours' => 'decimal:2',
+        'certificate_reviewer_hours' => 'decimal:2',
+        'certificate_guest_hours' => 'decimal:2',
+        'certificate_organization_hours' => 'decimal:2',
+        'certificate_publication_hours' => 'decimal:2',
+        'certificate_reviewer_enabled' => 'boolean',
+        'certificate_guest_enabled' => 'boolean',
+        'certificate_organization_enabled' => 'boolean',
+        'certificate_coauthor_enabled' => 'boolean',
         'edicao' => 'integer',
     ];
 
@@ -161,7 +170,12 @@ class Event extends Model
             ->orderByPivot('sort_order');
     }
 
-    /** Participantes (perfil aluno) inscritos no evento — útil para presença e certificados. */
+    /** Participantes (perfil aluno) inscritos no evento. Útil para presença e certificados. */
+    public function satisfactionResponses()
+    {
+        return $this->hasMany(EventSatisfactionResponse::class);
+    }
+
     public function participantUsers()
     {
         return $this->users()->where('users.role', User::ROLE_PARTICIPANT)->orderBy('users.name');
@@ -291,7 +305,7 @@ class Event extends Model
     }
 
     /**
-     * Faixas da NBR 16004: micro até 100, pequeno 101–500, médio 501–5.000, grande 5.001–40.000, mega acima disso.
+     * Faixas da NBR 16004: micro até 100, pequeno 101 a 500, médio 501 a 5.000, grande 5.001 a 40.000, mega acima disso.
      */
     public function porteKey(): string
     {

@@ -26,11 +26,15 @@
             color: #0f172a;
         }
         .auth-panel .text-white,
-        .auth-panel [class*="text-white"] {
-            color: #0f172a;
+        .auth-panel [class*="text-white"],
+        .auth-panel h1,
+        .auth-panel p,
+        .auth-panel ion-icon {
+            color: #0f172a !important;
         }
-        .auth-panel a[class*="text-white"]:hover {
-            color: #0b6b45;
+        .auth-panel a[class*="text-white"]:hover,
+        .auth-panel a[class*="text-white"]:hover ion-icon {
+            color: #0b6b45 !important;
         }
         .auth-panel .blob.bg-white\/10 { background-color: rgba(64, 218, 152, 0.34); }
         .auth-panel .blob.bg-white\/15 { background-color: rgba(18, 167, 106, 0.22); }

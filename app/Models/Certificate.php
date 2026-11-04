@@ -15,12 +15,26 @@ class Certificate extends Model
 
     public const TYPE_PRESENTATION = 'apresentacao';
 
+    public const TYPE_REVIEWER = 'avaliador';
+
+    public const TYPE_GUEST = 'convidado';
+
+    public const TYPE_ORGANIZATION = 'organizacao';
+
+    public const TYPE_COAUTHOR = 'coautor';
+
+    public const TYPE_PUBLICATION = 'publicacao';
+
     protected $fillable = [
         'user_id',
+        'recipient_name',
+        'recipient_role',
         'tipo',
         'event_id',
         'activity_id',
         'work_id',
+        'event_guest_id',
+        'work_author_id',
         'arquivo_pdf',
         'codigo_validacao',
         'conteudo_hash',
@@ -51,6 +65,26 @@ class Certificate extends Model
         return $this->belongsTo(Work::class);
     }
 
+    public function eventGuest(): BelongsTo
+    {
+        return $this->belongsTo(EventGuest::class);
+    }
+
+    public function workAuthor(): BelongsTo
+    {
+        return $this->belongsTo(WorkAuthor::class);
+    }
+
+    public function recipientDisplayName(): string
+    {
+        $stored = trim((string) ($this->recipient_name ?? ''));
+        if ($stored !== '') {
+            return $stored;
+        }
+
+        return $this->user?->name ?? 'Não identificado';
+    }
+
     /**
      * Normaliza o texto digitado pelo visitante (maiúsculas, só letras/números).
      */
@@ -65,6 +99,11 @@ class Certificate extends Model
             self::TYPE_PARTICIPATION => 'Participação no evento',
             self::TYPE_ACTIVITY => 'Participação em atividade',
             self::TYPE_PRESENTATION => 'Apresentação de trabalho',
+            self::TYPE_REVIEWER => 'atuação como avaliador',
+            self::TYPE_GUEST => 'participação como convidado',
+            self::TYPE_ORGANIZATION => 'participação na organização',
+            self::TYPE_COAUTHOR => 'coautoria de trabalho',
+            self::TYPE_PUBLICATION => 'publicação em anais',
             default => $tipo,
         };
     }

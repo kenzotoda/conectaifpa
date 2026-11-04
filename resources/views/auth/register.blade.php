@@ -50,7 +50,7 @@
     </div>
 </div>
 
-{{-- Painel do formulário — desktop: card largo + grelha compacta para evitar rolagem vertical --}}
+{{-- Painel do formulário. No desktop: card largo e grelha compacta para evitar rolagem vertical. --}}
 <div class="w-full min-w-0 lg:w-7/12 lg:shrink-0 flex flex-col items-stretch justify-start lg:justify-center px-4 sm:px-6 lg:px-8 xl:px-10 py-6 sm:py-8 lg:py-4 order-1 lg:order-2  auth-safe-top auth-safe-bottom lg:min-h-[calc(100dvh-3.5rem)]">
     <div class="w-full max-w-xl min-w-0 mx-auto my-0 sm:my-1 lg:my-0 lg:max-w-none">
         <div class="glass-card rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl shadow-slate-200/50 border border-white/60 p-5 sm:p-6 lg:p-5 xl:p-6 min-w-0 w-full max-w-full [overflow-wrap:anywhere]">
@@ -109,6 +109,7 @@
                                     <option value="startup" @selected(old('participant_profile') === 'startup')>Startup</option>
                                     <option value="organizacao_social" @selected(old('participant_profile') === 'organizacao_social')>Organização social</option>
                                     <option value="comunidade_geral" @selected(old('participant_profile') === 'comunidade_geral')>Comunidade em geral</option>
+                                    <option value="ifpa_outro_campus" @selected(old('participant_profile') === 'ifpa_outro_campus')>Discente, docente ou técnico de outro campus</option>
                                 </select>
                                 <button type="button" id="participant_profile_trigger" class="profile-picker-trigger" aria-haspopup="listbox" aria-expanded="false" aria-controls="participant_profile_menu">
                                     <span class="profile-picker-value">Selecione</span>
@@ -117,11 +118,12 @@
                                     </svg>
                                 </button>
                                 <div id="participant_profile_menu" class="profile-picker-menu" role="listbox" hidden>
-                                    <p class="profile-picker-group">IFPA</p>
+                                    <p class="profile-picker-group">IFPA Belém</p>
                                     <button type="button" class="profile-picker-option" role="option" data-value="discente">Discente</button>
                                     <button type="button" class="profile-picker-option" role="option" data-value="docente">Docente</button>
                                     <button type="button" class="profile-picker-option" role="option" data-value="tecnico_administrativo">Técnico administrativo</button>
                                     <p class="profile-picker-group">Comunidade externa</p>
+                                    <button type="button" class="profile-picker-option" role="option" data-value="ifpa_outro_campus">Discente, docente ou técnico de outro campus</button>
                                     <button type="button" class="profile-picker-option" role="option" data-value="empreendedor">Empreendedor</button>
                                     <button type="button" class="profile-picker-option" role="option" data-value="estudante_escola_publica">Estudante de escola pública</button>
                                     <button type="button" class="profile-picker-option" role="option" data-value="startup">Startup</button>
@@ -129,15 +131,37 @@
                                     <button type="button" class="profile-picker-option" role="option" data-value="comunidade_geral">Comunidade em geral</button>
                                 </div>
                             </div>
-                            <p class="text-[11px] dash-muted mt-1.5 m-0 leading-relaxed">Discentes, docentes e técnicos administrativos são do IFPA. Os demais perfis são da comunidade externa.</p>
+                            <p class="text-[11px] dash-muted mt-1.5 m-0 leading-relaxed">Internos são discentes, docentes e técnicos do IFPA Belém. Quem é de outro campus entra na comunidade externa.</p>
                         </div>
 
                         <div id="participant-matricula-fields" class="sm:col-span-2 md:col-span-1 min-w-0 hidden">
-                            <label for="matricula" class="block font-outfit font-medium dash-title mb-2 lg:mb-1.5 text-sm">Matrícula (IFPA Belém)</label>
-                            <input id="matricula" type="text" name="matricula" value="{{ old('matricula') }}" maxlength="12" inputmode="numeric"
-                                oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                            <label for="matricula" id="matricula-label" class="block font-outfit font-medium dash-title mb-2 lg:mb-1.5 text-sm">Matrícula (IFPA Belém)</label>
+                            <input id="matricula" type="text" name="matricula" value="{{ old('matricula') }}" maxlength="20" inputmode="numeric"
+                                oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 20)"
                                 class="w-full min-w-0 px-4 py-3 lg:py-2.5 rounded-xl dash-field outline-none text-base"
-                                placeholder="12 dígitos">
+                                placeholder="Somente números">
+                        </div>
+
+                        <div id="participant-campus-fields" class="sm:col-span-2 md:col-span-1 min-w-0 hidden">
+                            <label for="campus-ifpa" class="block font-outfit font-medium dash-title mb-2 lg:mb-1.5 text-sm">Campus</label>
+                            <select id="campus-ifpa" name="institution" disabled data-app-select-search="Pesquisar campus"
+                                class="hidden w-full min-w-0 px-4 py-3 lg:py-2.5 rounded-xl dash-field outline-none text-base bg-white">
+                                <option value="">Selecione o campus</option>
+                                @foreach (\App\Support\IfpaCampuses::otherThanBelem() as $campus)
+                                    <option value="IFPA - {{ $campus }}" @selected(old('institution') === 'IFPA - '.$campus)>{{ $campus }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div id="participant-bond-fields" class="sm:col-span-2 md:col-span-1 min-w-0 hidden">
+                            <label for="ifpa_bond" class="block font-outfit font-medium dash-title mb-2 lg:mb-1.5 text-sm">Vínculo</label>
+                            <select id="ifpa_bond" name="ifpa_bond" disabled
+                                class="hidden w-full min-w-0 px-4 py-3 lg:py-2.5 rounded-xl dash-field outline-none text-base bg-white">
+                                <option value="">Selecione</option>
+                                <option value="discente" @selected(old('ifpa_bond') === 'discente')>Discente</option>
+                                <option value="docente" @selected(old('ifpa_bond') === 'docente')>Docente</option>
+                                <option value="tecnico_administrativo" @selected(old('ifpa_bond') === 'tecnico_administrativo')>Técnico administrativo</option>
+                            </select>
                         </div>
 
                         <div id="participant-organization-fields" class="sm:col-span-2 md:col-span-1 min-w-0 hidden">
@@ -149,6 +173,17 @@
 
                         <div id="participant-detail-fields" class="sm:col-span-2 md:col-span-1 min-w-0 hidden">
                             <label for="curso" id="curso-label" class="block font-outfit font-medium dash-title mb-2 lg:mb-1.5 text-sm">Curso</label>
+                            <select id="curso-discente" name="curso" disabled data-app-select-search="Pesquisar curso"
+                                class="hidden w-full min-w-0 px-4 py-3 lg:py-2.5 rounded-xl dash-field outline-none text-base bg-white">
+                                <option value="">Selecione o curso</option>
+                                @foreach (\App\Support\IfpaBelemCourses::grouped() as $group => $courses)
+                                    <optgroup label="{{ $group }}">
+                                        @foreach ($courses as $course)
+                                            <option value="{{ $course }}" @selected(old('curso') === $course)>{{ $course }}</option>
+                                        @endforeach
+                                    </optgroup>
+                                @endforeach
+                            </select>
                             <input id="curso" type="text" name="curso" value="{{ old('curso') }}"
                                 class="w-full min-w-0 px-4 py-3 lg:py-2.5 rounded-xl dash-field outline-none text-base"
                                 placeholder="">
@@ -411,14 +446,20 @@
     }
 
     var matriculaWrap = document.getElementById('participant-matricula-fields');
+    var campusWrap = document.getElementById('participant-campus-fields');
+    var bondWrap = document.getElementById('participant-bond-fields');
     var organizationWrap = document.getElementById('participant-organization-fields');
     var detailWrap = document.getElementById('participant-detail-fields');
     var matricula = document.getElementById('matricula');
+    var matriculaLabel = document.getElementById('matricula-label');
+    var campus = document.getElementById('campus-ifpa');
+    var bond = document.getElementById('ifpa_bond');
     var institution = document.getElementById('institution');
     var institutionLabel = document.getElementById('institution-label');
     var curso = document.getElementById('curso');
+    var cursoSelect = document.getElementById('curso-discente');
     var cursoLabel = document.getElementById('curso-label');
-    if (!profile || !matriculaWrap || !organizationWrap || !detailWrap) return;
+    if (!profile || !matriculaWrap || !campusWrap || !bondWrap || !organizationWrap || !detailWrap) return;
 
     var organizationCopy = {
         empreendedor: ['Empreendimento', 'Nome da empresa ou da atividade'],
@@ -433,13 +474,35 @@
         tecnico_administrativo: ['Setor ou lotação', 'Ex.: Coordenação de pesquisa'],
         estudante_escola_publica: ['Curso ou série', 'Ex.: 2 ano do ensino medio']
     };
-    var detailProfiles = ['discente', 'docente', 'tecnico_administrativo', 'estudante_escola_publica'];
+    var bondCopy = {
+        discente: ['Curso', 'Curso no campus'],
+        docente: ['Área de atuação', 'Ex.: Informática'],
+        tecnico_administrativo: ['Setor ou lotação', 'Ex.: Coordenação de pesquisa']
+    };
+    var detailProfiles = ['discente', 'docente', 'tecnico_administrativo', 'estudante_escola_publica', 'ifpa_outro_campus'];
     var organizationProfiles = ['empreendedor', 'estudante_escola_publica', 'startup', 'organizacao_social', 'comunidade_geral'];
 
     function setField(input, wrap, visible, required) {
         wrap.classList.toggle('hidden', !visible);
+        setControl(input, visible, required);
+    }
+
+    function controlShell(input) {
+        return (input.__appSelect && input.__appSelect.root) || input;
+    }
+
+    function setControl(input, visible, required) {
         if (!input) return;
         input.disabled = !visible;
+        var shell = controlShell(input);
+        if (shell !== input) {
+            input.classList.remove('hidden');
+            input.hidden = false;
+        }
+        shell.classList.toggle('hidden', !visible);
+        shell.hidden = !visible;
+        if (!visible) shell.style.setProperty('display', 'none', 'important');
+        else shell.style.removeProperty('display');
         if (visible && required) {
             input.setAttribute('required', 'required');
         } else {
@@ -450,27 +513,56 @@
 
     function sync() {
         var value = profile.value;
-        var showMatricula = value === 'discente';
+        var otherCampus = value === 'ifpa_outro_campus';
+        var showMatricula = value === 'discente' || otherCampus;
         var showOrganization = organizationProfiles.indexOf(value) !== -1;
         var showDetail = detailProfiles.indexOf(value) !== -1;
         var organizationRequired = showOrganization && value !== 'comunidade_geral';
+        var showCourseSelect = showDetail && value === 'discente';
+        var showCourseText = showDetail && value !== 'discente';
+        var bondValue = bond ? bond.value : '';
+        var detailText = otherCampus ? (bondCopy[bondValue] || ['Curso, área ou setor', 'Conforme o vínculo']) : detailCopy[value];
 
-        setField(matricula, matriculaWrap, showMatricula, true);
+        setField(matricula, matriculaWrap, showMatricula, value === 'discente');
+        setField(campus, campusWrap, otherCampus, true);
+        setField(bond, bondWrap, otherCampus, true);
         setField(institution, organizationWrap, showOrganization, organizationRequired);
-        setField(curso, detailWrap, showDetail, true);
+        detailWrap.classList.toggle('hidden', !showDetail);
+        setControl(cursoSelect, showCourseSelect, true);
+        setControl(curso, showCourseText, true);
 
+        if (matriculaLabel) {
+            matriculaLabel.textContent = otherCampus ? 'Matrícula (opcional)' : 'Matrícula (IFPA Belém)';
+        }
         if (showOrganization && organizationCopy[value]) {
             institutionLabel.textContent = organizationCopy[value][0] + (organizationRequired ? '' : ' (opcional)');
             institution.placeholder = organizationCopy[value][1];
         }
-        if (showDetail && detailCopy[value]) {
-            cursoLabel.textContent = detailCopy[value][0];
-            curso.placeholder = detailCopy[value][1];
+        if (cursoLabel) {
+            cursoLabel.setAttribute('for', showCourseSelect ? 'curso-discente' : 'curso');
+        }
+        if (showDetail && detailText && cursoLabel) {
+            cursoLabel.textContent = detailText[0];
+        }
+        if (showCourseText && detailText) {
+            curso.placeholder = detailText[1];
         }
     }
 
     profile.addEventListener('change', sync);
+    if (bond) bond.addEventListener('change', sync);
     sync();
+
+    var selectUiTries = 0;
+    function syncWhenCourseSelectIsReady() {
+        if (!cursoSelect || cursoSelect.__appSelect || selectUiTries > 40) {
+            sync();
+            return;
+        }
+        selectUiTries += 1;
+        setTimeout(syncWhenCourseSelectIsReady, 50);
+    }
+    syncWhenCourseSelectIsReady();
 })();
 </script>
 @endif

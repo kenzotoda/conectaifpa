@@ -35,7 +35,7 @@
 </div>
 
 {{-- Painel do formulário (direita) --}}
-<div class="lg:w-1/2 flex items-start lg:items-center justify-center px-4 sm:px-6 py-6 sm:py-8 lg:py-0 order-1 lg:order-2  auth-safe-top auth-safe-bottom">
+<div class="lg:w-1/2 flex items-start lg:items-center justify-center px-4 sm:px-6 py-6 sm:py-8 lg:py-0 order-1 lg:order-2 auth-safe-top auth-safe-bottom lg:min-h-[calc(100dvh-3.5rem)]">
     <div class="w-full max-w-md">
         <div class="glass-card rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl shadow-slate-200/50 border border-white/60 p-5 sm:p-6 md:p-8 lg:p-10">
             <div class="flex justify-center mb-6 sm:mb-8 lg:hidden">

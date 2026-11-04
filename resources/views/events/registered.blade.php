@@ -1,6 +1,6 @@
 @extends('layouts.newMain')
 
-@section('title', 'Gerenciar Inscritos')
+@section('title', $event->isFinalized() ? 'Inscritos' : 'Gerenciar Inscritos')
 
 @section('content')
 
@@ -24,7 +24,7 @@
                     <ion-icon name="arrow-back-outline" class="text-lg shrink-0"></ion-icon>
                     Voltar ao painel
                 </a>
-                <h1 class="dash-title font-montserrat font-bold text-2xl sm:text-3xl m-0">Gerenciar Inscritos</h1>
+                <h1 class="dash-title font-montserrat font-bold text-2xl sm:text-3xl m-0">{{ $event->isFinalized() ? 'Inscritos' : 'Gerenciar Inscritos' }}</h1>
                 <p class="dash-text text-sm m-0 mt-1">Evento: <strong class="dash-title">{{ $event->title }}</strong></p>
             </div>
 
@@ -83,9 +83,15 @@
             </div>
         </div>
 
-        <p class="dash-text text-sm mb-6 m-0">
-            Remover um inscrito libera a vaga da categoria dele na hora. Um limite menor do que a quantidade já inscrita só é aceito na edição depois dessa remoção.
-        </p>
+        @if($event->isFinalized())
+            <p class="dash-text text-sm mb-6 m-0">
+                Evento finalizado. A lista fica disponível para consulta. A remoção de inscritos está bloqueada.
+            </p>
+        @else
+            <p class="dash-text text-sm mb-6 m-0">
+                Remover um inscrito libera a vaga da categoria dele na hora. Um limite menor do que a quantidade já inscrita só é aceito na edição depois dessa remoção.
+            </p>
+        @endif
 
         @if ($users->isEmpty())
             <div class="rounded-xl border border-amber-200 bg-amber-50 text-amber-950 px-4 py-3 text-sm m-0">
@@ -134,22 +140,26 @@
                                         @endif
                                     </td>
                                     <td class="px-4 py-3 whitespace-nowrap">{{ $user->participantProfileLabel() }}</td>
-                                    <td class="px-4 py-3">{{ filled($user->matricula) ? $user->matricula : '—' }}</td>
-                                    <td class="px-4 py-3 [overflow-wrap:anywhere] max-w-[14rem]">{{ $user->is_external_participant ? ($user->institution ?: '—') : 'IFPA — Belém' }}</td>
-                                    <td class="px-4 py-3 [overflow-wrap:anywhere]">{{ filled($user->curso) ? $user->curso : '—' }}</td>
+                                    <td class="px-4 py-3">{{ filled($user->matricula) ? $user->matricula : '-' }}</td>
+                                    <td class="px-4 py-3 [overflow-wrap:anywhere] max-w-[14rem]">{{ $user->is_external_participant ? ($user->institution ?: '-') : 'IFPA - Belém' }}</td>
+                                    <td class="px-4 py-3 [overflow-wrap:anywhere]">{{ filled($user->curso) ? $user->curso : '-' }}</td>
                                     <td class="px-4 py-3 text-center">
-                                        <form action="/events/{{ $event->id }}/remove/{{ $user->id }}"
-                                              method="POST"
-                                              class="inline"
-                                              onsubmit="return confirm('Remover este participante do evento? A vaga da categoria será liberada.');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit"
-                                                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-red-600 hover:bg-red-700 text-white border-0 cursor-pointer transition-colors"
-                                                    title="Remover participante">
-                                                <ion-icon name="trash-outline" class="text-lg"></ion-icon>
-                                            </button>
-                                        </form>
+                                        @if($event->isFinalized())
+                                            <span class="text-xs font-medium text-slate-400">Bloqueada</span>
+                                        @else
+                                            <form action="/events/{{ $event->id }}/remove/{{ $user->id }}"
+                                                  method="POST"
+                                                  class="inline"
+                                                  onsubmit="return confirm('Remover este participante do evento? A vaga da categoria será liberada.');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit"
+                                                        class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-red-600 hover:bg-red-700 text-white border-0 cursor-pointer transition-colors"
+                                                        title="Remover participante">
+                                                    <ion-icon name="trash-outline" class="text-lg"></ion-icon>
+                                                </button>
+                                            </form>
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach

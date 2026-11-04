@@ -1,6 +1,6 @@
 @extends('layouts.newMain')
 
-@section('title', 'Certificados emitidos — '.$event->title)
+@section('title', 'Certificados emitidos: '.$event->title)
 
 @section('content')
 <div class="dash-page min-h-screen">
@@ -23,7 +23,12 @@
                 @forelse($certificates as $c)
                     <tr class="border-t border-slate-100">
                         <td class="px-4 py-2 whitespace-nowrap">{{ $c->data_emissao->format('d/m/Y H:i') }}</td>
-                        <td class="px-4 py-2">{{ $c->user->name }}</td>
+                        <td class="px-4 py-2">
+                            {{ $c->recipientDisplayName() }}
+                            @if(! $c->user_id)
+                                <span class="block text-xs text-slate-500">Sem conta. Baixe e entregue</span>
+                            @endif
+                        </td>
                         <td class="px-4 py-2">{{ \App\Models\Certificate::typeLabel($c->tipo) }}</td>
                         <td class="px-4 py-2 font-mono text-xs">{{ $c->codigo_validacao }}</td>
                         <td class="px-4 py-2 text-right">

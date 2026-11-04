@@ -162,7 +162,7 @@
                                     <p class="text-3xl font-bold tabular-nums tracking-tight text-slate-900 m-0 sm:text-right">{{ number_format((float) $work->final_score, 2, ',', '.') }}</p>
                                     <p class="text-xs font-medium text-slate-600 m-0 leading-relaxed sm:text-right">{{ $work->final_score_is_manual ? 'Definida pela coordenação.' : 'Média provisória dos pareceres (aguardando decisão oficial).' }}</p>
                                 @elseif($work->final_score !== null && ! $viewerSeesProvisionalFinalScore)
-                                    <p class="text-base font-medium text-slate-700 m-0 sm:text-right leading-snug max-w-[20rem] sm:max-w-none sm:ml-auto">Ainda não há nota oficial — será exibida quando a coordenação registrar a decisão.</p>
+                                    <p class="text-base font-medium text-slate-700 m-0 sm:text-right leading-snug max-w-[20rem] sm:max-w-none sm:ml-auto">Ainda não há nota oficial. Ela aparece quando a coordenação registrar a decisão.</p>
                                 @else
                                     <p class="text-base font-medium text-slate-700 m-0 sm:text-right leading-snug">Aguardando pareceres.</p>
                                 @endif
@@ -213,7 +213,7 @@
                                 <p class="dash-text text-sm font-medium m-0 leading-relaxed">A coordenação havia solicitado <strong>correções</strong>. A versão corrigida foi enviada
                                     @if($work->correction_submitted_at)em <span class="font-bold tabular-nums">{{ $work->correction_submitted_at->format('d/m/Y H:i') }}</span>@endif.</p>
                                 @if(! empty($allReviewersCompleted))
-                                    <p class="dash-text text-xs font-semibold m-0">Os avaliadores concluíram a análise da versão corrigida — a próxima etapa é a decisão definitiva (<strong>aceitar</strong> ou <strong>reprovar</strong>) pela coordenação.</p>
+                                    <p class="dash-text text-xs font-semibold m-0">Os avaliadores concluíram a análise da versão corrigida. A próxima etapa é a decisão definitiva (<strong>aceitar</strong> ou <strong>reprovar</strong>) pela coordenação.</p>
                                 @else
                                     <p class="dash-text text-xs font-medium m-0">Os avaliadores estão na <strong>reavaliação</strong> do arquivo corrigido. A decisão final (aceitar ou reprovar) só aparece quando todos enviarem o parecer nesta rodada.</p>
                                 @endif
@@ -279,6 +279,18 @@
                     </div>
                     <div class="p-5 sm:p-6">
                         <p class="text-[15px] leading-[1.7] text-slate-800 font-medium whitespace-pre-line m-0 max-w-none">{{ $work->abstract }}</p>
+                    </div>
+                </article>
+            @endif
+
+            @php $abntReference = \App\Services\AbntWorkReference::forWork($work); @endphp
+            @if($abntReference)
+                <article class="dash-card rounded-2xl overflow-hidden">
+                    <div class="dash-panel dash-rule px-5 py-3.5 sm:px-6 border-b">
+                        <h2 class="font-semibold text-slate-900 text-base sm:text-lg m-0 tracking-tight">Referência ABNT</h2>
+                    </div>
+                    <div class="p-5 sm:p-6">
+                        <p class="text-[15px] leading-[1.7] text-slate-800 m-0">{{ $abntReference }}</p>
                     </div>
                 </article>
             @endif
@@ -505,9 +517,9 @@
                         <div>
                             <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2 m-0">Período do evento</p>
                             <p class="font-bold text-slate-900 tabular-nums m-0 text-[15px] leading-snug">
-                                {{ $work->event->start_date?->format('d/m/Y') ?? '—' }}
-                                <span class="text-slate-400 font-normal mx-0.5">—</span>
-                                {{ ($work->event->end_date ?? $work->event->start_date)?->format('d/m/Y') ?? '—' }}
+                                {{ $work->event->start_date?->format('d/m/Y') ?? '-' }}
+                                <span class="text-slate-400 font-normal mx-0.5">até</span>
+                                {{ ($work->event->end_date ?? $work->event->start_date)?->format('d/m/Y') ?? '-' }}
                             </p>
                         </div>
                         @if($work->event->acceptsSubmissions() && $work->event->submission_deadline_at)
@@ -517,7 +529,7 @@
                                     Submissões de trabalho
                                 </p>
                                 <p class="font-bold text-slate-900 tabular-nums text-[13px] m-0 leading-snug">{{ $work->event->submission_deadline_at->format('d/m/Y H:i') }}</p>
-                                <p class="text-[11px] text-slate-600 mt-2 m-0 leading-relaxed">{{ $work->event->workSubmissionDeadlinePassed() ? 'Prazo encerrado — avaliações em curso conforme cada evento.' : 'O autor ainda pode ajustar o arquivo conforme esta data.' }}</p>
+                                <p class="text-[11px] text-slate-600 mt-2 m-0 leading-relaxed">{{ $work->event->workSubmissionDeadlinePassed() ? 'Prazo encerrado. As avaliações seguem o calendário de cada evento.' : 'O autor ainda pode ajustar o arquivo conforme esta data.' }}</p>
                             </div>
                         @endif
                         @if($work->event->review_deadline_at)
@@ -741,10 +753,10 @@
                     <div class="mb-4 p-4 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm space-y-2">
                         <p class="font-semibold m-0">Resumo do fluxo dos arquivos</p>
                         <ul class="list-disc ml-5 m-0 space-y-1 text-slate-700">
-                            <li><strong>Submissão do autor</strong> — arquivo inicial conservado pelo sistema como referência histórica.</li>
-                            <li><strong>Correções e parecer em arquivo</strong> — quando o avaliador indica correções ou na reavaliação, há arquivos anexados que ficam só para uso da coordenação (junto com eventual nova versão que o próprio autor enviou).</li>
-                            <li><strong>Correções para o autor</strong> — ao marcar “Aceito com correções”, você pode anexar o documento com as orientações que o participante deve seguir.</li>
-                            <li><strong>Versão oficial final</strong> — ao marcar “Aceito”, você envia o PDF (ou DOC/ODT) que vale para a apresentação; é essa cópia que o sistema passa a oferecer no download principal após a aprovação.</li>
+                            <li><strong>Submissão do autor:</strong> arquivo inicial conservado pelo sistema como referência histórica.</li>
+                            <li><strong>Correções e parecer em arquivo:</strong> quando o avaliador indica correções ou na reavaliação, há arquivos anexados que ficam só para uso da coordenação (junto com eventual nova versão que o próprio autor enviou).</li>
+                            <li><strong>Correções para o autor:</strong> ao marcar “Aceito com correções”, você pode anexar o documento com as orientações que o participante deve seguir.</li>
+                            <li><strong>Versão oficial final:</strong> ao marcar “Aceito”, você envia o PDF (ou DOC/ODT) que vale para a apresentação. Essa cópia passa a ser o download principal após a aprovação.</li>
                         </ul>
                     </div>
 
@@ -802,7 +814,7 @@
                         <div class="rounded-xl border border-slate-200 bg-slate-50/80 p-4 space-y-3">
                             @if($computedFinalScoreAverage !== null)
                                 <p class="text-xs text-slate-600 m-0">
-                                    Referência — média dos pareceres:
+                                    Referência (média dos pareceres):
                                     <span class="font-semibold">{{ number_format($computedFinalScoreAverage, 2, ',', '.') }}</span>
                                     <span class="text-slate-500">(você deve informar a nota final registrada)</span>
                                 </p>
@@ -846,7 +858,7 @@
                                         Arquivo de correções para o aluno <span class="text-red-600">*</span>
                                     </label>
                                     <p class="text-xs text-slate-600 m-0">
-                                        Obrigatório ao escolher <strong>Aceito com correções</strong> (PDF, DOC, DOCX ou ODT — até 10MB), salvo se já existir um arquivo anexado em encaminhamento anterior. Orienta o que o autor deve ajustar — <strong>não substitui</strong> a versão oficial final, que será exigida depois quando você registrar o aceite definitivo.
+                                        Obrigatório ao escolher <strong>Aceito com correções</strong> (PDF, DOC, DOCX ou ODT, até 10MB), salvo se já existir um arquivo anexado em encaminhamento anterior. Orienta o que o autor deve ajustar e <strong>não substitui</strong> a versão oficial final, que será exigida depois, quando você registrar o aceite definitivo.
                                     </p>
                                     <input type="file"
                                            id="work_decision_coordinator_feedback_file"
@@ -909,7 +921,7 @@
                                 <p class="font-medium m-0 mb-1">Aguardando avaliadores</p>
                                 <p class="m-0">
                                     @if($work->isAwaitingCorrectionReReview())
-                                        Nesta rodada <strong>só precisam reenviar parecer os avaliadores que tinham recomendado “Aceitar com correções”</strong>. Quem havia apenas “Aceitar” fica dispensado; quando todos obrigados concluirem, você poderá registrar a decisão definitiva — com envio obrigatório da <strong>versão oficial</strong> ao aceitar o trabalho.
+                                        Nesta rodada <strong>só precisam reenviar parecer os avaliadores que tinham recomendado “Aceitar com correções”</strong>. Quem havia apenas “Aceitar” fica dispensado. Quando todos os obrigados concluírem, você poderá registrar a decisão definitiva, com envio obrigatório da <strong>versão oficial</strong> ao aceitar o trabalho.
                                     @else
                                         A <strong>nota final</strong> e a <strong>decisão</strong> só podem ser registradas depois que <strong>todos</strong> os avaliadores designados enviarem o parecer deste trabalho.
                                     @endif
@@ -956,7 +968,7 @@
                             @if($work->event->acceptsSubmissions())
                                 <li>
                                     <a class="text-emerald-800 underline font-medium" href="{{ route('events.presentations.manage', $work->event_id) }}">Organizar local, data e horário das apresentações dos trabalhos aceitos</a>
-                                    <span class="text-emerald-900/90"> — use o painel do evento para ver todos os trabalhos neste estágio.</span>
+                                    <span class="text-emerald-900/90">. Use o painel do evento para ver todos os trabalhos neste estágio.</span>
                                     @if($work->presentation && in_array($work->status, [\App\Models\Work::STATUS_SCHEDULED, \App\Models\Work::STATUS_PRESENTED, \App\Models\Work::STATUS_ABSENT], true))
                                         <span class="block mt-1.5 text-emerald-900/90">A <strong class="font-semibold text-emerald-950">presença na apresentação</strong>, a CH e o título no certificado são registrados em <a href="{{ route('events.certificates.index', $work->event_id) }}" class="font-semibold text-emerald-950 underline">Certificados e presença</a>.</span>
                                     @endif

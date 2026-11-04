@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Certificate;
+use App\Services\CertificateDocument;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -64,6 +65,7 @@ class CertificateVerificationController extends Controller
 
         return view('certificates.verify', [
             'certificate' => $certificate,
+            'sheet' => CertificateDocument::forCertificate($certificate),
         ]);
     }
 }

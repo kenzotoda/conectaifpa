@@ -16,7 +16,7 @@
                         Na reavaliação você deve apenas <strong>aceitar</strong> ou <strong>rejeitar</strong>; não use "aceitar com correções".
                     </p>
                     <p class="m-0 text-xs opacity-95">
-                        O arquivo que você enviar fica só para a coordenação, separado da versão registrada pelo autor — que não é alterada.
+                        O arquivo que você enviar fica só para a coordenação, separado da versão registrada pelo autor, que não é alterada.
                         Mantenha a <strong>mesma extensão</strong> do trabalho atual (ex.: PDF).
                     </p>
                 </div>
@@ -84,7 +84,7 @@
                                    required
                                    class="dash-field w-full px-4 py-3 rounded-xl outline-none">
                             <p class="dash-muted text-xs mt-2">
-                                Use apenas números, conforme a escala do edital (ex.: 0–5, 0–10).
+                                Use apenas números, conforme a escala do edital (ex.: 0 a 5, 0 a 10).
                             </p>
                         @endif
                     @endif
@@ -111,7 +111,7 @@
                             <strong>Obrigatório nesta rodada.</strong>
                             Envie a sua versão refinada (pode ser igual à do autor com ajustes pontuais). Fica apenas à disposição da coordenação, sem alterar a versão do autor no sistema. Use a mesma extensão da submissão atual (ex.: PDF).
                         @else
-                            Obrigatório se a recomendação for “Aceitar com correções”. Serve de base para o coordenador preparar o retorno ao autor. PDF, DOC, DOCX ou ODT — até 10MB.
+                            Obrigatório se a recomendação for “Aceitar com correções”. Serve de base para o coordenador preparar o retorno ao autor. PDF, DOC, DOCX ou ODT, até 10MB.
                         @endif
                     </p>
                     <input type="file" name="feedback_file"

@@ -200,7 +200,41 @@ class EventAudienceCapacityTest extends TestCase
             ->assertSee($internal->name)
             ->assertSee($external->name)
             ->assertSee('/ 3')
-            ->assertSee('/ 1');
+            ->assertSee('/ 1')
+            ->assertSee('Ações');
+    }
+
+    public function test_finalized_event_keeps_the_participant_list_and_hides_removal(): void
+    {
+        $coordinator = User::factory()->create();
+        $event = $this->makeEvent([
+            'user_id' => $coordinator->id,
+            'title' => 'Evento encerrado',
+            'finalized_at' => now(),
+        ]);
+        $participant = $this->makeParticipant(false);
+        $event->users()->attach($participant->id);
+
+        $this->actingAs($coordinator)
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertSee('/events/registered/'.$event->id, false);
+
+        $this->actingAs($coordinator)
+            ->get('/events/registered/'.$event->id)
+            ->assertOk()
+            ->assertSee($participant->name)
+            ->assertSee('A remoção de inscritos está bloqueada.')
+            ->assertSee('Ações')
+            ->assertSee('Bloqueada')
+            ->assertDontSee('Remover participante');
+
+        $this->actingAs($coordinator)
+            ->delete('/events/'.$event->id.'/remove/'.$participant->id)
+            ->assertRedirect()
+            ->assertSessionHas('msg', 'Este evento foi finalizado. Não é possível alterar a lista de inscritos.');
+
+        $this->assertTrue($event->users()->where('users.id', $participant->id)->exists());
     }
 
     public function test_create_and_edit_forms_show_the_quota_fields(): void

@@ -1,6 +1,6 @@
 @extends('layouts.newMain')
 
-@section('title', 'Apresentações dos trabalhos — '.$event->title)
+@section('title', 'Apresentações dos trabalhos: '.$event->title)
 
 @section('content')
 @php
@@ -24,8 +24,8 @@
         </p>
         <h1 class="dash-title text-2xl font-bold m-0">Cronograma de apresentações</h1>
         <p class="dash-text text-sm mt-2 m-0 max-w-3xl">
-            Esta página lista somente <strong class="dash-title">trabalhos já aceitos na decisão final</strong>, com versão válida definida — incluindo os aprovados após correção. Cada bloco abaixo é um trabalho distinto. Para salvar, é <strong class="dash-title">obrigatório</strong> informar <strong class="dash-title">início e fim</strong> da apresentação (dentro do período do evento), o <strong class="dash-title">tipo</strong> e o <strong class="dash-title">local ou link</strong>; apenas o nome da sessão permanece opcional. O agendamento só fica disponível depois que o evento tiver horário de início e de fim.
-            <span class="dash-text block mt-2">A <strong class="dash-title">presença na apresentação</strong> (apresentado/ausente), carga horária e título no certificado ficam na página <a href="{{ route('events.certificates.index', $event) }}" class="dash-link font-semibold underline underline-offset-2">Certificados e presença</a> do evento — não nesta tela.</span>
+            Esta página lista somente <strong class="dash-title">trabalhos já aceitos na decisão final</strong>, com versão válida definida, incluindo os aprovados após correção. Cada bloco abaixo é um trabalho distinto. Para salvar, é <strong class="dash-title">obrigatório</strong> informar <strong class="dash-title">início e fim</strong> da apresentação (dentro do período do evento), o <strong class="dash-title">tipo</strong> e o <strong class="dash-title">local ou link</strong>. Só o nome da sessão permanece opcional. O agendamento só fica disponível depois que o evento tiver horário de início e de fim.
+            <span class="dash-text block mt-2">A <strong class="dash-title">presença na apresentação</strong> (apresentado ou ausente), a carga horária e o título no certificado ficam na página <a href="{{ route('events.certificates.index', $event) }}" class="dash-link font-semibold underline underline-offset-2">Certificados e presença</a> do evento, não nesta tela.</span>
         </p>
         @if ($totalWorks > 0)
             <div class="flex flex-wrap items-center gap-2 mt-4">
@@ -65,7 +65,7 @@
         <aside class="dash-panel rounded-2xl p-4 sm:p-5 text-sm dash-text space-y-3">
             <p class="dash-title m-0 font-semibold">Sobre o campo &ldquo;Nome da sessão&rdquo;</p>
             <p class="m-0 leading-relaxed">
-                É um <strong>rótulo em texto livre</strong> (por exemplo, &ldquo;Comunicações orais — manhã&rdquo; ou &ldquo;Eixo temático B&rdquo;) usado para identificar o bloco da programação em que o trabalho se encaixa. Esse nome pode aparecer para os autores e em resumos do evento.
+                É um <strong>rótulo em texto livre</strong> (por exemplo, &ldquo;Comunicações orais da manhã&rdquo; ou &ldquo;Eixo temático B&rdquo;) usado para identificar o bloco da programação em que o trabalho se encaixa. Esse nome pode aparecer para os autores e em resumos do evento.
             </p>
             <p class="m-0 leading-relaxed">
                 Ele é <strong>opcional</strong> porque nem todo evento organiza a grade em blocos com nome próprio; início, fim, tipo e local já definem o slot. Se você deixar em branco, o sistema não exibirá esse rótulo extra.
@@ -98,7 +98,7 @@
                     $__hasWindow = $work->presentation && $work->presentation->scheduled_start && $work->presentation->scheduled_end;
                     $__hasLocation = $work->presentation && filled(trim((string) ($work->presentation->location ?? '')));
                     $__scheduleComplete = $__hasWindow && $__hasLocation;
-                    $__currentTypeLabel = $__typeSelected !== '' ? ($typeLabelMap[$__typeSelected] ?? $__typeSelected) : '—';
+                    $__currentTypeLabel = $__typeSelected !== '' ? ($typeLabelMap[$__typeSelected] ?? $__typeSelected) : '-';
                 @endphp
                 <article class="dash-card relative overflow-hidden rounded-2xl scroll-mt-6">
                     <div class="dash-rail" aria-hidden="true"></div>
@@ -137,7 +137,7 @@
                                         </span>
                                     @elseif ($work->presentation)
                                         <span class="inline-flex items-center rounded-full bg-amber-50 text-amber-900 px-2.5 py-1 text-[11px] font-medium border border-amber-200/90">
-                                            Dados incompletos — horário e local obrigatórios
+                                            Dados incompletos: horário e local obrigatórios
                                         </span>
                                     @else
                                         <span class="dash-badge inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium">
@@ -156,7 +156,7 @@
                                     </div>
                                     <div class="flex flex-col gap-0.5 sm:text-right sm:items-end">
                                         <dt class="text-[11px] font-semibold uppercase tracking-wide text-slate-500 m-0">Sessão (rótulo)</dt>
-                                        <dd class="m-0 text-slate-900 font-medium">{{ $work->presentation->session_name ? $work->presentation->session_name : '—' }}</dd>
+                                        <dd class="m-0 text-slate-900 font-medium">{{ $work->presentation->session_name ? $work->presentation->session_name : '-' }}</dd>
                                     </div>
                                     @if($__hasWindow)
                                         <div class="sm:col-span-2 flex flex-col gap-0.5 pt-1 border-t border-slate-200/80 mt-1">
@@ -170,7 +170,7 @@
                                     @endif
                                     <div class="sm:col-span-2 flex flex-col gap-0.5">
                                         <dt class="text-[11px] font-semibold uppercase tracking-wide text-slate-500 m-0">Local ou link</dt>
-                                        <dd class="m-0 text-slate-800 leading-relaxed [overflow-wrap:anywhere]">{{ $__hasLocation ? $work->presentation->location : '— (obrigatório ao salvar)' }}</dd>
+                                        <dd class="m-0 text-slate-800 leading-relaxed [overflow-wrap:anywhere]">{{ $__hasLocation ? $work->presentation->location : 'Não informado (obrigatório ao salvar)' }}</dd>
                                     </div>
                                 </dl>
                                 </div>
@@ -203,7 +203,7 @@
                                     <label class="block text-xs font-medium text-slate-600 mb-1">Nome da sessão <span class="font-normal text-slate-500">(opcional)</span></label>
                                     <input type="text" name="session_name" value="{{ $__sessionNameVal }}"
                                            class="dash-field w-full rounded-xl px-3 py-2 text-sm"
-                                           maxlength="255" placeholder="Ex.: Comunicações orais — tarde">
+                                           maxlength="255" placeholder="Ex.: Comunicações orais da tarde">
                                     <p class="text-[11px] text-slate-500 mt-1.5 m-0 leading-relaxed">Rótulo para programação; pode ficar vazio se o evento não usar sessões nomeadas.</p>
                                     @error('session_name')
                                         <p class="text-xs text-red-600 mt-1">{{ $message }}</p>

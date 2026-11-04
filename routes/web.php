@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\CertificateDownloadController;
 use App\Http\Controllers\CertificateVerificationController;
 use App\Http\Controllers\EventCertificateController;
+use App\Http\Controllers\EventSatisfactionController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventPresentationScheduleController;
 use App\Http\Controllers\MyCertificatesController;
@@ -26,6 +27,10 @@ Route::get('/events/{id}/anais/download', [EventController::class, 'downloadAnna
 Route::get('/events/{id}', [EventController::class, 'show'])->name('events.show');
 Route::post('/events', [EventController::class, 'store'])->middleware(['auth', 'isCoordinator']);
 Route::get('/dashboard', [EventController::class, 'dashboard'])->middleware('auth')->name('dashboard');
+Route::middleware('auth')->group(function () {
+    Route::get('/events/{event}/pesquisa', [EventSatisfactionController::class, 'form'])->name('events.satisfaction.form');
+    Route::post('/events/{event}/pesquisa', [EventSatisfactionController::class, 'store'])->name('events.satisfaction.store');
+});
 Route::delete('/events/{id}', [EventController::class, 'destroy'])->middleware(['auth', 'isCoordinator']);
 Route::get('/events/edit/{id}', [EventController::class, 'edit'])->middleware(['auth', 'isCoordinator']);
 Route::put('/events/update/{id}', [EventController::class, 'update'])->middleware(['auth', 'isCoordinator']);
@@ -153,6 +158,8 @@ Route::middleware(['auth', 'isCoordinator'])->group(function () {
     Route::delete('/assinaturas/{signature}', [SignatureController::class, 'destroy'])->name('signatures.destroy');
     Route::get('/assinaturas/{signature}/imagem', [SignatureController::class, 'showImage'])->name('signatures.image');
 
+    Route::get('/events/{event}/pesquisa/resultado', [EventSatisfactionController::class, 'results'])->name('events.satisfaction.results');
+    Route::post('/events/{event}/pesquisa/convite', [EventSatisfactionController::class, 'invite'])->name('events.satisfaction.invite');
     Route::get('/events/{event}/certificates', [EventCertificateController::class, 'index'])->name('events.certificates.index');
     Route::post('/events/{event}/certificates/meta', [EventCertificateController::class, 'updateCertificateMeta'])->name('events.certificates.meta');
     Route::post('/events/{event}/certificates/presence', [EventCertificateController::class, 'updateEventPresence'])->name('events.certificates.presence');
@@ -160,6 +167,12 @@ Route::middleware(['auth', 'isCoordinator'])->group(function () {
     Route::post('/events/{event}/certificates/signatures', [EventCertificateController::class, 'syncSignatures'])->name('events.certificates.signatures');
     Route::post('/events/{event}/certificates/generate/participation', [EventCertificateController::class, 'generateParticipation'])->name('events.certificates.generate.participation');
     Route::post('/events/{event}/certificates/generate/presentations', [EventCertificateController::class, 'generatePresentations'])->name('events.certificates.generate.presentations');
+    Route::post('/events/{event}/certificates/optional', [EventCertificateController::class, 'updateOptionalCertificates'])->name('events.certificates.optional');
+    Route::post('/events/{event}/certificates/generate/reviewers', [EventCertificateController::class, 'generateReviewers'])->name('events.certificates.generate.reviewers');
+    Route::post('/events/{event}/certificates/generate/guests', [EventCertificateController::class, 'generateGuests'])->name('events.certificates.generate.guests');
+    Route::post('/events/{event}/certificates/generate/organization', [EventCertificateController::class, 'generateOrganization'])->name('events.certificates.generate.organization');
+    Route::post('/events/{event}/certificates/generate/coauthors', [EventCertificateController::class, 'generateCoauthors'])->name('events.certificates.generate.coauthors');
+    Route::post('/events/{event}/certificates/generate/publications', [EventCertificateController::class, 'generatePublications'])->name('events.certificates.generate.publications');
     Route::post('/events/{event}/certificates/generate/activities-all', [EventCertificateController::class, 'generateActivitiesAll'])->name('events.certificates.generate.activities-all');
     Route::get('/events/{event}/certificates/issued', [EventCertificateController::class, 'issuedList'])->name('events.certificates.issued');
 

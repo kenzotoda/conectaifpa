@@ -52,12 +52,43 @@ function placeholderText(select) {
     return (empty && empty.text) || 'Selecione'
 }
 
+function foldText(text) {
+    return text.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('pt-BR')
+}
+
+function filterMenu(select) {
+    const ui = select.__appSelect
+    if (!ui || !ui.search || !ui.list) return
+
+    const query = foldText(ui.search.value.trim())
+    let any = false
+    ui.list.querySelectorAll('.app-select-option').forEach((button) => {
+        const match = query === '' || foldText(button.textContent).includes(query)
+        button.hidden = !match
+        if (match) any = true
+    })
+    ui.list.querySelectorAll('.app-select-group').forEach((group) => {
+        let sibling = group.nextElementSibling
+        let visible = false
+        while (sibling && !sibling.classList.contains('app-select-group') && !sibling.classList.contains('app-select-empty')) {
+            if (sibling.classList.contains('app-select-option') && !sibling.hidden) visible = true
+            sibling = sibling.nextElementSibling
+        }
+        group.hidden = !visible
+    })
+    if (ui.empty) ui.empty.hidden = any
+}
+
 function closeSelect(select) {
     const ui = select.__appSelect
     if (!ui) return
     ui.root.classList.remove('is-open')
     ui.menu.hidden = true
     ui.trigger.setAttribute('aria-expanded', 'false')
+    if (ui.search && ui.search.value !== '') {
+        ui.search.value = ''
+        filterMenu(select)
+    }
 }
 
 function placeMenu(select) {
@@ -71,6 +102,10 @@ function placeMenu(select) {
     ui.menu.style.left = Math.max(8, rect.left) + 'px'
     ui.menu.style.width = rect.width + 'px'
     ui.menu.style.maxHeight = available + 'px'
+    if (ui.list) {
+        const searchHeight = ui.searchWrap ? ui.searchWrap.offsetHeight : 0
+        ui.list.style.maxHeight = Math.max(120, available - searchHeight) + 'px'
+    }
 
     if (openUp) {
         ui.menu.style.top = 'auto'
@@ -87,10 +122,15 @@ function openSelect(select) {
     })
 
     const ui = select.__appSelect
-    placeMenu(select)
     ui.root.classList.add('is-open')
     ui.menu.hidden = false
     ui.trigger.setAttribute('aria-expanded', 'true')
+    placeMenu(select)
+    if (ui.search) {
+        ui.search.focus()
+        const end = ui.search.value.length
+        ui.search.setSelectionRange(end, end)
+    }
 }
 
 function choose(select, value) {
@@ -103,11 +143,19 @@ function choose(select, value) {
     ui.trigger.focus()
 }
 
+function visibleOptions(select) {
+    const ui = select.__appSelect
+    const scope = ui.list || ui.menu
+    return Array.from(scope.querySelectorAll('.app-select-option:not(:disabled):not([hidden])'))
+}
+
 function buildMenu(select) {
     const ui = select.__appSelect
-    ui.menu.replaceChildren()
+    const list = ui.list || ui.menu
+    list.replaceChildren()
 
     const appendOption = (option) => {
+        if (ui.search && option.value === '') return
         const button = document.createElement('button')
         button.type = 'button'
         button.className = 'app-select-option'
@@ -123,7 +171,7 @@ function buildMenu(select) {
             event.stopPropagation()
             choose(select, option.value)
         })
-        ui.menu.appendChild(button)
+        list.appendChild(button)
     }
 
     Array.from(select.children).forEach((node) => {
@@ -131,7 +179,7 @@ function buildMenu(select) {
             const title = document.createElement('p')
             title.className = 'app-select-group'
             title.textContent = node.label
-            ui.menu.appendChild(title)
+            list.appendChild(title)
             Array.from(node.children).forEach((child) => {
                 if (child.tagName === 'OPTION') appendOption(child)
             })
@@ -140,14 +188,23 @@ function buildMenu(select) {
 
         if (node.tagName === 'OPTION') appendOption(node)
     })
+
+    if (ui.search) {
+        const empty = document.createElement('p')
+        empty.className = 'app-select-empty'
+        empty.hidden = true
+        empty.textContent = 'Nenhum resultado'
+        list.appendChild(empty)
+        ui.empty = empty
+        filterMenu(select)
+    }
 }
 
 function bindLabel(select, trigger) {
     let label = null
     if (select.id) {
         label = document.querySelector(`label[for="${CSS.escape(select.id)}"]`)
-    }
-    if (!label && select.parentElement) {
+    } else if (select.parentElement) {
         label = Array.from(select.parentElement.children).find((element) => element.tagName === 'LABEL') || null
     }
     if (!label) return
@@ -162,8 +219,18 @@ function bindLabel(select, trigger) {
     })
 }
 
+function hideShell(shell, hidden) {
+    shell.hidden = hidden
+    if (hidden) shell.style.setProperty('display', 'none', 'important')
+    else shell.style.removeProperty('display')
+}
+
 function enhance(select) {
     if (select.__appSelect) return
+
+    const startHidden = select.hidden || select.classList.contains('hidden')
+    select.classList.remove('hidden')
+    select.hidden = false
 
     const root = document.createElement('div')
     root.className = 'app-select'
@@ -198,8 +265,33 @@ function enhance(select) {
 
     const menu = document.createElement('div')
     menu.className = 'app-select-menu'
-    menu.setAttribute('role', 'listbox')
     menu.hidden = true
+
+    const searchPlaceholder = select.getAttribute('data-app-select-search')
+    let search = null
+    let searchWrap = null
+    let list = null
+    if (searchPlaceholder !== null) {
+        menu.classList.add('has-search')
+        menu.setAttribute('role', 'group')
+        searchWrap = document.createElement('div')
+        searchWrap.className = 'app-select-search'
+        search = document.createElement('input')
+        search.type = 'search'
+        search.className = 'app-select-search-input'
+        search.placeholder = searchPlaceholder || 'Pesquisar'
+        search.autocomplete = 'off'
+        search.spellcheck = false
+        search.setAttribute('aria-label', search.placeholder)
+        searchWrap.appendChild(search)
+        list = document.createElement('div')
+        list.className = 'app-select-list'
+        list.setAttribute('role', 'listbox')
+        menu.appendChild(searchWrap)
+        menu.appendChild(list)
+    } else {
+        menu.setAttribute('role', 'listbox')
+    }
 
     bindLabel(select, trigger)
 
@@ -220,10 +312,35 @@ function enhance(select) {
         trigger.setAttribute('aria-controls', menu.id)
     }
 
-    select.__appSelect = { root, trigger, value, menu }
+    select.__appSelect = { root, trigger, value, menu, search, searchWrap, list, empty: null }
     select.dataset.appSelectSignature = optionSignature(select)
+    if (startHidden) hideShell(root, true)
     buildMenu(select)
     paint(select)
+
+    if (search && list) {
+        if (select.id) list.id = `${select.id}-listbox`
+        search.setAttribute('aria-controls', list.id || menu.id || '')
+        search.addEventListener('input', () => filterMenu(select))
+        search.addEventListener('keydown', (event) => {
+            if (event.key === 'ArrowDown') {
+                event.preventDefault()
+                event.stopPropagation()
+                visibleOptions(select)[0]?.focus()
+            }
+            if (event.key === 'Escape') {
+                event.preventDefault()
+                event.stopPropagation()
+                closeSelect(select)
+                trigger.focus()
+            }
+            if (event.key === 'Enter') {
+                event.preventDefault()
+                event.stopPropagation()
+                visibleOptions(select)[0]?.click()
+            }
+        })
+    }
 
     trigger.addEventListener('click', () => {
         if (select.disabled) return
@@ -233,23 +350,36 @@ function enhance(select) {
 
     trigger.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') closeSelect(select)
+        if (search && event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+            event.preventDefault()
+            openSelect(select)
+            search.value += event.key
+            filterMenu(select)
+            const end = search.value.length
+            search.focus()
+            search.setSelectionRange(end, end)
+            return
+        }
         if (event.key === 'ArrowDown' && menu.hidden) {
             event.preventDefault()
             openSelect(select)
-            menu.querySelector('.app-select-option:not(:disabled)')?.focus()
+            if (!search) visibleOptions(select)[0]?.focus()
         }
     })
 
     menu.addEventListener('keydown', (event) => {
-        const options = Array.from(menu.querySelectorAll('.app-select-option:not(:disabled)'))
+        if (search && event.target === search) return
+        const options = visibleOptions(select)
         const index = options.indexOf(document.activeElement)
         if (event.key === 'ArrowDown') {
             event.preventDefault()
-            options[Math.min(index + 1, options.length - 1)]?.focus()
+            const next = index < 0 ? 0 : Math.min(index + 1, options.length - 1)
+            options[next]?.focus()
         }
         if (event.key === 'ArrowUp') {
             event.preventDefault()
-            options[Math.max(index - 1, 0)]?.focus()
+            if (index <= 0 && search) search.focus()
+            else options[Math.max(index - 1, 0)]?.focus()
         }
         if (event.key === 'Escape') {
             event.preventDefault()
@@ -264,7 +394,7 @@ function enhance(select) {
         event.preventDefault()
         trigger.classList.add('is-invalid')
         openSelect(select)
-        trigger.focus()
+        if (!search) trigger.focus()
     })
 }
 

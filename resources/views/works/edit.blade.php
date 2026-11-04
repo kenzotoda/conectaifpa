@@ -34,7 +34,7 @@
                 </div>
 
                 <div>
-                    <label class="dash-title block text-sm font-medium mb-2">Novo arquivo (PDF, DOC, DOCX ou ODT — opcional)</label>
+                    <label class="dash-title block text-sm font-medium mb-2">Novo arquivo (PDF, DOC, DOCX ou ODT, opcional)</label>
                     <input type="file" name="file"
                            accept=".pdf,.doc,.docx,.odt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text"
                            class="dash-field w-full px-4 py-3 rounded-xl">

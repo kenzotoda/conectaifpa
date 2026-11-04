@@ -53,7 +53,7 @@
                                     {{ $assignment->work->listTitleCompact() }}
                                     @if($workCorrRound)
                                         <span class="dash-link block mt-1.5 text-[0.7rem] font-semibold uppercase tracking-wide">
-                                            Reavaliação — versão corrigida
+                                            Reavaliação: versão corrigida
                                             @if(! $needsMyCorrReview && $assignment->status === \App\Models\WorkReviewer::STATUS_COMPLETED)
                                                 <span class="block mt-1 font-normal normal-case text-emerald-800">Sua avaliação nesta rodada não é obrigatória (parecer anterior já era “aceitar” sem correções).</span>
                                             @endif
@@ -81,14 +81,14 @@
                                         <span class="block text-rose-800 font-semibold text-sm">Prazo de avaliação encerrado</span>
                                         <span class="block text-slate-600 mt-1 leading-snug">
                                             @if($eventModel->hasReviewDeadline())
-                                                O prazo de avaliação terminou em {{ $eventModel->review_deadline_at->format('d/m/Y H:i') }}
+                                                O prazo de avaliação terminou em {{ $eventModel->review_deadline_at->format('d/m/Y H:i') }}.
                                             @else
-                                                O período do evento já terminou
+                                                O período do evento já terminou.
                                             @endif
                                             @if($reviewCompleted)
-                                                — você pode ver o parecer enviado.
+                                                Você pode ver o parecer enviado.
                                             @else
-                                                — não é mais possível enviar avaliação para este trabalho.
+                                                Não é mais possível enviar avaliação para este trabalho.
                                             @endif
                                         </span>
                                     @else

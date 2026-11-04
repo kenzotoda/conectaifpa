@@ -13,12 +13,14 @@ class ActivityPresence extends Model
         'user_id',
         'activity_id',
         'presente',
+        'frequencia_percent',
         'marcado_por',
         'data_marcacao',
     ];
 
     protected $casts = [
         'presente' => 'boolean',
+        'frequencia_percent' => 'integer',
         'data_marcacao' => 'datetime',
     ];
 

@@ -6,6 +6,19 @@ use Illuminate\Database\Eloquent\Model;
 
 class EventGuest extends Model
 {
+    public const GUEST_CERTIFICATE_ROLES = [
+        'palestrante',
+        'ministrante',
+        'mediador',
+        'avaliador',
+    ];
+
+    public const ORGANIZATION_CERTIFICATE_ROLES = [
+        'organizador',
+        'coordenador',
+        'monitor',
+    ];
+
     public const ROLE_TYPE_OPTIONS = [
         'palestrante',
         'ministrante',

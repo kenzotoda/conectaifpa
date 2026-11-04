@@ -76,7 +76,7 @@
                                             </span>
                                             <div class="min-w-0">
                                                 <dt class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide m-0">Sessão</dt>
-                                                <dd class="text-slate-900 font-medium m-0 mt-0.5 [overflow-wrap:anywhere]">{{ $work->presentation->session_name ?? '—' }}</dd>
+                                                <dd class="text-slate-900 font-medium m-0 mt-0.5 [overflow-wrap:anywhere]">{{ $work->presentation->session_name ?? '-' }}</dd>
                                             </div>
                                         </div>
                                         @if($work->presentation->scheduled_start || $work->presentation->scheduled_end)
@@ -90,7 +90,7 @@
                                                         @if($work->presentation->scheduled_start)
                                                             {{ \Carbon\Carbon::parse($work->presentation->scheduled_start)->format('d/m/Y H:i') }}
                                                         @else
-                                                            —
+                                                            -
                                                         @endif
                                                         @if($work->presentation->scheduled_end)
                                                             <span class="text-slate-400 font-normal"> · </span>

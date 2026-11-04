@@ -175,10 +175,20 @@
                                                 Trabalhos
                                             </a>
                                         @endif
+                                        <a href="/events/registered/{{ $event['id'] }}"
+                                           class="dash-btn-secondary inline-flex flex-wrap items-center justify-center gap-2 w-full px-4 py-3 rounded-xl text-sm font-semibold no-underline transition-colors text-center [overflow-wrap:anywhere]">
+                                            <ion-icon name="people-outline" class="text-lg shrink-0" aria-hidden="true"></ion-icon>
+                                            Inscritos
+                                        </a>
                                         <a href="{{ route('events.certificates.index', $event->id) }}"
                                            class="dash-btn-soft inline-flex flex-wrap items-center justify-center gap-2 w-full px-4 py-3 rounded-xl text-sm font-semibold no-underline transition-colors text-center [overflow-wrap:anywhere]">
                                             <ion-icon name="ribbon-outline" class="text-lg shrink-0" aria-hidden="true"></ion-icon>
                                             Certificados e presença
+                                        </a>
+                                        <a href="{{ route('events.satisfaction.results', $event) }}"
+                                           class="dash-btn-secondary inline-flex flex-wrap items-center justify-center gap-2 w-full px-4 py-3 rounded-xl text-sm font-semibold no-underline transition-colors text-center [overflow-wrap:anywhere]">
+                                            <ion-icon name="happy-outline" class="text-lg shrink-0" aria-hidden="true"></ion-icon>
+                                            Pesquisa de satisfação
                                         </a>
                                         </div>
                                     </div>
@@ -380,6 +390,11 @@
                                    class="dash-btn-secondary inline-flex flex-wrap items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold no-underline transition-colors text-center break-words [overflow-wrap:anywhere]">
                                     <ion-icon name="eye-outline" aria-hidden="true"></ion-icon>
                                     Ver evento
+                                </a>
+                                <a href="{{ route('events.satisfaction.form', $event) }}"
+                                   class="dash-btn inline-flex flex-wrap items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold no-underline transition-colors text-center break-words [overflow-wrap:anywhere]">
+                                    <ion-icon name="happy-outline" aria-hidden="true"></ion-icon>
+                                    {{ in_array((int) $event->id, $satisfactionAnsweredEventIds ?? [], true) ? 'Pesquisa respondida' : 'Pesquisa de satisfação' }}
                                 </a>
                             </div>
                         </div>

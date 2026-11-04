@@ -10,7 +10,7 @@ class MyCertificatesController extends Controller
     public function index(): View
     {
         $user = auth()->user();
-        abort_unless($user && $user->isParticipant(), 403);
+        abort_unless($user, 403);
 
         $certificates = Certificate::query()
             ->where('user_id', $user->id)

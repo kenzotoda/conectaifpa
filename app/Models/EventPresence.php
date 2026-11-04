@@ -13,12 +13,16 @@ class EventPresence extends Model
         'user_id',
         'event_id',
         'presente',
+        'presente_presencial',
+        'presente_online',
         'marcado_por',
         'data_marcacao',
     ];
 
     protected $casts = [
         'presente' => 'boolean',
+        'presente_presencial' => 'boolean',
+        'presente_online' => 'boolean',
         'data_marcacao' => 'datetime',
     ];
 

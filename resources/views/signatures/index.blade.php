@@ -31,7 +31,7 @@
             Recomendações para ficar legível no certificado
         </p>
         <ul class="text-sm text-amber-950/90 m-0 pl-5 space-y-1.5 list-disc [overflow-wrap:anywhere]">
-            <li>Use <strong>PNG com fundo transparente</strong> quando possível — combina melhor com o layout verde do PDF.</li>
+            <li>Use <strong>PNG com fundo transparente</strong> quando possível. Combina melhor com o layout verde do PDF.</li>
             <li>Prefira só o <strong>traço da assinatura</strong> (recorte perto da assinatura). Evite foto da folha inteira: no PDF a altura máxima é <strong>≈ 64 px</strong>, então detalhes miúdos somem.</li>
             <li>Formatos aceitos: <strong>JPEG, PNG ou WebP</strong>, até <strong>2 MB</strong>.</li>
             <li>O layout do PDF reserva <strong>~42% da largura</strong> para cada assinatura na mesma linha. Com <strong>duas</strong>, ficam lado a lado; com mais, as seguintes passam para a linha de baixo (continua legível, mas evite muitas para não “apertar” o rodapé).</li>
@@ -62,7 +62,7 @@
             </div>
 
             <div class="dash-panel rounded-xl p-4 space-y-2">
-                <p class="dash-muted text-xs font-semibold uppercase tracking-wide m-0">Prévia — rodapé do certificado (aproximado)</p>
+                <p class="dash-muted text-xs font-semibold uppercase tracking-wide m-0">Prévia do rodapé do certificado (aproximado)</p>
                 <div class="dash-preview rounded-lg px-4 py-5 max-w-md mx-auto sm:mx-0">
                     <div class="border-t border-slate-200 pt-3 mt-8">
                         <p class="text-[10px] text-slate-400 m-0 mb-3">… texto do certificado acima …</p>

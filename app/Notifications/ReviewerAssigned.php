@@ -3,11 +3,15 @@
 namespace App\Notifications;
 
 use App\Models\Work;
+use App\Notifications\Concerns\RespectsGmailQuota;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class ReviewerAssigned extends Notification
+class ReviewerAssigned extends Notification implements ShouldQueue
 {
+    use RespectsGmailQuota;
+
     public function __construct(public Work $work) {}
 
     /**

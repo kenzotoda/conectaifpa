@@ -25,6 +25,11 @@ class EmailVerificationTest extends TestCase
         $response = $this->actingAs($user)->get('/email/verify');
 
         $response->assertStatus(200);
+        $response->assertSee('Confirme seu e-mail');
+        $response->assertSee('Reenviar e-mail de confirmação');
+        $response->assertSee('Sair da conta');
+        $response->assertSee($user->email);
+        $response->assertDontSee('Edit Profile');
     }
 
     public function test_email_can_be_verified(): void

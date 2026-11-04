@@ -31,7 +31,7 @@
     background: #ffffff;
 }
 .home-hero-ghost:hover { border-color: #0b6b45; color: #0b6b45; }
-/* Forma orgânica igual ao login (.blob em auth) — aplicar em TODOS os blobs */
+/* Forma orgânica igual ao login (.blob em auth). Aplicar em todos os blobs. */
 .home-hero-blob { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
 @keyframes float-hero {
     0%, 100% { transform: translate(0, 0) scale(1); }
@@ -45,7 +45,7 @@
 </style>
 @endpush
 
-@section('title', 'ConectaIFPA – Eventos do IFPA')
+@section('title', 'ConectaIFPA - Eventos do IFPA')
 
 @section('content')
 

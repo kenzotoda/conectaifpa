@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Notifications\VerifyEmailQueued;
 use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -11,7 +12,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens;
 
@@ -47,6 +48,8 @@ class User extends Authenticatable
 
     public const PROFILE_COMUNIDADE_GERAL = 'comunidade_geral';
 
+    public const PROFILE_IFPA_OUTRO_CAMPUS = 'ifpa_outro_campus';
+
     /** @var array<string, string> */
     public const PARTICIPANT_PROFILE_LABELS = [
         self::PROFILE_DISCENTE => 'Discente',
@@ -57,6 +60,15 @@ class User extends Authenticatable
         self::PROFILE_STARTUP => 'Startup',
         self::PROFILE_ORGANIZACAO_SOCIAL => 'Organização social',
         self::PROFILE_COMUNIDADE_GERAL => 'Comunidade em geral',
+        self::PROFILE_IFPA_OUTRO_CAMPUS => 'Discente, docente ou técnico de outro campus',
+    ];
+
+    /** Vínculo de quem é do IFPA, mas não do campus Belém. */
+    /** @var array<string, string> */
+    public const IFPA_BOND_LABELS = [
+        self::PROFILE_DISCENTE => 'Discente',
+        self::PROFILE_DOCENTE => 'Docente',
+        self::PROFILE_TECNICO => 'Técnico administrativo',
     ];
 
     /** @var list<string> */
@@ -68,6 +80,7 @@ class User extends Authenticatable
 
     /** @var list<string> */
     public const EXTERNAL_PARTICIPANT_PROFILES = [
+        self::PROFILE_IFPA_OUTRO_CAMPUS,
         self::PROFILE_EMPREENDEDOR,
         self::PROFILE_ESTUDANTE_ESCOLA_PUBLICA,
         self::PROFILE_STARTUP,
@@ -82,6 +95,7 @@ class User extends Authenticatable
         self::PROFILE_DOCENTE,
         self::PROFILE_TECNICO,
         self::PROFILE_ESTUDANTE_ESCOLA_PUBLICA,
+        self::PROFILE_IFPA_OUTRO_CAMPUS,
     ];
 
     /** Perfis externos em que a organização é obrigatória. Comunidade em geral pode ficar sem. */
@@ -107,6 +121,7 @@ class User extends Authenticatable
         'curso',
         'is_external_participant',
         'participant_profile',
+        'ifpa_bond',
         'institution',
     ];
 
@@ -160,6 +175,11 @@ class User extends Authenticatable
         return $this->belongsToMany('App\Models\Event');
     }
 
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new VerifyEmailQueued);
+    }
+
     public function isCoordinator()
     {
         return $this->role === self::ROLE_COORDINATOR;
@@ -210,6 +230,11 @@ class User extends Authenticatable
     public function participantProfileLabel(): string
     {
         $profile = (string) ($this->participant_profile ?? '');
+        if ($profile === self::PROFILE_IFPA_OUTRO_CAMPUS) {
+            $bond = self::IFPA_BOND_LABELS[(string) ($this->ifpa_bond ?? '')] ?? 'IFPA';
+
+            return $bond.' de outro campus';
+        }
         if (isset(self::PARTICIPANT_PROFILE_LABELS[$profile])) {
             return self::PARTICIPANT_PROFILE_LABELS[$profile];
         }
@@ -231,16 +256,16 @@ class User extends Authenticatable
 
         if ($this->is_external_participant) {
             if ($organization !== '' && $detail !== '') {
-                return $organization.' — '.$detail;
+                return $organization.', '.$detail;
             }
 
             return $organization !== '' ? $organization : ($detail !== '' ? $detail : null);
         }
 
         if ($detail !== '') {
-            return 'IFPA — Belém — '.$detail;
+            return 'IFPA - Belém, '.$detail;
         }
 
-        return 'IFPA — Belém';
+        return 'IFPA - Belém';
     }
 }

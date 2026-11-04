@@ -33,7 +33,7 @@
                 </div>
 
                 <div>
-                    <label class="dash-title block text-sm font-medium mb-2">Arquivo (PDF, DOC, DOCX ou ODT — até 10MB)</label>
+                    <label class="dash-title block text-sm font-medium mb-2">Arquivo (PDF, DOC, DOCX ou ODT, até 10MB)</label>
                     <input type="file" name="file"
                            accept=".pdf,.doc,.docx,.odt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text"
                            required

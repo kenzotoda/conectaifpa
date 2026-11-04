@@ -1251,6 +1251,13 @@
                             placeholder="Ex.: Auditório, sala 3, link da videoconferência…"
                             class="form-input w-full px-4 py-3 rounded-lg font-open-sans">
                     </div>
+                    <div class="md:col-span-2">
+                        <input type="hidden" name="activities_new[${idx}][is_extension]" value="0">
+                        <label class="flex items-start gap-2 text-sm font-montserrat">
+                            <input type="checkbox" name="activities_new[${idx}][is_extension]" value="1">
+                            <span>Atividade de extensão (certificado exige 75% de frequência)</span>
+                        </label>
+                    </div>
                     <div class="md:col-span-2 activity-guests-block">
                         <label class="form-label block text-sm font-montserrat mb-2">Convidados</label>
                         <div class="activity-guest-rows space-y-2">

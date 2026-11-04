@@ -4,7 +4,7 @@
     use App\Models\WorkPresentation;
 @endphp
 
-@section('title', 'Certificados — '.$event->title)
+@section('title', 'Certificados: '.$event->title)
 
 @section('content')
 <div class="dash-page min-h-screen">
@@ -16,7 +16,7 @@
             </p>
             <h1 class="dash-title text-2xl sm:text-[1.65rem] font-bold tracking-tight m-0">Certificados e presença</h1>
             <p class="dash-text mt-3 m-0 max-w-2xl text-sm leading-relaxed">
-                Três marcações separadas — <strong>participação geral</strong>, <strong>apresentações</strong> (eventos com submissão) e <strong>atividades</strong> — cada uma com modelo de PDF próprio e as <strong>mesmas assinaturas</strong> configuradas aqui para o evento.
+                Há três marcações separadas: <strong>participação geral</strong>, <strong>apresentações</strong> (eventos com submissão) e <strong>atividades</strong>. Cada uma tem modelo de PDF próprio e usa as <strong>mesmas assinaturas</strong> configuradas aqui para o evento.
             </p>
             <p class="dash-muted text-xs m-0 mt-4 max-w-2xl leading-relaxed">Ao usar qualquer botão <strong>Salvar</strong> abaixo, a página recarrega e mostra <strong>no topo</strong> se as alterações foram gravadas (mensagem em verde).</p>
         </div>
@@ -40,6 +40,7 @@
                 <li><a href="#cert-apresentacao" class="dash-link font-medium no-underline rounded-lg px-2 py-1 -mx-2">4. Apresentação de trabalhos</a></li>
             @endif
             <li><a href="#cert-atividades" class="dash-link font-medium no-underline rounded-lg px-2 py-1 -mx-2">@if($event->acceptsSubmissions())5.@else 4. @endif Atividades</a></li>
+            <li><a href="#cert-opcionais" class="dash-link font-medium no-underline rounded-lg px-2 py-1 -mx-2">Opcionais</a></li>
         </ul>
     </nav>
 
@@ -81,6 +82,69 @@
     @endif
 
     {{-- 1 --}}
+    <section id="cert-opcionais" class="dash-card scroll-mt-6 overflow-hidden rounded-2xl">
+        <div class="border-b border-slate-100 px-6 py-5">
+            <h2 class="dash-title text-lg font-bold m-0">Certificados opcionais</h2>
+            <p class="dash-text text-sm m-0 mt-2 max-w-3xl leading-relaxed">
+                Marque a caixa, salve e use <strong>Gerar</strong>. Exemplo: a caixa de avaliador ligada permite gerar o certificado de avaliador neste evento.
+            </p>
+        </div>
+        <form method="POST" action="{{ route('events.certificates.optional', $event) }}" class="px-6 py-5 space-y-4">
+            @csrf
+            @foreach ([
+                'certificate_reviewer_enabled' => ['Avaliador', 'Permite gerar o certificado de avaliador neste evento.', $optionalEligible['reviewers'], $optionalIssued['reviewers']],
+                'certificate_guest_enabled' => ['Convidado', 'Permite gerar o certificado de convidado neste evento.', $optionalEligible['guests'], $optionalIssued['guests']],
+                'certificate_organization_enabled' => ['Organização', 'Permite gerar o certificado de organização neste evento.', $optionalEligible['organization'], $optionalIssued['organization']],
+                'certificate_coauthor_enabled' => ['Coautor', 'Permite gerar o certificado de coautor neste evento.', $optionalEligible['coauthors'], $optionalIssued['coauthors']],
+            ] as $field => [$label, $help, $eligible, $issued])
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-slate-100 px-4 py-3">
+                    <label class="flex items-start gap-3 min-w-0">
+                        <input type="hidden" name="{{ $field }}" value="0">
+                        <input type="checkbox" name="{{ $field }}" value="1" class="mt-1" @checked(filter_var(old($field, $event->{$field}), FILTER_VALIDATE_BOOLEAN))>
+                        <span>
+                            <span class="block font-semibold text-slate-900">{{ $label }}</span>
+                            <span class="block text-sm text-slate-600">{{ $help }} Elegíveis agora: {{ $eligible }}. Emitidos: {{ $issued }}.</span>
+                        </span>
+                    </label>
+                    @if($event->{$field})
+                        <button type="submit" form="optional-generate-{{ $field }}" class="dash-btn-secondary px-3 py-2 rounded-xl text-xs font-semibold shrink-0" @disabled($optionalCertificateBlock)>Gerar {{ strtolower($label) }}</button>
+                    @endif
+                </div>
+            @endforeach
+            <div class="grid sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Carga horária do avaliador</label>
+                    <input type="number" step="0.5" min="0" name="certificate_reviewer_hours" value="{{ old('certificate_reviewer_hours', $event->certificate_reviewer_hours) }}" placeholder="Em branco omite as horas" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Carga horária do convidado</label>
+                    <input type="number" step="0.5" min="0" name="certificate_guest_hours" value="{{ old('certificate_guest_hours', $event->certificate_guest_hours) }}" placeholder="Em branco omite as horas" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Carga horária da organização</label>
+                    <input type="number" step="0.5" min="0" name="certificate_organization_hours" value="{{ old('certificate_organization_hours', $event->certificate_organization_hours) }}" placeholder="Em branco omite as horas" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
+                </div>
+            </div>
+            <p class="text-xs text-slate-500 m-0">Essas horas entram só no certificado do tipo correspondente. O campo em branco deixa a carga horária fora do PDF.</p>
+            <button type="submit" class="dash-btn px-4 py-2.5 rounded-xl text-sm font-semibold">Salvar tipos opcionais</button>
+        </form>
+        @foreach ([
+            'certificate_reviewer_enabled' => ['events.certificates.generate.reviewers', 'Gerar certificados de avaliador', 'Gerar o certificado de avaliador deste evento.'],
+            'certificate_guest_enabled' => ['events.certificates.generate.guests', 'Gerar certificados de convidado', 'Gerar o certificado de convidado deste evento.'],
+            'certificate_organization_enabled' => ['events.certificates.generate.organization', 'Gerar certificados de organização', 'Gerar o certificado de organização deste evento.'],
+            'certificate_coauthor_enabled' => ['events.certificates.generate.coauthors', 'Gerar certificados de coautor', 'Gerar o certificado de coautor deste evento.'],
+        ] as $field => [$generateRoute, $swalTitle, $swalText])
+            @if($event->{$field})
+                <form id="optional-generate-{{ $field }}" method="POST" action="{{ route($generateRoute, $event) }}" class="hidden cert-batch-swal-confirm" data-swal-title="{{ $swalTitle }}" data-swal-text="{{ $swalText }}">
+                    @csrf
+                </form>
+            @endif
+        @endforeach
+        @if($optionalCertificateBlock)
+            <p class="px-6 pb-5 m-0 text-sm text-amber-900">{{ $optionalCertificateBlock }}</p>
+        @endif
+    </section>
+
     <section id="cert-dados-pdf" class="dash-card scroll-mt-6 overflow-hidden rounded-2xl">
         <div class="dash-accent" aria-hidden="true"></div>
         <div class="p-6 sm:p-7 space-y-5">
@@ -175,22 +239,41 @@
                     @csrf
                     <p class="text-xs font-medium text-slate-600 m-0">Lista de participantes (rolável em eventos com muitas inscrições)</p>
                     <div class="max-h-[min(32rem,58svh)] overflow-y-auto overscroll-y-contain rounded-xl border border-slate-100 bg-gradient-to-b from-slate-50/50 to-white divide-y divide-slate-100/80 shadow-inner ring-1 ring-slate-100/60">
-                        @forelse($participantUsers as $u)
-                            @php $p = $presences->get($u->id); @endphp
-                            <label class="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-800 cursor-pointer hover:bg-emerald-50/40 transition-colors">
-                                <input type="checkbox" name="presente[]" value="{{ $u->id }}" @checked($p && $p->presente) class="rounded border-slate-300 text-emerald-600 shadow-sm focus:ring-emerald-500 focus:ring-offset-0">
-                                <span>{{ $u->name }} <span class="text-slate-500 text-xs font-normal">({{ $u->email }})</span></span>
-                            </label>
-                        @empty
+                        @if($participantUsers->isEmpty())
                             <p class="text-sm text-slate-500 m-0 px-3 py-6 text-center">Nenhum participante inscrito.</p>
-                        @endforelse
+                        @elseif($event->modality === 'Híbrido')
+                            @foreach($participantUsers as $u)
+                                @php $p = $presences->get($u->id); @endphp
+                                <div class="px-3 py-2.5 text-sm text-slate-800">
+                                    <p class="m-0 font-medium">{{ $u->name }} <span class="text-slate-500 text-xs font-normal">({{ $u->email }})</span></p>
+                                    <div class="mt-2 flex flex-wrap gap-4">
+                                        <label class="inline-flex items-center gap-2">
+                                            <input type="checkbox" name="presente_presencial[]" value="{{ $u->id }}" @checked($p && $p->presente_presencial) class="rounded border-slate-300 text-emerald-600">
+                                            Presencial
+                                        </label>
+                                        <label class="inline-flex items-center gap-2">
+                                            <input type="checkbox" name="presente_online[]" value="{{ $u->id }}" @checked($p && $p->presente_online) class="rounded border-slate-300 text-emerald-600">
+                                            Online
+                                        </label>
+                                    </div>
+                                </div>
+                            @endforeach
+                        @else
+                            @foreach($participantUsers as $u)
+                                @php $p = $presences->get($u->id); @endphp
+                                <label class="flex items-center gap-3 px-3 py-2.5 text-sm text-slate-800 cursor-pointer hover:bg-emerald-50/40 transition-colors">
+                                    <input type="checkbox" name="presente[]" value="{{ $u->id }}" @checked($event->modality === 'Online' ? ($p && $p->presente_online) : ($p && ($p->presente_presencial || ($p->presente && ! $p->presente_online)))) class="rounded border-slate-300 text-emerald-600 shadow-sm focus:ring-emerald-500 focus:ring-offset-0">
+                                    <span>{{ $u->name }} <span class="text-slate-500 text-xs font-normal">({{ $u->email }})</span></span>
+                                </label>
+                            @endforeach
+                        @endif
                     </div>
                     <button type="submit" class="dash-btn inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-sm font-semibold">Salvar presença geral</button>
                 </form>
             </div>
             <div class="rounded-xl border border-slate-100 bg-slate-50/50 px-4 py-4 sm:px-5">
                 @unless($participationBatchBlock)
-                    <form action="{{ route('events.certificates.generate.participation', $event) }}" method="POST" class="inline-block cert-batch-swal-confirm" data-swal-title="Gerar em lote: participação" data-swal-text="Confirma a geração em lote dos certificados de participação geral? Entram apenas participantes marcados como presentes que ainda não possuem certificado registrado.">
+                    <form action="{{ route('events.certificates.generate.participation', $event) }}" method="POST" class="inline-block cert-batch-swal-confirm" data-swal-title="Gerar em lote: participação" data-swal-text="Confirma a geração em lote dos certificados de participação? O PDF já existente é regravado só quando o texto muda, e o e-mail sai apenas na primeira emissão.">
                         @csrf
                         <button type="submit" class="dash-btn inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-sm font-semibold">Gerar certificados de participação</button>
                     </form>
@@ -213,7 +296,7 @@
                             <h2 class="dash-title text-lg font-bold tracking-tight m-0">Apresentação de trabalho (submissão)</h2>
                             <ul class="dash-text text-sm m-0 mt-3 pl-4 list-[square] space-y-1.5 leading-relaxed">
                                 <li><strong>Título do trabalho</strong> (uma linha) é <strong>obrigatório</strong> quando a situação for <strong>Apresentado</strong>, no formato habitual de trabalho ou artigo científico.</li>
-                                <li><strong>Presença:</strong> <strong>Apresentado</strong> ou <strong>Ausente</strong> — apenas apresentações confirmadas entram na emissão em lote.</li>
+                                <li><strong>Presença:</strong> <strong>Apresentado</strong> ou <strong>Ausente</strong>. Só as apresentações confirmadas entram na emissão em lote.</li>
                                 <li><strong>Carga horária</strong> no PDF (padrão 2 h em branco).</li>
                                 <li><strong>Ausente</strong> apenas registra motivo, sem certificado.</li>
                             </ul>
@@ -248,7 +331,7 @@
                                             <p class="dash-muted text-[11px] font-bold uppercase tracking-wider m-0">Submissão / referência</p>
                                             <p class="font-semibold text-slate-900 m-0 mt-1 [overflow-wrap:anywhere] leading-snug">{{ $w->listTitleCompact() }}</p>
                                             <p class="text-sm text-slate-600 m-0 mt-1.5">
-                                                <span class="text-slate-500 font-medium">Autor principal</span> — {{ $w->submitter?->name ?? '—' }}
+                                                <span class="text-slate-500 font-medium">Autor principal:</span> {{ $w->submitter?->name ?? '-' }}
                                             </p>
                                         </div>
                                         <div class="shrink-0 sm:pt-0">
@@ -308,6 +391,30 @@
                 </div>
             </div>
         </section>
+        <section id="cert-publicacao" class="dash-card scroll-mt-6 overflow-hidden rounded-2xl">
+            <div class="p-6 sm:p-7 space-y-4">
+                <h2 class="dash-title text-lg font-bold m-0">Publicação em anais ou e-book</h2>
+                @if($presentationWorks->isEmpty())
+                    <p class="text-sm text-slate-600 m-0">Não há trabalhos submetidos neste evento.</p>
+                @elseif(! $event->hasAnnalsPublication())
+                    <p class="text-sm text-amber-900 m-0">Publique o PDF dos anais ou do e-book antes de gerar este certificado.</p>
+                @else
+                    <p class="text-sm text-slate-600 m-0">O certificado sai para o autor principal de cada trabalho aceito para os anais. Trabalhos elegíveis: {{ $publicationEligible }}.</p>
+                    <form action="{{ route('events.certificates.meta', $event) }}" method="POST" class="flex flex-wrap items-end gap-3">
+                        @csrf
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Carga horária da publicação</label>
+                            <input type="number" step="0.5" min="0" name="certificate_publication_hours" value="{{ old('certificate_publication_hours', $event->certificate_publication_hours) }}" placeholder="Em branco omite as horas" class="dash-field rounded-xl px-3 py-2.5 text-sm">
+                        </div>
+                        <button type="submit" class="dash-btn px-4 py-2.5 rounded-xl text-sm font-semibold">Salvar horas</button>
+                    </form>
+                    <form action="{{ route('events.certificates.generate.publications', $event) }}" method="POST" class="inline-block cert-batch-swal-confirm" data-swal-title="Gerar certificados de publicação" data-swal-text="Gerar o certificado de publicação dos trabalhos elegíveis. O e-mail sai só na primeira emissão.">
+                        @csrf
+                        <button type="submit" class="dash-btn px-4 py-2.5 rounded-xl text-sm font-semibold" @disabled($optionalCertificateBlock)>Gerar certificados de publicação</button>
+                    </form>
+                @endif
+            </div>
+        </section>
     @else
         <section class="overflow-hidden rounded-2xl border border-dashed border-slate-300/90 bg-gradient-to-br from-slate-50 to-white p-6 sm:p-7 shadow-inner">
             <h2 class="text-base font-bold text-slate-900 tracking-tight m-0">Apresentação de trabalhos</h2>
@@ -359,10 +466,10 @@
                             <tr class="transition-colors hover:bg-amber-50/25">
                                 <td class="px-4 py-3 font-medium text-slate-900">{{ $act->title }}</td>
                                 <td class="px-4 py-3 text-slate-600 whitespace-nowrap tabular-nums">{{ $act->start_at?->format('d/m/Y H:i') }}</td>
-                                <td class="px-4 py-3 text-slate-700 tabular-nums">{{ $act->workload_hours ?? '—' }}</td>
+                                <td class="px-4 py-3 text-slate-700 tabular-nums">{{ $act->workload_hours ?? '-' }}</td>
                                 <td class="px-4 py-3 text-slate-700">
                                     @if($participantUsers->isEmpty())
-                                        <span class="text-xs text-slate-400 font-medium">—</span>
+                                        <span class="text-xs text-slate-400 font-medium">-</span>
                                     @elseif($_attDone)
                                         <span class="dash-badge-positive inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wide">Registrada</span>
                                     @else

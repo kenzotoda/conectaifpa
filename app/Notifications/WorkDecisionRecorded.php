@@ -3,11 +3,15 @@
 namespace App\Notifications;
 
 use App\Models\Work;
+use App\Notifications\Concerns\RespectsGmailQuota;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class WorkDecisionRecorded extends Notification
+class WorkDecisionRecorded extends Notification implements ShouldQueue
 {
+    use RespectsGmailQuota;
+
     public const ACCEPTED = 'accepted';
 
     public const CORRECTIONS = 'corrections';

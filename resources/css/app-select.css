@@ -5,6 +5,10 @@
     min-width: 0;
 }
 
+.app-select[hidden] {
+    display: none !important;
+}
+
 .app-select-native {
     position: absolute !important;
     width: 1px !important;
@@ -84,6 +88,52 @@
     box-shadow: 0 16px 40px rgba(15, 23, 42, 0.14);
 }
 
+.app-select-menu.has-search {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 0;
+}
+
+.app-select-search {
+    flex: 0 0 auto;
+    padding: 0.55rem 0.65rem 0.45rem;
+    border-bottom: 1px solid #f1f5f9;
+    background: #fff;
+}
+
+.app-select-search-input {
+    display: block;
+    width: 100%;
+    min-height: 2.5rem;
+    padding: 0.45rem 0.75rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 0.65rem;
+    background: #fff;
+    color: #0f172a;
+    font-size: 16px;
+    line-height: 1.3;
+}
+
+.app-select-search-input:focus {
+    outline: none;
+    border-color: #0b6b45;
+    box-shadow: 0 0 0 3px rgba(11, 107, 69, 0.15);
+}
+
+.app-select-list {
+    overflow: auto;
+    min-height: 0;
+    padding: 0.3rem 0 0.4rem;
+}
+
+.app-select-empty {
+    margin: 0;
+    padding: 0.75rem 1rem 0.85rem;
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
 .app-select-group {
     margin: 0.15rem 0 0;
     padding: 0.45rem 1rem 0.2rem;
@@ -133,6 +183,8 @@
 
 html.a11y-high-contrast .app-select-trigger,
 html.a11y-high-contrast .app-select-menu,
+html.a11y-high-contrast .app-select-search,
+html.a11y-high-contrast .app-select-search-input,
 html.a11y-high-contrast .app-select-option {
     background: #fff !important;
     color: #000 !important;

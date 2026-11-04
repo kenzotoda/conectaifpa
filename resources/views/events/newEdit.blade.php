@@ -651,7 +651,7 @@
                                                     maxlength="255">
                                             </td>
                                             <td class="px-4 py-3 align-top">
-                                                <div class="guest-existing-summary-role-type text-slate-600 break-words">{{ ($guestRoleTypeLabels ?? [])[$guest->role_type] ?? '—' }}</div>
+                                                <div class="guest-existing-summary-role-type text-slate-600 break-words">{{ ($guestRoleTypeLabels ?? [])[$guest->role_type] ?? '-' }}</div>
                                                 <select name="guests_existing[{{ $guest->id }}][role_type]"
                                                     class="form-input w-full px-3 py-2.5 rounded-lg font-open-sans guest-existing-role-type-input hidden">
                                                     <option value="">Selecione a função</option>
@@ -663,7 +663,7 @@
                                                 </select>
                                             </td>
                                             <td class="px-4 py-3 align-top">
-                                                <div class="guest-existing-summary-role text-slate-600 whitespace-pre-line break-words">{{ $guest->role ?: '—' }}</div>
+                                                <div class="guest-existing-summary-role text-slate-600 whitespace-pre-line break-words">{{ $guest->role ?: '-' }}</div>
                                                 <textarea name="guests_existing[{{ $guest->id }}][role]"
                                                     rows="3"
                                                     maxlength="2000"
@@ -779,6 +779,13 @@
                                                                 required
                                                                 placeholder="Ex.: Auditório, sala 3, link da videoconferência…"
                                                                 class="form-input w-full px-4 py-3 rounded-lg font-open-sans activity-existing-location-input">
+                                                        </div>
+                                                        <div class="md:col-span-2">
+                                                            <input type="hidden" name="activities_existing[{{ $activity->id }}][is_extension]" value="0">
+                                                            <label class="flex items-start gap-2 text-sm font-montserrat">
+                                                                <input type="checkbox" name="activities_existing[{{ $activity->id }}][is_extension]" value="1" @checked($activity->is_extension)>
+                                                                <span>Atividade de extensão (certificado exige 75% de frequência)</span>
+                                                            </label>
                                                         </div>
                                                         @php
                                                             $activityGuestsLinked = $activity->eventGuests;
@@ -1213,9 +1220,9 @@
         const nameSummary = row.querySelector('.guest-existing-summary-name');
         const roleTypeSummary = row.querySelector('.guest-existing-summary-role-type');
         const roleSummary = row.querySelector('.guest-existing-summary-role');
-        if (nameSummary) nameSummary.textContent = name || '—';
-        if (roleTypeSummary) roleTypeSummary.textContent = roleTypeLabel && roleTypeLabel !== 'Selecione a função' ? roleTypeLabel : '—';
-        if (roleSummary) roleSummary.textContent = role || '—';
+        if (nameSummary) nameSummary.textContent = name || '-';
+        if (roleTypeSummary) roleTypeSummary.textContent = roleTypeLabel && roleTypeLabel !== 'Selecione a função' ? roleTypeLabel : '-';
+        if (roleSummary) roleSummary.textContent = role || '-';
     }
 
     function refreshActivityExistingSummary(row) {
@@ -1466,6 +1473,13 @@
                     <input type="text" name="activities_new[${idx}][location]" maxlength="255" required
                         placeholder="Ex.: Auditório, sala 3, link da videoconferência…"
                         class="form-input w-full px-4 py-3 rounded-lg font-open-sans">
+                </div>
+                <div class="md:col-span-2">
+                    <input type="hidden" name="activities_new[${idx}][is_extension]" value="0">
+                    <label class="flex items-start gap-2 text-sm font-montserrat">
+                        <input type="checkbox" name="activities_new[${idx}][is_extension]" value="1">
+                        <span>Atividade de extensão (certificado exige 75% de frequência)</span>
+                    </label>
                 </div>
                 <div class="md:col-span-2 activity-guests-block">
                     <label class="form-label block text-sm font-montserrat mb-2">Convidados</label>

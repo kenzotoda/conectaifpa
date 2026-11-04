@@ -1,5 +1,5 @@
 {{--
-    VLibras Widget (governo federal) — tradução automática para Libras.
+    VLibras Widget (governo federal): tradução automática para Libras.
     Documentação: https://vlibras.gov.br/doc/widget/
     Requisitos típicos: HTTPS em produção, rede permitindo vlibras.gov.br.
     Se o script não carregar (rede, bloqueio), o site continua funcionando.

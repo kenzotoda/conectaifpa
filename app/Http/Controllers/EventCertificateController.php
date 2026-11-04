@@ -81,11 +81,27 @@ class EventCertificateController extends Controller
                 : null,
             'activitiesBatchBlock' => $this->activitiesBatchReadyMessage($event),
             'activityAttendanceCompleteById' => $this->activityAttendanceCompleteMap($participantIds, $activities),
+            'optionalCertificateBlock' => $this->optionalCertificateReadyMessage($event),
+            'publicationEligible' => $event->acceptsSubmissions()
+                ? Work::query()->where('event_id', $event->id)->whereIn('status', Work::annalsCertificateStatuses())->count()
+                : 0,
+            'optionalEligible' => [
+                'reviewers' => $this->certificateIssuer->eligibleReviewers($event)->count(),
+                'guests' => $this->certificateIssuer->eligibleGuests($event)->count(),
+                'organization' => $this->certificateIssuer->eligibleOrganization($event)->count(),
+                'coauthors' => $this->certificateIssuer->eligibleCoauthors($event)->count(),
+            ],
+            'optionalIssued' => [
+                'reviewers' => Certificate::query()->where('event_id', $event->id)->where('tipo', Certificate::TYPE_REVIEWER)->count(),
+                'guests' => Certificate::query()->where('event_id', $event->id)->where('tipo', Certificate::TYPE_GUEST)->count(),
+                'organization' => Certificate::query()->where('event_id', $event->id)->where('tipo', Certificate::TYPE_ORGANIZATION)->count(),
+                'coauthors' => Certificate::query()->where('event_id', $event->id)->where('tipo', Certificate::TYPE_COAUTHOR)->count(),
+            ],
         ]);
     }
 
     /**
-     * Presença na apresentação (por trabalho) e carga horária do certificado de apresentação — em lote nesta tela.
+     * Presença na apresentação (por trabalho) e carga horária do certificado de apresentação, em lote nesta tela.
      */
     public function updatePresentationCertificateRows(Request $request, Event $event)
     {
@@ -166,8 +182,8 @@ class EventCertificateController extends Controller
 
         return back()->with([
             'msg' => $updated > 0
-                ? "Gravado com sucesso — {$updated} trabalho(s) atualizado(s): título, presença e CH."
-                : 'Nenhum cartão foi atualizado — confira se o status da submissão permite edição ou se os dados já estavam iguais.',
+                ? "Gravado com sucesso. {$updated} trabalho(s) atualizado(s): título, presença e CH."
+                : 'Nenhum cartão foi atualizado. Confira se o status da submissão permite edição ou se os dados já estavam iguais.',
             'saved_ok' => $updated > 0,
         ]);
     }
@@ -177,17 +193,31 @@ class EventCertificateController extends Controller
         $this->authorizeCoordinator($event);
 
         $participantIds = $event->participantUsers()->pluck('users.id')->all();
-        $presentIds = collect($request->input('presente', []))
-            ->map(fn ($id) => (int) $id)
-            ->filter(fn ($id) => in_array($id, $participantIds, true))
-            ->unique()
-            ->all();
+        $isHybrid = $event->modality === 'Híbrido';
+        $isOnline = $event->modality === 'Online';
+        $presentIds = collect($request->input('presente', []))->map(fn ($id) => (int) $id)->all();
+        $inPersonIds = collect($request->input('presente_presencial', []))->map(fn ($id) => (int) $id)->all();
+        $onlineIds = collect($request->input('presente_online', []))->map(fn ($id) => (int) $id)->all();
 
         foreach ($participantIds as $uid) {
+            $uid = (int) $uid;
+            if ($isHybrid) {
+                $inPerson = in_array($uid, $inPersonIds, true);
+                $online = in_array($uid, $onlineIds, true);
+            } elseif ($isOnline) {
+                $inPerson = false;
+                $online = in_array($uid, $presentIds, true);
+            } else {
+                $inPerson = in_array($uid, $presentIds, true);
+                $online = false;
+            }
+
             EventPresence::updateOrCreate(
                 ['event_id' => $event->id, 'user_id' => $uid],
                 [
-                    'presente' => in_array((int) $uid, $presentIds, true),
+                    'presente' => $inPerson || $online,
+                    'presente_presencial' => $inPerson,
+                    'presente_online' => $online,
                     'marcado_por' => auth()->id(),
                     'data_marcacao' => now(),
                 ]
@@ -195,7 +225,7 @@ class EventCertificateController extends Controller
         }
 
         return back()->with([
-            'msg' => 'Gravado com sucesso — lista de presença geral do evento.',
+            'msg' => 'Gravado com sucesso. Lista de presença geral do evento.',
             'saved_ok' => true,
         ]);
     }
@@ -232,25 +262,43 @@ class EventCertificateController extends Controller
         }
 
         $participantIds = $event->participantUsers()->pluck('users.id')->all();
-        $presentIds = collect($request->input('presente', []))
-            ->map(fn ($id) => (int) $id)
-            ->filter(fn ($id) => in_array($id, $participantIds, true))
-            ->unique()
-            ->all();
 
-        foreach ($participantIds as $uid) {
-            ActivityPresence::updateOrCreate(
-                ['activity_id' => $activity->id, 'user_id' => $uid],
-                [
-                    'presente' => in_array((int) $uid, $presentIds, true),
-                    'marcado_por' => auth()->id(),
-                    'data_marcacao' => now(),
-                ]
-            );
+        if ($activity->is_extension) {
+            $frequencies = (array) $request->input('frequencia', []);
+            foreach ($participantIds as $uid) {
+                $raw = $frequencies[$uid] ?? $frequencies[(string) $uid] ?? null;
+                $frequency = ($raw === null || $raw === '') ? null : max(0, min(100, (int) $raw));
+                ActivityPresence::updateOrCreate(
+                    ['activity_id' => $activity->id, 'user_id' => $uid],
+                    [
+                        'frequencia_percent' => $frequency,
+                        'presente' => $frequency !== null && $frequency >= Activity::EXTENSION_MINIMUM_FREQUENCY,
+                        'marcado_por' => auth()->id(),
+                        'data_marcacao' => now(),
+                    ]
+                );
+            }
+        } else {
+            $presentIds = collect($request->input('presente', []))
+                ->map(fn ($id) => (int) $id)
+                ->filter(fn ($id) => in_array($id, $participantIds, true))
+                ->unique()
+                ->all();
+
+            foreach ($participantIds as $uid) {
+                ActivityPresence::updateOrCreate(
+                    ['activity_id' => $activity->id, 'user_id' => $uid],
+                    [
+                        'presente' => in_array((int) $uid, $presentIds, true),
+                        'marcado_por' => auth()->id(),
+                        'data_marcacao' => now(),
+                    ]
+                );
+            }
         }
 
         return back()->with([
-            'msg' => 'Gravado com sucesso — presença desta atividade.',
+            'msg' => 'Gravado com sucesso. Presença desta atividade.',
             'saved_ok' => true,
         ]);
     }
@@ -273,7 +321,7 @@ class EventCertificateController extends Controller
         $event->certificateSignatures()->sync($sync);
 
         return back()->with([
-            'msg' => 'Gravado com sucesso — assinaturas marcadas neste evento.',
+            'msg' => 'Gravado com sucesso. Assinaturas marcadas neste evento.',
             'saved_ok' => true,
         ]);
     }
@@ -289,8 +337,8 @@ class EventCertificateController extends Controller
         $count = $this->certificateIssuer->batchParticipation($event);
 
         return back()->with('msg', $count > 0
-            ? "Geração em lote (participação): {$count} certificado(s) emitido(s)."
-            : 'Geração em lote (participação): nenhum certificado novo. Verifique presenças marcadas e se já existia certificado para cada participante elegível.');
+            ? "Geração em lote (participação): {$count} certificado(s) emitido(s) ou atualizado(s). O e-mail sai só na primeira emissão."
+            : 'Geração em lote (participação): nenhum PDF novo. O certificado já existente só é regravado quando o texto muda.');
     }
 
     public function generateActivity(Event $event, Activity $activity)
@@ -314,8 +362,8 @@ class EventCertificateController extends Controller
         $count = $this->certificateIssuer->batchActivitiesForEvent($event);
 
         return back()->with('msg', $count > 0
-            ? "Geração em lote (atividades): {$count} certificado(s) emitido(s)."
-            : 'Geração em lote (atividades): nenhum certificado novo. Verifique presenças salvas em cada atividade e a elegibilidade.');
+            ? "Geração em lote (atividades): {$count} certificado(s) emitido(s) ou atualizado(s). O e-mail sai só na primeira emissão."
+            : 'Geração em lote (atividades): nenhum PDF novo. Atividade de extensão exige frequência de 75% ou mais.');
     }
 
     public function generatePresentations(Event $event)
@@ -337,13 +385,98 @@ class EventCertificateController extends Controller
             : 'Geração em lote (apresentação): nada a emitir ou atualizar. Verifique trabalhos «Apresentado», dados salvos na lista ou se o conteúdo já coincide com o certificado emitido.');
     }
 
+    public function updateOptionalCertificates(Request $request, Event $event)
+    {
+        $this->authorizeCoordinator($event);
+
+        $data = $request->validate([
+            'certificate_reviewer_enabled' => ['required', 'boolean'],
+            'certificate_guest_enabled' => ['required', 'boolean'],
+            'certificate_organization_enabled' => ['required', 'boolean'],
+            'certificate_coauthor_enabled' => ['required', 'boolean'],
+            'certificate_reviewer_hours' => ['nullable', 'numeric', 'min:0', 'max:99999'],
+            'certificate_guest_hours' => ['nullable', 'numeric', 'min:0', 'max:99999'],
+            'certificate_organization_hours' => ['nullable', 'numeric', 'min:0', 'max:99999'],
+        ]);
+
+        $event->fill($data);
+        $event->save();
+
+        return back()->with([
+            'msg' => 'Gravado com sucesso. Certificados opcionais deste evento.',
+            'saved_ok' => true,
+        ]);
+    }
+
+    public function generateReviewers(Event $event)
+    {
+        return $this->generateOptional(
+            $event,
+            (bool) $event->certificate_reviewer_enabled,
+            'avaliador',
+            fn () => $this->certificateIssuer->batchReviewers($event)
+        );
+    }
+
+    public function generateGuests(Event $event)
+    {
+        return $this->generateOptional(
+            $event,
+            (bool) $event->certificate_guest_enabled,
+            'convidado',
+            fn () => $this->certificateIssuer->batchGuests($event)
+        );
+    }
+
+    public function generateOrganization(Event $event)
+    {
+        return $this->generateOptional(
+            $event,
+            (bool) $event->certificate_organization_enabled,
+            'organização',
+            fn () => $this->certificateIssuer->batchOrganization($event)
+        );
+    }
+
+    public function generateCoauthors(Event $event)
+    {
+        return $this->generateOptional(
+            $event,
+            (bool) $event->certificate_coauthor_enabled,
+            'coautor',
+            fn () => $this->certificateIssuer->batchCoauthors($event)
+        );
+    }
+
+    public function generatePublications(Event $event)
+    {
+        $this->authorizeCoordinator($event);
+
+        if ($msg = $this->optionalCertificateReadyMessage($event)) {
+            return back()->with('msg', $msg);
+        }
+
+        if (! $event->hasAnnalsPublication()) {
+            return back()->with('msg', 'Publique o PDF dos anais ou do e-book antes de gerar o certificado de publicação.');
+        }
+
+        $count = $this->certificateIssuer->batchPublications($event);
+
+        return back()->with([
+            'msg' => $count > 0
+                ? 'Gravado com sucesso. '.$count.' certificado(s) de publicação gerado(s) ou atualizado(s). O e-mail sai só na primeira emissão, no ritmo do Gmail.'
+                : 'Nenhum certificado novo de publicação. O PDF só é regravado quando o texto muda.',
+            'saved_ok' => true,
+        ]);
+    }
+
     public function issuedList(Event $event)
     {
         $this->authorizeCoordinator($event);
 
         $certificates = Certificate::query()
             ->where('event_id', $event->id)
-            ->with(['user'])
+            ->with(['user', 'eventGuest', 'workAuthor'])
             ->orderByDesc('data_emissao')
             ->paginate(40);
 
@@ -359,6 +492,9 @@ class EventCertificateController extends Controller
         if ($request->has('certificate_total_hours')) {
             $rules['certificate_total_hours'] = ['nullable', 'numeric', 'min:0', 'max:99999'];
         }
+        if ($request->has('certificate_publication_hours')) {
+            $rules['certificate_publication_hours'] = ['nullable', 'numeric', 'min:0', 'max:99999'];
+        }
         if ($request->has('certificate_organizer')) {
             $rules['certificate_organizer'] = ['nullable', 'string', 'max:255'];
         }
@@ -368,7 +504,7 @@ class EventCertificateController extends Controller
 
         if ($rules === []) {
             return back()->with([
-                'msg' => 'Nenhum campo enviado para atualização — marque pelo menos uma alteração antes de Salvar.',
+                'msg' => 'Nenhum campo enviado para atualização. Marque pelo menos uma alteração antes de Salvar.',
                 'saved_ok' => false,
             ]);
         }
@@ -378,6 +514,9 @@ class EventCertificateController extends Controller
 
         if (array_key_exists('certificate_total_hours', $data)) {
             $event->certificate_total_hours = $data['certificate_total_hours'] ?? null;
+        }
+        if (array_key_exists('certificate_publication_hours', $data)) {
+            $event->certificate_publication_hours = $data['certificate_publication_hours'] ?? null;
         }
         if (array_key_exists('certificate_organizer', $data)) {
             $event->certificate_organizer = $data['certificate_organizer'] ?? null;
@@ -389,7 +528,7 @@ class EventCertificateController extends Controller
         $event->save();
 
         return back()->with([
-            'msg' => 'Gravado com sucesso — '.$this->certificateMetaSavedMessage($request),
+            'msg' => 'Gravado com sucesso. '.$this->certificateMetaSavedMessage($request),
             'saved_ok' => true,
         ]);
     }
@@ -419,15 +558,51 @@ class EventCertificateController extends Controller
 
         $data = $request->validate([
             'workload_hours' => ['nullable', 'numeric', 'min:0', 'max:99999'],
+            'is_extension' => ['nullable', 'boolean'],
         ]);
 
         $activity->workload_hours = $data['workload_hours'] ?? null;
+        if ($request->has('is_extension')) {
+            $activity->is_extension = $request->boolean('is_extension');
+        }
         $activity->save();
 
         return back()->with([
-            'msg' => 'Gravado com sucesso — carga horária do certificado desta atividade.',
+            'msg' => 'Gravado com sucesso. Carga horária do certificado desta atividade.',
             'saved_ok' => true,
         ]);
+    }
+
+    private function optionalCertificateReadyMessage(Event $event): ?string
+    {
+        if ($m = $this->globalCertificateBlockedMessage($event)) {
+            return $m;
+        }
+
+        if (! $event->isFinalized()) {
+            return 'Conclua a finalização do evento antes de emitir avaliador, convidado, organização ou coautor.';
+        }
+
+        return null;
+    }
+
+    private function generateOptional(Event $event, bool $enabled, string $label, callable $batch)
+    {
+        $this->authorizeCoordinator($event);
+
+        if (! $enabled) {
+            return back()->with('msg', 'Ligue o certificado de '.$label.' e salve antes de gerar.');
+        }
+
+        if ($msg = $this->optionalCertificateReadyMessage($event)) {
+            return back()->with('msg', $msg);
+        }
+
+        $count = $batch();
+
+        return back()->with('msg', $count > 0
+            ? "Geração ({$label}): {$count} certificado(s) emitido(s) ou PDF atualizado(s)."
+            : "Geração ({$label}): nenhum certificado novo. Quem já tem o PDF atual fica como está; confira a lista de elegíveis.");
     }
 
     private function participationBatchReadyMessage(Event $event): ?string

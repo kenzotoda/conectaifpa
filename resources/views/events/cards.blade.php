@@ -14,7 +14,7 @@
                 <span class="dash-muted text-xs sm:text-sm shrink-0">
                     {{ date('d/m/Y', strtotime($event['start_date'])) }}
                     @if($event['end_date'])
-                        – {{ date('d/m/Y', strtotime($event['end_date'])) }}
+                        até {{ date('d/m/Y', strtotime($event['end_date'])) }}
                     @endif
                 </span>
             </div>

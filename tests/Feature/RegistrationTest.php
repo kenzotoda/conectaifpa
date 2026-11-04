@@ -25,6 +25,8 @@ class RegistrationTest extends TestCase
         $response->assertSee('Técnico administrativo');
         $response->assertSee('Estudante de escola pública');
         $response->assertSee('Comunidade em geral');
+        $response->assertSee('Discente, docente ou técnico de outro campus');
+        $response->assertSee('IFPA Belém');
     }
 
     public function test_registration_screen_cannot_be_rendered_if_support_is_disabled(): void
@@ -52,12 +54,103 @@ class RegistrationTest extends TestCase
             'role' => 'participant',
             'participant_profile' => 'discente',
             'matricula' => '123456789012',
-            'curso' => 'Licenciatura em Computacao',
+            'curso' => 'Análise e Desenvolvimento de Sistemas (Tecnologia)',
             'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature(),
         ]);
 
         $this->assertAuthenticated();
         $response->assertRedirect(route('dashboard', absolute: false));
+
+        $user = User::where('email', 'test@example.com')->first();
+        $this->assertNotNull($user);
+        $this->assertSame('123456789012', $user->matricula);
+        $this->assertSame('Análise e Desenvolvimento de Sistemas (Tecnologia)', $user->curso);
+    }
+
+    public function test_discente_matricula_accepts_between_one_and_twenty_digits(): void
+    {
+        if (! Features::enabled(Features::registration())) {
+            $this->markTestSkipped('Registration support is not enabled.');
+        }
+
+        $response = $this->post('/register', [
+            'name' => 'Short Matricula',
+            'email' => 'short-matricula@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'role' => 'participant',
+            'participant_profile' => 'discente',
+            'matricula' => '7',
+            'curso' => 'Pedagogia (Licenciatura)',
+            'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature(),
+        ]);
+
+        $this->assertAuthenticated();
+        $response->assertRedirect(route('dashboard', absolute: false));
+        $this->assertSame('7', User::where('email', 'short-matricula@example.com')->value('matricula'));
+
+        auth()->logout();
+
+        $long = str_repeat('9', 20);
+        $response = $this->post('/register', [
+            'name' => 'Long Matricula',
+            'email' => 'long-matricula@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'role' => 'participant',
+            'participant_profile' => 'discente',
+            'matricula' => $long,
+            'curso' => 'Mestrado Profissional em Engenharia de Materiais',
+            'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature(),
+        ]);
+
+        $this->assertAuthenticated();
+        $this->assertSame($long, User::where('email', 'long-matricula@example.com')->value('matricula'));
+    }
+
+    public function test_discente_rejects_empty_or_too_long_matricula_and_unknown_course(): void
+    {
+        if (! Features::enabled(Features::registration())) {
+            $this->markTestSkipped('Registration support is not enabled.');
+        }
+
+        $this->post('/register', [
+            'name' => 'Invalid Discente',
+            'email' => 'invalid-discente@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'role' => 'participant',
+            'participant_profile' => 'discente',
+            'matricula' => '',
+            'curso' => 'Pedagogia (Licenciatura)',
+            'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature(),
+        ])->assertSessionHasErrors('matricula');
+
+        $this->post('/register', [
+            'name' => 'Invalid Discente',
+            'email' => 'invalid-discente@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'role' => 'participant',
+            'participant_profile' => 'discente',
+            'matricula' => str_repeat('1', 21),
+            'curso' => 'Pedagogia (Licenciatura)',
+            'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature(),
+        ])->assertSessionHasErrors('matricula');
+
+        $this->post('/register', [
+            'name' => 'Invalid Discente',
+            'email' => 'invalid-discente@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'role' => 'participant',
+            'participant_profile' => 'discente',
+            'matricula' => '123',
+            'curso' => 'Curso inventado',
+            'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature(),
+        ])->assertSessionHasErrors('curso');
+
+        $this->assertGuest();
     }
 
     public function test_external_participant_can_register_without_matricula(): void
@@ -145,5 +238,77 @@ class RegistrationTest extends TestCase
         $this->assertNull($user->institution);
         $this->assertNull($user->curso);
         $this->assertNull($user->matricula);
+    }
+
+    public function test_other_ifpa_campus_registers_as_external_with_optional_matricula(): void
+    {
+        if (! Features::enabled(Features::registration())) {
+            $this->markTestSkipped('Registration support is not enabled.');
+        }
+
+        $response = $this->post('/register', [
+            'name' => 'Campus User',
+            'email' => 'castanhal@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'role' => 'participant',
+            'participant_profile' => 'ifpa_outro_campus',
+            'institution' => 'IFPA - Castanhal',
+            'ifpa_bond' => 'docente',
+            'curso' => 'Informatica',
+            'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature(),
+        ]);
+
+        $this->assertAuthenticated();
+        $response->assertRedirect(route('dashboard', absolute: false));
+
+        $user = User::where('email', 'castanhal@example.com')->first();
+        $this->assertNotNull($user);
+        $this->assertTrue($user->is_external_participant);
+        $this->assertSame('ifpa_outro_campus', $user->participant_profile);
+        $this->assertSame('docente', $user->ifpa_bond);
+        $this->assertSame('IFPA - Castanhal', $user->institution);
+        $this->assertSame('Informatica', $user->curso);
+        $this->assertNull($user->matricula);
+        $this->assertSame('Docente de outro campus', $user->participantProfileLabel());
+
+        auth()->logout();
+
+        $this->post('/register', [
+            'name' => 'Campus Discente',
+            'email' => 'santarem@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'role' => 'participant',
+            'participant_profile' => 'ifpa_outro_campus',
+            'institution' => 'IFPA - Santarém',
+            'ifpa_bond' => 'discente',
+            'curso' => 'Tecnico em Informatica',
+            'matricula' => '12345',
+            'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature(),
+        ])->assertRedirect(route('dashboard', absolute: false));
+
+        $discente = User::where('email', 'santarem@example.com')->first();
+        $this->assertNotNull($discente);
+        $this->assertTrue($discente->is_external_participant);
+        $this->assertSame('12345', $discente->matricula);
+        $this->assertSame('Discente de outro campus', $discente->participantProfileLabel());
+
+        auth()->logout();
+
+        $this->post('/register', [
+            'name' => 'Campus Invalido',
+            'email' => 'belem-como-externo@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'role' => 'participant',
+            'participant_profile' => 'ifpa_outro_campus',
+            'institution' => 'IFPA - Belém',
+            'ifpa_bond' => 'tecnico_administrativo',
+            'curso' => 'Pesquisa',
+            'terms' => Jetstream::hasTermsAndPrivacyPolicyFeature(),
+        ])->assertSessionHasErrors('institution');
+
+        $this->assertGuest();
     }
 }

@@ -373,7 +373,7 @@
                     @if($event->modality === 'Online')
                         <div class="dash-text text-sm space-y-4 max-w-2xl">
                             <p class="m-0 leading-relaxed">
-                                Este evento é <strong class="dash-title">100% online</strong>. Não há sede física de realização divulgada nesta página — o acesso é remoto (meet, plataforma EAD, etc.).
+                                Este evento é <strong class="dash-title">100% online</strong>. Não há sede física de realização divulgada nesta página. O acesso é remoto (meet, plataforma EAD etc.).
                             </p>
                             @if($event->ead_link)
                                 <p class="m-0">

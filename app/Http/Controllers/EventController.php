@@ -464,7 +464,7 @@ class EventController extends Controller
     private function stepFields(): array
     {
         return [
-            // STEP 0 — Informações Básicas
+            // STEP 0: Informações Básicas
             0 => [
                 'title',
                 'category',
@@ -483,7 +483,7 @@ class EventController extends Controller
                 'description',
             ],
 
-            // STEP 1 — Datas + Localização + Imagem
+            // STEP 1: Datas + Localização + Imagem
             1 => [
                 'start_date',
                 'end_date',
@@ -497,7 +497,7 @@ class EventController extends Controller
                 'image',
             ],
 
-            // STEP 2 — Coordenação + Configurações finais
+            // STEP 2: Coordenação + Configurações finais
             2 => [
                 'coordinator_name',
                 'coordinator_email',
@@ -875,7 +875,16 @@ class EventController extends Controller
 
         // echo "<pre>"; print_r($events); echo "</pre>"; exit;
 
-        return view('events.dashboard', ['events' => $events, 'eventsAsParticipant' => $eventsAsParticipant]);
+        $satisfactionAnsweredEventIds = \App\Models\EventSatisfactionResponse::query()
+            ->where('user_id', $user->id)
+            ->pluck('event_id')
+            ->all();
+
+        return view('events.dashboard', [
+            'events' => $events,
+            'eventsAsParticipant' => $eventsAsParticipant,
+            'satisfactionAnsweredEventIds' => $satisfactionAnsweredEventIds,
+        ]);
     }
 
     public function destroy($id)
@@ -1645,6 +1654,7 @@ class EventController extends Controller
                 'location' => $location,
                 'guest_id' => null,
                 'speakers' => [],
+                'is_extension' => filter_var($row['is_extension'] ?? false, FILTER_VALIDATE_BOOLEAN),
             ]);
             $this->syncActivityEventGuests($activity, $guestIds);
         }
@@ -1836,10 +1846,6 @@ class EventController extends Controller
             return redirect('/dashboard');
         }
 
-        if ($event->isFinalized()) {
-            return redirect('/dashboard')->with('msg', 'Este evento foi finalizado. A gestão de inscritos não está mais disponível.');
-        }
-
         $users = $event->users()
             ->orderBy('users.is_external_participant')
             ->orderBy('users.name')
@@ -1859,10 +1865,6 @@ class EventController extends Controller
 
         if (auth()->id() != $event->user_id) {
             return redirect('/dashboard');
-        }
-
-        if ($event->isFinalized()) {
-            return redirect('/dashboard')->with('msg', 'Este evento foi finalizado. A exportação não está mais disponível.');
         }
 
         $users = $event->users;
@@ -1895,7 +1897,7 @@ class EventController extends Controller
                     $user->audienceCategoryLabel(),
                     $user->participantProfileLabel(),
                     $user->matricula,
-                    $user->is_external_participant ? ($user->institution ?: '') : 'IFPA — Belém',
+                    $user->is_external_participant ? ($user->institution ?: '') : 'IFPA - Belém',
                     $user->curso,
                 ]);
             }
@@ -1967,13 +1969,22 @@ class EventController extends Controller
             'content.required' => 'O conteúdo da novidade é obrigatório.',
         ]);
 
-        EventNews::create([
+        $news = EventNews::create([
             'event_id' => $event->id,
             'title' => $request->title,
             'content' => $request->content,
         ]);
 
-        return redirect("/events/{$event->id}/novidades")->with('msg', 'Novidade adicionada com sucesso!');
+        $participants = $event->participantUsers()->get();
+        foreach ($participants as $participant) {
+            $participant->notify(new \App\Notifications\EventNewsPublished($news));
+        }
+
+        $message = $participants->isEmpty()
+            ? 'Novidade adicionada. Não há inscritos para avisar.'
+            : 'Novidade adicionada. O aviso aos '.$participants->count().' inscrito(s) entra na fila do Gmail: no máximo 8 por minuto e 400 por dia.';
+
+        return redirect("/events/{$event->id}/novidades")->with('msg', $message);
     }
 
     public function destroyNovidade($eventId, $novidadeId)
@@ -2311,6 +2322,7 @@ class EventController extends Controller
             $activity->start_at = $startAt;
             $activity->end_at = $endAt;
             $activity->location = $location;
+            $activity->is_extension = filter_var($row['is_extension'] ?? false, FILTER_VALIDATE_BOOLEAN);
             $activity->save();
             $this->syncActivityEventGuests($activity, $guestIds);
         }

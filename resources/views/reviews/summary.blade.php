@@ -33,14 +33,14 @@
                     Recomendação: <span class="dash-title font-medium">{{ $recommendationLabels[$review->recommendation] ?? $review->recommendation }}</span>
                 </p>
                 <p class="dash-text text-sm mb-1">
-                    Nota: <span class="dash-title font-medium">{{ $review->score ?? '—' }}</span>
+                    Nota: <span class="dash-title font-medium">{{ $review->score ?? '-' }}</span>
                 </p>
                 <p class="dash-text text-sm mb-1">
                     Status da designação: <span class="dash-title font-medium">{{ $assignment->statusLabel() }}</span>
                 </p>
                 <p class="dash-text text-sm m-0">
                     Enviado em:
-                    <span class="dash-title font-medium">{{ $review->submitted_at?->format('d/m/Y H:i') ?? '—' }}</span>
+                    <span class="dash-title font-medium">{{ $review->submitted_at?->format('d/m/Y H:i') ?? '-' }}</span>
                 </p>
             </div>
 

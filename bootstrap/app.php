@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureVerifiedEmail;
 use App\Http\Middleware\IsCoordinator;
 use App\Http\Middleware\IsReviewer;
 use App\Http\Middleware\SecurityHeaders;
@@ -22,6 +23,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // 👇 cabeçalhos de segurança em todas as respostas
         $middleware->append(SecurityHeaders::class);
+        $middleware->web(append: [
+            EnsureVerifiedEmail::class,
+        ]);
 
         // 👇 seus aliases continuam intactos
         $middleware->alias([

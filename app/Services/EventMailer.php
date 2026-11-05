@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\Log;
 class EventMailer
 {
     /**
-     * Envia pelo mailer padrão (Gmail SMTP em local e produção).
-     * As notificações ficam na fila e respeitam o teto compartilhado do Gmail.
+     * Envia pelo mailer padrão (Resend em local e produção).
+     * As notificações ficam na fila e respeitam o ritmo da API do Resend.
      * Uma falha de entrega não desfaz a ação que já foi gravada.
      */
     public static function notify(object $notifiable, Notification $notification): void

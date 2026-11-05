@@ -6,7 +6,7 @@ use DateTimeInterface;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\Middleware\RateLimited;
 
-trait RespectsGmailQuota
+trait QueuesOutboundMail
 {
     use Queueable;
 
@@ -26,6 +26,6 @@ trait RespectsGmailQuota
             return [];
         }
 
-        return [new RateLimited('gmail-outbound')];
+        return [new RateLimited('outbound-mail')];
     }
 }

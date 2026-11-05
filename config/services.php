@@ -25,8 +25,7 @@ return [
     ],
 
     'resend' => [
-        // O envio em uso é o SMTP do Gmail (MAIL_MAILER=smtp). Esta chave só entra se o mailer for resend.
-        'key' => env('RESEND_API_KEY'),
+        'key' => env('RESEND_API_KEY', env('RESEND_KEY')),
     ],
 
     'slack' => [

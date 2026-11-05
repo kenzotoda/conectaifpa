@@ -1978,12 +1978,12 @@ class EventController extends Controller
 
         $participants = $event->participantUsers()->get();
         foreach ($participants as $participant) {
-            $participant->notify(new \App\Notifications\EventNewsPublished($news));
+            EventMailer::notify($participant, new \App\Notifications\EventNewsPublished($news));
         }
 
         $message = $participants->isEmpty()
             ? 'Novidade adicionada. Não há inscritos para avisar.'
-            : 'Novidade adicionada. O aviso aos '.$participants->count().' inscrito(s) entra na fila do Gmail: no máximo 8 por minuto e 400 por dia.';
+            : 'Novidade adicionada. O aviso aos '.$participants->count().' inscrito(s) entra na fila e será enviado em seguida.';
 
         return redirect("/events/{$event->id}/novidades")->with('msg', $message);
     }

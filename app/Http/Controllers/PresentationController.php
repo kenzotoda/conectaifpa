@@ -75,6 +75,11 @@ class PresentationController extends Controller
         }
 
         $existing = WorkPresentation::firstOrNew(['work_id' => $work->id]);
+        $scheduleChanged = ! $existing->exists
+            || $existing->presentation_type !== $data['presentation_type']
+            || (string) $existing->location !== (string) $data['location']
+            || ! $existing->scheduled_start?->equalTo($start)
+            || ! $existing->scheduled_end?->equalTo($end);
 
         WorkPresentation::updateOrCreate(
             ['work_id' => $work->id],
@@ -96,7 +101,7 @@ class PresentationController extends Controller
 
         $presentation = WorkPresentation::query()->where('work_id', $work->id)->first();
         $work->loadMissing('submitter');
-        if ($presentation && $work->submitter) {
+        if ($scheduleChanged && $presentation && $work->submitter) {
             EventMailer::notify($work->submitter, new PresentationScheduled($work, $presentation));
         }
 

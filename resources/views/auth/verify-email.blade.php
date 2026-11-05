@@ -47,7 +47,7 @@
                 O link foi enviado para
                 <strong class="dash-title">{{ auth()->user()->email }}</strong>.
                 Abra essa caixa, inclusive o spam, e procure uma mensagem de
-                <strong class="dash-title">conectaifpa@gmail.com</strong>
+                <strong class="dash-title">{{ config('mail.from.address') }}</strong>
                 com o assunto “Confirme seu e-mail no ConectaIFPA”.
             </p>
 

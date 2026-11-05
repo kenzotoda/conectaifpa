@@ -3,14 +3,14 @@
 namespace App\Notifications;
 
 use App\Models\EventNews;
-use App\Notifications\Concerns\RespectsGmailQuota;
+use App\Notifications\Concerns\QueuesOutboundMail;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class EventNewsPublished extends Notification implements ShouldQueue
 {
-    use RespectsGmailQuota;
+    use QueuesOutboundMail;
 
     public function __construct(public EventNews $news) {}
 

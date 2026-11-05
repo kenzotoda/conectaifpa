@@ -35,18 +35,17 @@ class EventMailTest extends TestCase
         Notification::fake();
     }
 
-    public function test_mail_example_points_at_gmail_smtp_without_secrets(): void
+    public function test_mail_example_points_at_resend_without_secrets(): void
     {
         $example = file_get_contents(base_path('.env.example'));
 
         $this->assertIsString($example);
-        $this->assertStringContainsString('MAIL_MAILER=smtp', $example);
-        $this->assertStringContainsString('MAIL_SCHEME=smtp', $example);
-        $this->assertStringContainsString('smtp.gmail.com', $example);
-        $this->assertStringContainsString('MAIL_PORT=587', $example);
-        $this->assertMatchesRegularExpression('/^MAIL_PASSWORD=$/m', $example);
-        $this->assertStringNotContainsString('RESEND_API_KEY=re_', $example);
-        $this->assertDoesNotMatchRegularExpression('/MAIL_PASSWORD=\S+/', $example);
+        $this->assertStringContainsString('MAIL_MAILER=resend', $example);
+        $this->assertStringContainsString('MAIL_FROM_ADDRESS=nao-responda@conectaifpa.com.br', $example);
+        $this->assertStringContainsString('MAIL_FROM_NAME="ConectaIFPA"', $example);
+        $this->assertDoesNotMatchRegularExpression('/^RESEND_API_KEY=\S+/m', $example);
+        $this->assertStringNotContainsString('smtp.gmail.com', $example);
+        $this->assertStringNotContainsString('MAIL_PASSWORD', $example);
     }
 
     public function test_registration_email_goes_only_to_a_new_participant(): void
@@ -265,6 +264,15 @@ class EventMailTest extends TestCase
             }
         );
         Mail::assertNothingSent();
+
+        $this->actingAs($coordinator)->post(route('works.presentation.upsert', $work), [
+            'presentation_type' => WorkPresentation::TYPE_ORAL,
+            'scheduled_start' => $day.' 11:00',
+            'scheduled_end' => $day.' 12:00',
+            'location' => 'Auditório 1',
+        ])->assertRedirect();
+
+        Notification::assertSentToTimes($participant, PresentationScheduled::class, 1);
     }
 
     public function test_new_participation_certificate_sends_one_email(): void

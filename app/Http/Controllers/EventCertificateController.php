@@ -464,7 +464,7 @@ class EventCertificateController extends Controller
 
         return back()->with([
             'msg' => $count > 0
-                ? 'Gravado com sucesso. '.$count.' certificado(s) de publicação gerado(s) ou atualizado(s). O e-mail sai só na primeira emissão, no ritmo do Gmail.'
+                ? 'Gravado com sucesso. '.$count.' certificado(s) de publicação gerado(s) ou atualizado(s). O e-mail sai só na primeira emissão.'
                 : 'Nenhum certificado novo de publicação. O PDF só é regravado quando o texto muda.',
             'saved_ok' => true,
         ]);

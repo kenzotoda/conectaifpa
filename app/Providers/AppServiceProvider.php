@@ -2,7 +2,7 @@
 
 namespace App\Providers;
 
-use App\Mail\GmailOutboundQuota;
+use App\Mail\OutboundMailPace;
 use App\Livewire\Profile\TwoFactorAuthenticationForm as ProfileTwoFactorAuthenticationForm;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Pagination\Paginator;
@@ -29,11 +29,8 @@ class AppServiceProvider extends ServiceProvider
     {
         Carbon::setLocale(config('app.locale'));
 
-        RateLimiter::for('gmail-outbound', function () {
-            return [
-                Limit::perMinute(GmailOutboundQuota::PER_MINUTE)->by('gmail-smtp'),
-                Limit::perDay(GmailOutboundQuota::PER_DAY)->by('gmail-smtp'),
-            ];
+        RateLimiter::for('outbound-mail', function () {
+            return Limit::perSecond(OutboundMailPace::PER_SECOND)->by('resend');
         });
 
         Paginator::defaultView('vendor.pagination.tailwind');

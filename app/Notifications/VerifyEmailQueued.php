@@ -2,14 +2,14 @@
 
 namespace App\Notifications;
 
-use App\Notifications\Concerns\RespectsGmailQuota;
+use App\Notifications\Concerns\QueuesOutboundMail;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 
 class VerifyEmailQueued extends VerifyEmail implements ShouldQueue
 {
-    use RespectsGmailQuota;
+    use QueuesOutboundMail;
 
     public function toMail($notifiable)
     {

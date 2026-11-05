@@ -4,14 +4,14 @@ namespace App\Notifications;
 
 use App\Models\Work;
 use App\Models\WorkPresentation;
-use App\Notifications\Concerns\RespectsGmailQuota;
+use App\Notifications\Concerns\QueuesOutboundMail;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class PresentationScheduled extends Notification implements ShouldQueue
 {
-    use RespectsGmailQuota;
+    use QueuesOutboundMail;
 
     public function __construct(public Work $work, public WorkPresentation $presentation) {}
 

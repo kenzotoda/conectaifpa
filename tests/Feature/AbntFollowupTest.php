@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Mail\GmailOutboundQuota;
+use App\Mail\OutboundMailPace;
 use App\Models\Activity;
 use App\Models\ActivityPresence;
 use App\Models\Certificate;
@@ -148,10 +148,9 @@ class AbntFollowupTest extends TestCase
         $this->assertStringContainsString('(participação online)', $sheet['place']);
     }
 
-    public function test_gmail_quota_is_shared_by_news_and_verification(): void
+    public function test_outbound_mail_pace_is_shared_by_news_and_verification(): void
     {
-        $this->assertSame(8, GmailOutboundQuota::PER_MINUTE);
-        $this->assertSame(400, GmailOutboundQuota::PER_DAY);
+        $this->assertSame(2, OutboundMailPace::PER_SECOND);
         $this->assertContains(\Illuminate\Contracts\Queue\ShouldQueue::class, class_implements(EventNewsPublished::class));
         $this->assertContains(\Illuminate\Contracts\Queue\ShouldQueue::class, class_implements(VerifyEmailQueued::class));
 

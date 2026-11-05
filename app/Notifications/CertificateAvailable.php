@@ -3,14 +3,14 @@
 namespace App\Notifications;
 
 use App\Models\Certificate;
-use App\Notifications\Concerns\RespectsGmailQuota;
+use App\Notifications\Concerns\QueuesOutboundMail;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class CertificateAvailable extends Notification implements ShouldQueue
 {
-    use RespectsGmailQuota;
+    use QueuesOutboundMail;
 
     public function __construct(public Certificate $certificate) {}
 

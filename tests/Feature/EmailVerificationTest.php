@@ -30,6 +30,8 @@ class EmailVerificationTest extends TestCase
         $response->assertSee('Reenviar e-mail de confirmação');
         $response->assertSee('Sair da conta');
         $response->assertSee($user->email);
+        $response->assertSee(config('mail.from.address'));
+        $response->assertDontSee('conectaifpa@gmail.com');
         $response->assertDontSee('Edit Profile');
     }
 

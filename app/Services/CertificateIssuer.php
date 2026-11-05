@@ -412,19 +412,21 @@ class CertificateIssuer
             $existing->data_emissao = now();
             $existing->conteudo_hash = $contentFingerprint;
             $existing->save();
-        } else {
-            Certificate::create([
-                'user_id' => $user->id,
-                'tipo' => Certificate::TYPE_PRESENTATION,
-                'event_id' => $event->id,
-                'activity_id' => null,
-                'work_id' => $work->id,
-                'arquivo_pdf' => $relativePath,
-                'codigo_validacao' => $code,
-                'conteudo_hash' => $contentFingerprint,
-                'data_emissao' => now(),
-            ]);
+
+            return true;
         }
+
+        Certificate::create([
+            'user_id' => $user->id,
+            'tipo' => Certificate::TYPE_PRESENTATION,
+            'event_id' => $event->id,
+            'activity_id' => null,
+            'work_id' => $work->id,
+            'arquivo_pdf' => $relativePath,
+            'codigo_validacao' => $code,
+            'conteudo_hash' => $contentFingerprint,
+            'data_emissao' => now(),
+        ]);
 
         $this->notifyCertificateAvailable($user, $event, Certificate::TYPE_PRESENTATION, null, $work->id);
 
@@ -889,7 +891,7 @@ class CertificateIssuer
             Certificate::create($payload);
         }
 
-        if ($notifyUser) {
+        if ($notifyUser && ! $existing) {
             $this->notifyCertificateAvailable($notifyUser, $event, $tipo, null, $attributes['work_id'] ?? null);
         }
 

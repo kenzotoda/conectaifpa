@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\ActivateEmailController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\CertificateDownloadController;
 use App\Http\Controllers\CertificateVerificationController;
@@ -27,6 +28,9 @@ Route::get('/events/{id}/anais/download', [EventController::class, 'downloadAnna
 Route::get('/events/{id}', [EventController::class, 'show'])->name('events.show');
 Route::post('/events', [EventController::class, 'store'])->middleware(['auth', 'isCoordinator']);
 Route::get('/dashboard', [EventController::class, 'dashboard'])->middleware('auth')->name('dashboard');
+Route::get('/email/verification-status', [ActivateEmailController::class, 'status'])
+    ->middleware('auth')
+    ->name('verification.status');
 Route::middleware('auth')->group(function () {
     Route::get('/events/{event}/pesquisa', [EventSatisfactionController::class, 'form'])->name('events.satisfaction.form');
     Route::post('/events/{event}/pesquisa', [EventSatisfactionController::class, 'store'])->name('events.satisfaction.store');

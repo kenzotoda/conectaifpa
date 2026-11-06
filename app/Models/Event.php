@@ -342,11 +342,24 @@ class Event extends Model
     }
 
     /**
+     * Liberação local do fluxo: datas, prazos e vagas deixam de travar o ensaio.
+     * Fora de APP_ENV=local a chave do .env é ignorada.
+     */
+    public static function flowUnlocked(): bool
+    {
+        return app()->environment('local') && (bool) config('app.flow_unlocked');
+    }
+
+    /**
      * Prazo de submissão de trabalhos encerrado (usa apenas submission_deadline_at).
      * Sem prazo definido: retorna false (avaliações não liberadas por este critério).
      */
     public function workSubmissionDeadlinePassed(): bool
     {
+        if (self::flowUnlocked() && $this->acceptsSubmissions()) {
+            return true;
+        }
+
         if ($this->submission_deadline_at === null) {
             return false;
         }
@@ -359,6 +372,10 @@ class Event extends Model
      */
     public function workSubmissionWindowOpen(): bool
     {
+        if (self::flowUnlocked() && $this->acceptsSubmissions() && ! $this->isFinalized()) {
+            return true;
+        }
+
         if ($this->submission_deadline_at === null) {
             return false;
         }
@@ -374,6 +391,10 @@ class Event extends Model
     /** Prazo próprio de avaliação já passou. Evento antigo, sem esse prazo, não usa esta trava. */
     public function reviewDeadlinePassed(): bool
     {
+        if (self::flowUnlocked()) {
+            return false;
+        }
+
         if (! $this->hasReviewDeadline()) {
             return false;
         }
@@ -388,6 +409,10 @@ class Event extends Model
      */
     public function reviewersEvaluationWindowOpen(): bool
     {
+        if (self::flowUnlocked() && $this->acceptsSubmissions()) {
+            return true;
+        }
+
         if (! $this->workSubmissionDeadlinePassed()) {
             return false;
         }
@@ -410,6 +435,10 @@ class Event extends Model
 
     public function minReviewersPerWork(): int
     {
+        if (self::flowUnlocked()) {
+            return 1;
+        }
+
         $value = (int) ($this->reviewers_min_per_work ?? 0);
 
         return $value > 0 ? $value : 1;
@@ -531,7 +560,7 @@ class Event extends Model
 
     public function audienceQuotaBlockFor(User $user): ?string
     {
-        if (! $this->hasAudienceQuotas()) {
+        if (self::flowUnlocked() || ! $this->hasAudienceQuotas()) {
             return null;
         }
 
@@ -712,6 +741,10 @@ class Event extends Model
     {
         if ($this->isFinalized()) {
             return 'finalized';
+        }
+
+        if (self::flowUnlocked()) {
+            return null;
         }
         if ($this->calendarEnded()) {
             return 'ended';

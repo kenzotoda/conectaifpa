@@ -135,4 +135,17 @@ return [
 
     'allow_early_event_finalize' => (bool) env('EVENT_ALLOW_EARLY_FINALIZE', false),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Liberação do fluxo do evento (somente teste local)
+    |--------------------------------------------------------------------------
+    |
+    | Ignora datas, prazos e limites de vaga para ensaiar inscrição, submissão,
+    | avaliação, correção e certificados no mesmo dia. O código só obedece esta
+    | chave quando APP_ENV=local. Em produção ela não tem efeito.
+    |
+    */
+
+    'flow_unlocked' => (bool) env('EVENT_FLOW_UNLOCKED', false),
+
 ];

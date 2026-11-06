@@ -142,7 +142,7 @@ class PresentationController extends Controller
 
         $evtStart = $event->calendarStartAt();
         $evtEnd = $event->calendarEndAt();
-        if ($slotStart->lt($evtStart) || $slotEnd->gt($evtEnd)) {
+        if (! Event::flowUnlocked() && ($slotStart->lt($evtStart) || $slotEnd->gt($evtEnd))) {
             throw new \InvalidArgumentException('O horário da apresentação deve estar dentro do período oficial do evento.');
         }
     }

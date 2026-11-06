@@ -312,8 +312,12 @@
                                 Evento finalizado: não é possível editar, gerenciar inscritos, novidades ou patrocinadores. A página permanece visível ao público e você pode excluir o evento no painel.
                             </p>
                             @include('events.partials.annals-upload-form', ['event' => $event])
-                        @elseif($event->calendarEnded() || config('app.allow_early_event_finalize'))
-                            @if(! $event->calendarEnded() && config('app.allow_early_event_finalize'))
+                        @elseif($event->calendarEnded() || config('app.allow_early_event_finalize') || \App\Models\Event::flowUnlocked())
+                            @if(\App\Models\Event::flowUnlocked())
+                                <p class="text-sm text-amber-900 mb-3 max-w-2xl rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                                    Liberação de fluxo ativa neste ambiente local (<code class="text-xs bg-amber-100/80 px-1 rounded">EVENT_FLOW_UNLOCKED</code>). Datas, prazos e vagas não travam inscrição, submissão, avaliação nem a finalização. Presença e arquivos continuam obrigatórios.
+                                </p>
+                            @elseif(! $event->calendarEnded() && config('app.allow_early_event_finalize'))
                                 <p class="text-sm text-amber-900 mb-3 max-w-2xl rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
                                     Modo de teste: a finalização antes do horário de fim está ativa (<code class="text-xs bg-amber-100/80 px-1 rounded">EVENT_ALLOW_EARLY_FINALIZE</code> no <code class="text-xs bg-amber-100/80 px-1 rounded">.env</code>). Use para validar certificados e fluxos pós evento; desligue em produção.
                                 </p>

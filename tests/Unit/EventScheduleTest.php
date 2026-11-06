@@ -82,4 +82,53 @@ class EventScheduleTest extends TestCase
 
         Carbon::setTestNow();
     }
+
+    public function test_flow_unlock_is_ignored_outside_the_local_environment(): void
+    {
+        config(['app.flow_unlocked' => true]);
+
+        $event = $this->closedEvent();
+
+        $this->assertFalse(Event::flowUnlocked());
+        $this->assertSame('ended', $event->registrationsBlockedReason());
+        $this->assertFalse($event->workSubmissionWindowOpen());
+        $this->assertFalse($event->reviewersEvaluationWindowOpen());
+    }
+
+    public function test_local_flow_unlock_opens_dates_deadlines_and_capacity(): void
+    {
+        $this->app['env'] = 'local';
+        config(['app.flow_unlocked' => true]);
+
+        $event = $this->closedEvent();
+        $event->capacity = 1;
+        $event->reviewers_min_per_work = 3;
+
+        $this->assertTrue(Event::flowUnlocked());
+        $this->assertNull($event->registrationsBlockedReason());
+        $this->assertTrue($event->workSubmissionWindowOpen());
+        $this->assertTrue($event->workSubmissionDeadlinePassed());
+        $this->assertTrue($event->reviewersEvaluationWindowOpen());
+        $this->assertFalse($event->reviewDeadlinePassed());
+        $this->assertSame(1, $event->minReviewersPerWork());
+
+        $event->finalized_at = now();
+        $this->assertSame('finalized', $event->registrationsBlockedReason());
+        $this->assertFalse($event->workSubmissionWindowOpen());
+    }
+
+    private function closedEvent(): Event
+    {
+        $event = new Event;
+        $event->accepts_submissions = true;
+        $event->start_date = '2020-01-01';
+        $event->end_date = '2020-01-01';
+        $event->start_time = '08:00:00';
+        $event->end_time = '12:00:00';
+        $event->datetime_registration = '2020-01-01 07:00:00';
+        $event->submission_deadline_at = '2020-01-01 07:30:00';
+        $event->review_deadline_at = '2020-01-01 09:00:00';
+
+        return $event;
+    }
 }

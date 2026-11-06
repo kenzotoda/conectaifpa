@@ -668,7 +668,7 @@ class WorkController extends Controller
             abort(403, 'Este evento não está configurado para receber submissões.');
         }
 
-        if ($event->isFinalized() || $event->calendarEnded()) {
+        if ($event->isFinalized() || ($event->calendarEnded() && ! Event::flowUnlocked())) {
             abort(403, 'Este evento não aceita novas submissões.');
         }
 
@@ -709,7 +709,7 @@ class WorkController extends Controller
             abort(403, 'A coordenação ainda não definiu o prazo para envio da versão corrigida.');
         }
 
-        if (Carbon::now()->greaterThanOrEqualTo(Carbon::parse($work->correction_deadline_at))) {
+        if (! Event::flowUnlocked() && Carbon::now()->greaterThanOrEqualTo(Carbon::parse($work->correction_deadline_at))) {
             abort(403, 'O prazo para envio da versão corrigida foi encerrado.');
         }
     }

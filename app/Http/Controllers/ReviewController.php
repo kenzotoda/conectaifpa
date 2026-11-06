@@ -763,7 +763,7 @@ class ReviewController extends Controller
             'coordinator_final_score.max' => 'A nota final não pode ultrapassar 999,99.',
         ]);
 
-        if ($data['status'] === Work::STATUS_ACCEPTED_WITH_CORRECTIONS && $work->event->hasReviewDeadline()) {
+        if ($data['status'] === Work::STATUS_ACCEPTED_WITH_CORRECTIONS && $work->event->hasReviewDeadline() && ! Event::flowUnlocked()) {
             if ($work->event->reviewDeadlinePassed()) {
                 return back()
                     ->withErrors([

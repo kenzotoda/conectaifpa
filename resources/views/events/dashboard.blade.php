@@ -278,7 +278,7 @@
                                     @php
                                         $submissionWindowOpen = $event->acceptsSubmissions()
                                             && !$event->isFinalized()
-                                            && !$event->calendarEnded()
+                                            && (!$event->calendarEnded() || \App\Models\Event::flowUnlocked())
                                             && $event->workSubmissionWindowOpen();
                                         $hasUnusedWorkType = \App\Models\Work::submitterCanSubmitAnotherWork($event, auth()->id());
                                         $canSubmitWork = $submissionWindowOpen && $hasUnusedWorkType;

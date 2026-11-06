@@ -445,7 +445,7 @@
                     $isSubmitted = $work->status === \App\Models\Work::STATUS_SUBMITTED;
                     $canEditSubmission = $isSubmitted && $work->event->workSubmissionWindowOpen();
                     $isCorrectionRequired = $work->status === \App\Models\Work::STATUS_ACCEPTED_WITH_CORRECTIONS;
-                    $correctionDeadlinePassed = $work->correction_deadline_at
+                    $correctionDeadlinePassed = ! \App\Models\Event::flowUnlocked() && $work->correction_deadline_at
                         ? \Carbon\Carbon::now()->greaterThanOrEqualTo(\Carbon\Carbon::parse($work->correction_deadline_at))
                         : false;
                     $canSubmitCorrection = $isCorrectionRequired && $work->correction_deadline_at && !$correctionDeadlinePassed;

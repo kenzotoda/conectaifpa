@@ -673,6 +673,10 @@ class EventController extends Controller
             return false;
         }
 
+        if (Event::flowUnlocked()) {
+            return false;
+        }
+
         return ! Event::activityFitsEventWindow($activityStart, $activityEnd, $eventStart, $eventEnd);
     }
 
@@ -1549,7 +1553,7 @@ class EventController extends Controller
                 $endAt = Carbon::parse($activity->end_at ?? $activity->start_at);
             }
 
-            if (! Event::activityFitsEventWindow($startAt, $endAt, $eventStart, $eventEnd)) {
+            if (! Event::flowUnlocked() && ! Event::activityFitsEventWindow($startAt, $endAt, $eventStart, $eventEnd)) {
                 $activityTitles[] = $title;
             }
         }
@@ -1558,7 +1562,7 @@ class EventController extends Controller
         foreach ($presentations as $presentation) {
             $slotStart = Carbon::parse($presentation->scheduled_start);
             $slotEnd = Carbon::parse($presentation->scheduled_end);
-            if ($slotStart->lt($eventStart) || $slotEnd->gt($eventEnd)) {
+            if (! Event::flowUnlocked() && ($slotStart->lt($eventStart) || $slotEnd->gt($eventEnd))) {
                 $presentationTitles[] = $presentation->work?->title ?? ('Trabalho #'.$presentation->work_id);
             }
         }
@@ -1801,7 +1805,7 @@ class EventController extends Controller
             );
         }
 
-        $allowEarly = (bool) config('app.allow_early_event_finalize', false);
+        $allowEarly = (bool) config('app.allow_early_event_finalize', false) || Event::flowUnlocked();
 
         if (! $event->calendarEnded() && ! $allowEarly) {
             return redirect()->back()->with(
@@ -2194,7 +2198,7 @@ class EventController extends Controller
 
         $actStart = Carbon::parse($data['start_at']);
         $actEnd = ! empty($data['end_at']) ? Carbon::parse($data['end_at']) : $actStart;
-        if ($event->scheduleIsComplete() && ! Event::activityFitsEventWindow($actStart, $actEnd, $event->calendarStartAt(), $event->calendarEndAt())) {
+        if (! Event::flowUnlocked() && $event->scheduleIsComplete() && ! Event::activityFitsEventWindow($actStart, $actEnd, $event->calendarStartAt(), $event->calendarEndAt())) {
             throw ValidationException::withMessages([
                 'start_at' => 'A atividade deve ocorrer inteiramente entre o início e o fim do evento (pode coincidir com esses instantes, mas não ultrapassar).',
             ]);

@@ -57,9 +57,20 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('verification.send') }}" class="space-y-3">
+            <p class="dash-text text-sm mb-4 leading-relaxed">
+                Pode abrir o link no celular ou neste computador. Esta tela libera o acesso sozinha.
+            </p>
+
+            <button type="button" id="already-activated" class="w-full py-3.5 rounded-xl dash-btn font-outfit font-semibold text-base">
+                Já ativei
+            </button>
+            <p id="activation-pending" class="hidden dash-text text-sm mt-3 mb-0 leading-relaxed" role="status">
+                A conta ainda não foi ativada. Abra o link do e-mail e toque em “Já ativei” de novo.
+            </p>
+
+            <form method="POST" action="{{ route('verification.send') }}" class="space-y-3 mt-3">
                 @csrf
-                <button type="submit" class="w-full py-3.5 rounded-xl dash-btn font-outfit font-semibold text-base">
+                <button type="submit" class="w-full py-3.5 rounded-xl dash-btn-secondary font-outfit font-semibold text-base">
                     Reenviar e-mail de confirmação
                 </button>
             </form>
@@ -73,5 +84,48 @@
         </div>
     </div>
 </div>
+
+<script>
+    (function () {
+        const statusUrl = @json(route('verification.status'));
+        const dashboardUrl = @json(route('dashboard'));
+        const pending = document.getElementById('activation-pending');
+        const button = document.getElementById('already-activated');
+        let checking = false;
+
+        async function checkActivation(showPending) {
+            if (checking) {
+                return;
+            }
+            checking = true;
+            try {
+                const response = await fetch(statusUrl, {
+                    headers: { 'Accept': 'application/json' },
+                    credentials: 'same-origin',
+                });
+                if (!response.ok) {
+                    return;
+                }
+                const data = await response.json();
+                if (data.verified) {
+                    window.location.assign(dashboardUrl);
+                    return;
+                }
+                if (showPending && pending) {
+                    pending.classList.remove('hidden');
+                }
+            } finally {
+                checking = false;
+            }
+        }
+
+        button?.addEventListener('click', function () {
+            checkActivation(true);
+        });
+        setInterval(function () {
+            checkActivation(false);
+        }, 4000);
+    })();
+</script>
 
 @endsection

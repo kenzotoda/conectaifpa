@@ -19,7 +19,6 @@ class Activity extends Model
         'capacity',
         'speakers',
         'workload_hours',
-        'is_extension',
     ];
 
     protected $casts = [
@@ -29,10 +28,7 @@ class Activity extends Model
         'guest_id' => 'integer',
         'speakers' => 'array',
         'workload_hours' => 'decimal:2',
-        'is_extension' => 'boolean',
     ];
-
-    public const EXTENSION_MINIMUM_FREQUENCY = 75;
 
     public const TYPE_LECTURE = 'palestra';
 

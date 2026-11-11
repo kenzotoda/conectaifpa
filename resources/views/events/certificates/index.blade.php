@@ -33,13 +33,12 @@
     <nav class="dash-card rounded-2xl p-5" aria-label="Seções desta página">
         <p class="dash-muted text-[11px] font-bold uppercase tracking-wider m-0 mb-3">Índice</p>
         <ul class="flex flex-wrap gap-x-5 gap-y-2.5 text-sm m-0 list-none p-0 leading-snug">
-            <li><a href="#cert-dados-pdf" class="dash-link font-medium no-underline rounded-lg px-2 py-1 -mx-2">1. Organização e instituição nos PDFs</a></li>
-            <li><a href="#cert-assinaturas" class="dash-link font-medium no-underline rounded-lg px-2 py-1 -mx-2">2. Assinaturas nos PDFs</a></li>
-            <li><a href="#cert-presenca-geral" class="dash-link font-medium no-underline rounded-lg px-2 py-1 -mx-2">3. Presença geral</a></li>
+            <li><a href="#cert-assinaturas" class="dash-link font-medium no-underline rounded-lg px-2 py-1 -mx-2">1. Assinaturas nos PDFs</a></li>
+            <li><a href="#cert-presenca-geral" class="dash-link font-medium no-underline rounded-lg px-2 py-1 -mx-2">2. Presença geral</a></li>
             @if($event->acceptsSubmissions())
-                <li><a href="#cert-apresentacao" class="dash-link font-medium no-underline rounded-lg px-2 py-1 -mx-2">4. Apresentação de trabalhos</a></li>
+                <li><a href="#cert-apresentacao" class="dash-link font-medium no-underline rounded-lg px-2 py-1 -mx-2">3. Apresentação de trabalhos</a></li>
             @endif
-            <li><a href="#cert-atividades" class="dash-link font-medium no-underline rounded-lg px-2 py-1 -mx-2">@if($event->acceptsSubmissions())5.@else 4. @endif Atividades</a></li>
+            <li><a href="#cert-atividades" class="dash-link font-medium no-underline rounded-lg px-2 py-1 -mx-2">@if($event->acceptsSubmissions())4.@else 3. @endif Atividades</a></li>
             <li><a href="#cert-opcionais" class="dash-link font-medium no-underline rounded-lg px-2 py-1 -mx-2">Opcionais</a></li>
         </ul>
     </nav>
@@ -89,44 +88,55 @@
                 Marque a caixa, salve e use <strong>Gerar</strong>. Exemplo: a caixa de avaliador ligada permite gerar o certificado de avaliador neste evento.
             </p>
         </div>
-        <form method="POST" action="{{ route('events.certificates.optional', $event) }}" class="px-6 py-5 space-y-4">
+        <form method="POST" action="{{ route('events.certificates.optional', $event) }}" class="px-6 py-5 space-y-5">
             @csrf
-            @foreach ([
-                'certificate_reviewer_enabled' => ['Avaliador', 'Permite gerar o certificado de avaliador neste evento.', $optionalEligible['reviewers'], $optionalIssued['reviewers']],
-                'certificate_guest_enabled' => ['Convidado', 'Permite gerar o certificado de convidado neste evento.', $optionalEligible['guests'], $optionalIssued['guests']],
-                'certificate_organization_enabled' => ['Organização', 'Permite gerar o certificado de organização neste evento.', $optionalEligible['organization'], $optionalIssued['organization']],
-                'certificate_coauthor_enabled' => ['Coautor', 'Permite gerar o certificado de coautor neste evento.', $optionalEligible['coauthors'], $optionalIssued['coauthors']],
-            ] as $field => [$label, $help, $eligible, $issued])
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-slate-100 px-4 py-3">
-                    <label class="flex items-start gap-3 min-w-0">
-                        <input type="hidden" name="{{ $field }}" value="0">
-                        <input type="checkbox" name="{{ $field }}" value="1" class="mt-1" @checked(filter_var(old($field, $event->{$field}), FILTER_VALIDATE_BOOLEAN))>
-                        <span>
-                            <span class="block font-semibold text-slate-900">{{ $label }}</span>
-                            <span class="block text-sm text-slate-600">{{ $help }} Elegíveis agora: {{ $eligible }}. Emitidos: {{ $issued }}.</span>
-                        </span>
-                    </label>
-                    @if($event->{$field})
-                        <button type="submit" form="optional-generate-{{ $field }}" class="dash-btn-secondary px-3 py-2 rounded-xl text-xs font-semibold shrink-0" @disabled($optionalCertificateBlock)>Gerar {{ strtolower($label) }}</button>
-                    @endif
-                </div>
-            @endforeach
-            <div class="grid sm:grid-cols-3 gap-4">
-                <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Carga horária do avaliador</label>
-                    <input type="number" step="0.5" min="0" name="certificate_reviewer_hours" value="{{ old('certificate_reviewer_hours', $event->certificate_reviewer_hours) }}" placeholder="Em branco omite as horas" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Carga horária do convidado</label>
-                    <input type="number" step="0.5" min="0" name="certificate_guest_hours" value="{{ old('certificate_guest_hours', $event->certificate_guest_hours) }}" placeholder="Em branco omite as horas" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Carga horária da organização</label>
-                    <input type="number" step="0.5" min="0" name="certificate_organization_hours" value="{{ old('certificate_organization_hours', $event->certificate_organization_hours) }}" placeholder="Em branco omite as horas" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm">
-                </div>
+            <div class="grid md:grid-cols-2 gap-4">
+                @foreach ([
+                    'certificate_reviewer_enabled' => ['Avaliador', 'Permite gerar o certificado de avaliador neste evento.', $optionalEligible['reviewers'], $optionalIssued['reviewers'], 'certificate_reviewer_hours', null],
+                    'certificate_guest_enabled' => ['Convidado', 'Permite gerar o certificado de cada convidado da lista, em qualquer função.', $optionalEligible['guests'], $optionalIssued['guests'], 'certificate_guest_hours', 'A mesma carga para todos os convidados.'],
+                    'certificate_organization_enabled' => ['Organização', 'Permite gerar o certificado de cada organizador deste evento.', $optionalEligible['organization'], $optionalIssued['organization'], 'certificate_organization_hours', null],
+                    'certificate_coauthor_enabled' => ['Coautor', 'Permite gerar o certificado de coautor neste evento.', $optionalEligible['coauthors'], $optionalIssued['coauthors'], null, 'A carga horária de cada coautor vem do trabalho.'],
+                ] as $field => [$label, $help, $eligible, $issued, $hoursField, $hoursNote])
+                    @php
+                        $hoursValue = $hoursField ? old($hoursField, $event->{$hoursField}) : null;
+                        if ($hoursValue !== null && $hoursValue !== '' && is_numeric($hoursValue)) {
+                            $hoursValue = rtrim(rtrim(number_format((float) $hoursValue, 2, '.', ''), '0'), '.');
+                        }
+                    @endphp
+                    <article class="flex h-full flex-col gap-4 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <label class="flex items-start gap-3 min-w-0">
+                                <input type="hidden" name="{{ $field }}" value="0">
+                                <input type="checkbox" name="{{ $field }}" value="1" class="mt-1 rounded border-slate-300 text-emerald-600" @checked(filter_var(old($field, $event->{$field}), FILTER_VALIDATE_BOOLEAN))>
+                                <span class="min-w-0">
+                                    <span class="block font-semibold text-slate-900">{{ $label }}</span>
+                                    <span class="block text-sm text-slate-600 mt-1 leading-relaxed">{{ $help }}</span>
+                                </span>
+                            </label>
+                            @if($event->{$field})
+                                <button type="submit" form="optional-generate-{{ $field }}" class="dash-btn-secondary px-3 py-2 rounded-xl text-xs font-semibold shrink-0" @disabled($optionalCertificateBlock)>Gerar</button>
+                            @endif
+                        </div>
+                        <p class="m-0 flex flex-wrap gap-2">
+                            <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700">Elegíveis: {{ $eligible }}</span>
+                            <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700">Emitidos: {{ $issued }}</span>
+                        </p>
+                        @if($hoursField)
+                            <div class="mt-auto">
+                                <label for="{{ $hoursField }}" class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Carga horária *</label>
+                                <input id="{{ $hoursField }}" type="number" step="0.5" min="0.5" required name="{{ $hoursField }}" value="{{ $hoursValue }}" class="dash-field w-full rounded-xl px-3 py-2.5 text-sm">
+                                @if($hoursNote)
+                                    <p class="text-xs text-slate-500 m-0 mt-2">{{ $hoursNote }}</p>
+                                @endif
+                            </div>
+                        @else
+                            <p class="mt-auto text-sm text-slate-600 m-0">{{ $hoursNote }}</p>
+                        @endif
+                    </article>
+                @endforeach
             </div>
-            <p class="text-xs text-slate-500 m-0">Essas horas entram só no certificado do tipo correspondente. O campo em branco deixa a carga horária fora do PDF.</p>
-            <button type="submit" class="dash-btn px-4 py-2.5 rounded-xl text-sm font-semibold">Salvar tipos opcionais</button>
+            <p class="text-xs text-slate-500 m-0">A carga horária de avaliador, convidado e organização é obrigatória para salvar e entra só no certificado correspondente.</p>
+            <button type="submit" class="dash-btn px-4 py-2.5 rounded-xl text-sm font-semibold">Salvar certificados opcionais</button>
         </form>
         @foreach ([
             'certificate_reviewer_enabled' => ['events.certificates.generate.reviewers', 'Gerar certificados de avaliador', 'Gerar o certificado de avaliador deste evento.'],
@@ -145,43 +155,12 @@
         @endif
     </section>
 
-    <section id="cert-dados-pdf" class="dash-card scroll-mt-6 overflow-hidden rounded-2xl">
-        <div class="dash-accent" aria-hidden="true"></div>
-        <div class="p-6 sm:p-7 space-y-5">
-            <div class="flex flex-wrap items-start gap-4">
-                <span class="dash-avatar inline-flex h-11 min-w-[2.75rem] shrink-0 items-center justify-center rounded-xl text-sm font-bold">1</span>
-                <div class="min-w-0 flex-1">
-                    <h2 class="dash-title text-lg font-bold tracking-tight m-0">Dados que entram nos PDFs</h2>
-                    <p class="text-sm text-slate-600 m-0 mt-2 leading-relaxed">
-                        Texto de <strong>organização</strong> e <strong>instituição</strong> igual em todos os certificados deste evento (participação, apresentação e atividades).
-                    </p>
-                </div>
-            </div>
-            <div class="rounded-xl border border-slate-200/70 bg-gradient-to-b from-slate-50/80 to-white p-4 sm:p-5 shadow-inner shadow-slate-200/40">
-                <form action="{{ route('events.certificates.meta', $event) }}" method="POST" class="grid sm:grid-cols-2 gap-5">
-                    @csrf
-                    <div class="sm:col-span-2">
-                        <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Organização (texto)</label>
-                        <input type="text" name="certificate_organizer" value="{{ old('certificate_organizer', $event->certificate_organizer) }}" placeholder="{{ $event->coordinator_name }}" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-[3px] focus:ring-emerald-500/20">
-                    </div>
-                    <div class="sm:col-span-2">
-                        <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Instituição</label>
-                        <input type="text" name="certificate_institution" value="{{ old('certificate_institution', $event->certificate_institution) }}" placeholder="{{ $event->campus }}" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-[3px] focus:ring-emerald-500/20">
-                    </div>
-                    <div class="sm:col-span-2 flex flex-wrap gap-3 pt-1">
-                        <button type="submit" class="dash-btn inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-sm font-semibold">Salvar organização e instituição</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </section>
-
-    {{-- 2 --}}
+    {{-- 1 --}}
     <section id="cert-assinaturas" class="dash-card scroll-mt-6 overflow-hidden rounded-2xl">
         <div class="dash-accent" aria-hidden="true"></div>
         <div class="p-6 sm:p-7 space-y-5">
             <div class="flex flex-wrap items-start gap-4">
-                <span class="dash-avatar inline-flex h-11 min-w-[2.75rem] shrink-0 items-center justify-center rounded-xl text-sm font-bold">2</span>
+                <span class="dash-avatar inline-flex h-11 min-w-[2.75rem] shrink-0 items-center justify-center rounded-xl text-sm font-bold">1</span>
                 <div class="min-w-0 flex-1">
                     <h2 class="dash-title text-lg font-bold tracking-tight m-0">Assinaturas neste evento</h2>
                     <p class="text-sm text-slate-600 m-0 mt-2 leading-relaxed">Imagens cadastradas em <a href="{{ route('signatures.index', ['event' => $event->id]) }}" class="text-emerald-700 font-semibold no-underline hover:underline">Assinaturas</a>. Marque quais entram em <strong>todos</strong> os PDFs emitidos por este evento (participação, apresentação e atividades).</p>
@@ -207,33 +186,21 @@
         </div>
     </section>
 
-    {{-- 3 --}}
+    {{-- 2 --}}
     <section id="cert-presenca-geral" class="dash-card scroll-mt-6 overflow-hidden rounded-2xl">
         <div class="dash-accent" aria-hidden="true"></div>
         <div class="p-6 sm:p-7 space-y-5">
             <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                 <div class="flex flex-wrap items-start gap-4 min-w-0">
-                    <span class="dash-avatar inline-flex h-11 min-w-[2.75rem] shrink-0 items-center justify-center rounded-xl text-sm font-bold">3</span>
+                    <span class="dash-avatar inline-flex h-11 min-w-[2.75rem] shrink-0 items-center justify-center rounded-xl text-sm font-bold">2</span>
                     <div class="min-w-0">
                         <h2 class="dash-title text-lg font-bold tracking-tight m-0">Participação geral no evento</h2>
-                        <p class="text-sm text-slate-600 m-0 mt-2 leading-relaxed">Presença <strong>independente</strong> de trabalho ou atividade. Apenas perfil <strong>participante</strong> inscrito. A <strong>carga horária total</strong> do certificado de participação deve ser definida nesta mesma seção (campo logo abaixo). Depois das presenças, é possível emitir os certificados de participação em lote.</p>
+                        <p class="text-sm text-slate-600 m-0 mt-2 leading-relaxed">Presença <strong>independente</strong> de trabalho ou atividade. Apenas perfil <strong>participante</strong> inscrito. A carga horária do certificado de participação é definida na criação ou na edição do evento. Depois das presenças, é possível emitir os certificados de participação em lote.</p>
                     </div>
                 </div>
                 <p class="dash-badge m-0 shrink-0 rounded-full px-3.5 py-2 text-xs font-semibold uppercase tracking-wide">Emitidos<br><span class="dash-title text-xl font-black normal-case tracking-normal">{{ $certCounts['participation'] }}</span></p>
             </div>
-            <div class="rounded-xl border border-slate-200/70 bg-gradient-to-b from-white to-slate-50/40 p-4 sm:p-5 shadow-inner shadow-slate-200/30">
-                <form action="{{ route('events.certificates.meta', $event) }}" method="POST" class="space-y-2">
-                    @csrf
-                    <div class="flex flex-wrap items-end gap-x-4 gap-y-2">
-                        <div class="min-w-[min(100%,14rem)] w-full max-w-xs sm:w-auto sm:flex-1">
-                            <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Carga horária total</label>
-                            <input type="number" step="0.5" min="0" name="certificate_total_hours" value="{{ old('certificate_total_hours', $event->certificate_total_hours) }}" placeholder="Ex.: 20" class="dash-field w-full rounded-xl px-3.5 py-2.5 text-sm leading-normal">
-                        </div>
-                        <button type="submit" class="dash-btn inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-sm font-semibold leading-normal shrink-0 w-full sm:w-auto">Salvar carga horária</button>
-                    </div>
-                    <p class="text-[11px] text-slate-500 m-0 leading-snug">Usada apenas no PDF de participação geral.</p>
-                </form>
-            </div>
+            <p class="text-sm text-slate-600 m-0">Carga horária do certificado: <strong>{{ $event->certificate_total_hours !== null ? rtrim(rtrim((string) $event->certificate_total_hours, '0'), '.').' h' : 'não informada' }}</strong>. Altere na edição do evento.</p>
             <div class="rounded-xl border border-slate-200/70 bg-white p-4 sm:p-5 shadow-sm">
                 <form action="{{ route('events.certificates.presence', $event) }}" method="POST" class="space-y-4">
                     @csrf
@@ -285,13 +252,13 @@
     </section>
 
     @if($event->acceptsSubmissions())
-        {{-- 4 --}}
+        {{-- 3 --}}
         <section id="cert-apresentacao" class="dash-card scroll-mt-6 overflow-hidden rounded-2xl">
             <div class="dash-accent" aria-hidden="true"></div>
             <div class="p-6 sm:p-7 space-y-5">
                 <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                     <div class="flex flex-wrap items-start gap-4 min-w-0">
-                        <span class="dash-avatar inline-flex h-11 min-w-[2.75rem] shrink-0 items-center justify-center rounded-xl text-sm font-bold">4</span>
+                        <span class="dash-avatar inline-flex h-11 min-w-[2.75rem] shrink-0 items-center justify-center rounded-xl text-sm font-bold">3</span>
                         <div class="min-w-0">
                             <h2 class="dash-title text-lg font-bold tracking-tight m-0">Apresentação de trabalho (submissão)</h2>
                             <ul class="dash-text text-sm m-0 mt-3 pl-4 list-[square] space-y-1.5 leading-relaxed">
@@ -428,10 +395,10 @@
         <div class="p-6 sm:p-7 space-y-5">
             <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                 <div class="flex flex-wrap items-start gap-4 min-w-0">
-                    <span class="dash-avatar inline-flex h-11 min-w-[2.75rem] shrink-0 items-center justify-center rounded-xl text-sm font-bold">{{ $event->acceptsSubmissions() ? '5' : '4' }}</span>
+                    <span class="dash-avatar inline-flex h-11 min-w-[2.75rem] shrink-0 items-center justify-center rounded-xl text-sm font-bold">{{ $event->acceptsSubmissions() ? '4' : '3' }}</span>
                     <div class="min-w-0">
                         <h2 class="dash-title text-lg font-bold tracking-tight m-0">Atividades do evento</h2>
-                        <p class="text-sm text-slate-600 m-0 mt-2 leading-relaxed"><strong>Carga horária</strong> por atividade, <strong>presença completa</strong> de cada participante (salvar na lista de cada linha). A emissão de certificados de atividade é <strong>somente em lote</strong>, após <strong>finalizar o evento</strong>.</p>
+                        <p class="text-sm text-slate-600 m-0 mt-2 leading-relaxed">A <strong>carga horária</strong> de cada atividade é definida na criação ou na edição do evento. Nesta tela, marque a <strong>presença</strong> de cada participante. A emissão dos certificados de atividade é <strong>somente em lote</strong>, após <strong>finalizar o evento</strong>.</p>
                         <p class="text-[11px] font-medium uppercase tracking-wide text-slate-500 m-0 mt-2">Tabela com cabeçalho fixo e rolagem</p>
                     </div>
                 </div>

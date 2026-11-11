@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Activity;
-use App\Models\ActivityPresence;
 use App\Models\Certificate;
 use App\Models\Event;
 use App\Models\EventPresence;
@@ -38,7 +37,6 @@ class CertificateDocument
         $channel = $certificate->tipo === Certificate::TYPE_PARTICIPATION
             ? self::attendanceChannel(self::eventPresence($certificate), $certificate->event)
             : null;
-        $frequency = self::activityFrequency($certificate);
         $url = self::validationUrl((string) $certificate->codigo_validacao);
 
         return [
@@ -50,7 +48,7 @@ class CertificateDocument
                 : self::attendancePlace($certificate->event, $channel),
             'modality' => self::modality($certificate->event),
             'matricula' => $certificate->user ? self::matricula($certificate->user) : null,
-            'presence' => self::presenceText($certificate->tipo, $channel, $frequency),
+            'presence' => self::presenceText($certificate->tipo, $channel),
             'validationUrl' => $url,
             'qrDataUri' => self::qrDataUri($url),
         ];
@@ -59,7 +57,7 @@ class CertificateDocument
     /**
      * @return array<string, mixed>
      */
-    public static function pdfFields(?User $user, Event $event, string $code, string $tipo, ?Activity $activity = null, ?string $attendanceChannel = null, ?int $frequency = null): array
+    public static function pdfFields(?User $user, Event $event, string $code, string $tipo, ?Activity $activity = null, ?string $attendanceChannel = null): array
     {
         $url = self::validationUrl($code);
 
@@ -69,7 +67,7 @@ class CertificateDocument
             'place' => $activity ? self::activityPlace($activity, $event) : self::attendancePlace($event, $attendanceChannel),
             'modality' => self::modality($event),
             'matricula' => $user ? self::matricula($user) : null,
-            'presence' => self::presenceText($tipo, $attendanceChannel, $frequency),
+            'presence' => self::presenceText($tipo, $attendanceChannel),
             'validationUrl' => $url,
             'qrDataUri' => self::qrDataUri($url),
         ];
@@ -210,26 +208,8 @@ class CertificateDocument
             ->first();
     }
 
-    private static function activityFrequency(Certificate $certificate): ?int
+    public static function presenceText(string $tipo, ?string $channel = null): string
     {
-        if ($certificate->tipo !== Certificate::TYPE_ACTIVITY || ! $certificate->activity?->is_extension || ! $certificate->user_id) {
-            return null;
-        }
-
-        $row = ActivityPresence::query()
-            ->where('activity_id', $certificate->activity_id)
-            ->where('user_id', $certificate->user_id)
-            ->first();
-
-        return $row?->frequencia_percent !== null ? (int) $row->frequencia_percent : null;
-    }
-
-    public static function presenceText(string $tipo, ?string $channel = null, ?int $frequency = null): string
-    {
-        if ($tipo === Certificate::TYPE_ACTIVITY && $frequency !== null) {
-            return 'Frequência de '.$frequency.'% registrada';
-        }
-
         if ($tipo === Certificate::TYPE_PARTICIPATION) {
             return match ($channel) {
                 'online' => 'Presença online registrada',

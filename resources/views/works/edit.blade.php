@@ -45,7 +45,7 @@
                         <strong class="dash-title">Autor principal:</strong> {{ $work->submitter->name }} ({{ $work->submitter->email }}).
                     </p>
                     <label class="dash-title block text-sm font-medium mb-1">Outros autores (opcional)</label>
-                    <p class="dash-muted text-xs mb-3 m-0">Adicione ou edite coautores. O autor principal acima não pode ser alterado aqui.</p>
+                    <p class="dash-muted text-xs mb-3 m-0">Informe primeiro o e-mail de uma conta de participante. O nome e a instituição são preenchidos com os dados dessa conta.</p>
                     @php
                         $manualRows = old('coauthors_manual');
                         if (!is_array($manualRows)) {
@@ -57,19 +57,25 @@
                     @endphp
                     <div id="coauthors-manual-container" class="space-y-3">
                         @foreach($manualRows as $idx => $row)
-                            <div class="coauthor-row dash-panel grid grid-cols-1 sm:grid-cols-3 gap-2 p-3 rounded-xl">
+                            <div class="coauthor-row account-lookup dash-panel grid grid-cols-1 sm:grid-cols-3 gap-2 p-3 rounded-xl items-start">
+                                <div>
+                                    <input type="email" name="coauthors_manual[{{ $idx }}][author_email]"
+                                           value="{{ $row['author_email'] ?? '' }}"
+                                           placeholder="E-mail do participante"
+                                           data-lookup-role="participant"
+                                           class="account-lookup-email dash-field w-full px-3 py-2 rounded-lg text-sm outline-none">
+                                    <p class="account-lookup-status dash-muted text-xs mt-1 m-0"></p>
+                                </div>
                                 <input type="text" name="coauthors_manual[{{ $idx }}][author_name]"
                                        value="{{ $row['author_name'] ?? '' }}"
                                        placeholder="Nome"
-                                       class="dash-field w-full px-3 py-2 rounded-lg text-sm outline-none">
-                                <input type="email" name="coauthors_manual[{{ $idx }}][author_email]"
-                                       value="{{ $row['author_email'] ?? '' }}"
-                                       placeholder="E-mail (opcional)"
-                                       class="dash-field w-full px-3 py-2 rounded-lg text-sm outline-none">
+                                       readonly
+                                       class="account-lookup-name dash-field w-full px-3 py-2 rounded-lg text-sm outline-none bg-slate-50 cursor-not-allowed">
                                 <input type="text" name="coauthors_manual[{{ $idx }}][institution]"
                                        value="{{ $row['institution'] ?? '' }}"
                                        placeholder="Instituição / curso"
-                                       class="dash-field w-full px-3 py-2 rounded-lg text-sm outline-none">
+                                       readonly
+                                       class="account-lookup-extra dash-field w-full px-3 py-2 rounded-lg text-sm outline-none bg-slate-50 cursor-not-allowed">
                             </div>
                         @endforeach
                     </div>
@@ -106,14 +112,19 @@
         var rows = container.querySelectorAll('.coauthor-row');
         var idx = rows.length;
         var wrap = document.createElement('div');
-        wrap.className = 'coauthor-row dash-panel grid grid-cols-1 sm:grid-cols-3 gap-2 p-3 rounded-xl';
+        wrap.className = 'coauthor-row account-lookup dash-panel grid grid-cols-1 sm:grid-cols-3 gap-2 p-3 rounded-xl';
         wrap.innerHTML =
-            '<input type="text" name="coauthors_manual[' + idx + '][author_name]" placeholder="Nome" class="' + inputClass + '">' +
-            '<input type="email" name="coauthors_manual[' + idx + '][author_email]" placeholder="E-mail (opcional)" class="' + inputClass + '">' +
-            '<input type="text" name="coauthors_manual[' + idx + '][institution]" placeholder="Instituição / curso" class="' + inputClass + '">';
+            '<div><input type="email" name="coauthors_manual[' + idx + '][author_email]" placeholder="E-mail do participante" data-lookup-role="participant" class="account-lookup-email ' + inputClass + '">' +
+            '<p class="account-lookup-status dash-muted text-xs mt-1 m-0"></p></div>' +
+            '<input type="text" name="coauthors_manual[' + idx + '][author_name]" placeholder="Nome" readonly class="account-lookup-name ' + inputClass + ' bg-slate-50 cursor-not-allowed">' +
+            '<input type="text" name="coauthors_manual[' + idx + '][institution]" placeholder="Instituição / curso" readonly class="account-lookup-extra ' + inputClass + ' bg-slate-50 cursor-not-allowed">';
         container.appendChild(wrap);
+        if (typeof window.scrollAddedIntoView === 'function') {
+            window.scrollAddedIntoView(wrap);
+        }
     });
 })();
 </script>
 @endpush
+@include('partials.account-lookup')
 @endsection

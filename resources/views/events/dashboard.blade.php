@@ -24,7 +24,7 @@
                     </div>
                 </div>
                 <span class="dash-badge inline-flex items-center self-start sm:self-center px-3 py-1 rounded-lg text-sm font-medium">
-                    {{ auth()->user()->isCoordinator() ? 'Coordenador' : (auth()->user()->isReviewer() ? 'Avaliador' : 'Aluno') }}
+                    {{ auth()->user()->roleLabel() }}
                 </span>
             </div>
         </div>
@@ -36,9 +36,14 @@
 
         <div class="mb-10">
             <div class="flex flex-col gap-6 mb-6">
-                <div>
-                    <h1 class="dash-title font-montserrat font-bold text-2xl sm:text-3xl">Meus eventos</h1>
-                    <p class="dash-text text-sm mt-1 max-w-2xl">Gerencie inscrições, trabalhos e a página pública de cada evento.</p>
+                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+                    <div>
+                        <h1 class="dash-title font-montserrat font-bold text-2xl sm:text-3xl">Meus eventos</h1>
+                        <p class="dash-text text-sm mt-1 max-w-2xl">Gerencie inscrições, trabalhos e a página pública de cada evento.</p>
+                    </div>
+                    @if(auth()->user()->hasIssuedCertificates())
+                        <a href="{{ route('certificates.my') }}" class="dash-btn inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold no-underline">Meus certificados</a>
+                    @endif
                 </div>
                 <div class="dash-card rounded-xl p-4 sm:p-5">
                     <p class="dash-muted text-xs font-semibold uppercase tracking-wide mb-3">Cadastros de equipe</p>
@@ -52,6 +57,21 @@
                            class="dash-btn-soft inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors no-underline">
                             <ion-icon name="school-outline" class="text-lg shrink-0" aria-hidden="true"></ion-icon>
                             Novo avaliador
+                        </a>
+                        <a href="{{ route('register.guest') }}"
+                           class="dash-btn-soft inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors no-underline">
+                            <ion-icon name="mic-outline" class="text-lg shrink-0" aria-hidden="true"></ion-icon>
+                            Novo convidado
+                        </a>
+                        <a href="{{ route('register.organizer') }}"
+                           class="dash-btn-soft inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors no-underline">
+                            <ion-icon name="people-outline" class="text-lg shrink-0" aria-hidden="true"></ion-icon>
+                            Novo organizador
+                        </a>
+                        <a href="{{ route('accounts.managed') }}"
+                           class="dash-btn inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors no-underline">
+                            <ion-icon name="list-outline" class="text-lg shrink-0" aria-hidden="true"></ion-icon>
+                            Contas criadas
                         </a>
                     </div>
                 </div>
@@ -427,6 +447,67 @@
                     Ir para avaliações
                 </a>
             </div>
+        </div>
+        @endif
+
+        @if(auth()->check() && auth()->user()->isGuest())
+        <div class="mb-10">
+            <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
+                <div>
+                    <h1 class="dash-title font-montserrat font-bold text-2xl sm:text-3xl">Meus eventos</h1>
+                    <p class="dash-text text-sm mt-1">Eventos em que você foi vinculado como convidado.</p>
+                </div>
+                <a href="{{ route('certificates.my') }}" class="dash-btn inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold no-underline">Certificados</a>
+            </div>
+            @forelse ($eventsAsGuest as $event)
+                <div class="dash-card rounded-2xl p-4 sm:p-6 mb-4">
+                    <a href="/events/{{ $event->id }}" class="dash-link font-semibold text-lg no-underline">{{ $event->title }}</a>
+                    <p class="dash-muted text-sm mt-2 m-0">
+                        {{ ($guestRole = $event->guests->first()) ? (\App\Models\EventGuest::roleTypeLabels()[$guestRole->role_type] ?? 'Convidado') : 'Convidado' }}
+                    </p>
+                </div>
+            @empty
+                <div class="dash-card rounded-2xl p-8 text-center">
+                    <p class="dash-text m-0">Nenhum evento vinculado ainda.</p>
+                </div>
+            @endforelse
+        </div>
+        @endif
+
+        @if(auth()->check() && auth()->user()->isOrganizer())
+        <div class="mb-10">
+            <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
+                <div>
+                    <h1 class="dash-title font-montserrat font-bold text-2xl sm:text-3xl">Meus eventos</h1>
+                    <p class="dash-text text-sm mt-1 max-w-2xl">Você gerencia os eventos em que foi designado como organizador. Não é possível criar outro evento.</p>
+                </div>
+                <a href="{{ route('certificates.my') }}" class="dash-btn inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold no-underline">Meus certificados</a>
+            </div>
+            @forelse ($eventsAsOrganizer as $event)
+                <div class="dash-card rounded-2xl p-4 sm:p-6 mb-4">
+                    <a href="/events/{{ $event->id }}" class="dash-link font-semibold text-lg no-underline">{{ $event->title }}</a>
+                    <div class="flex flex-wrap gap-2 mt-4">
+                        @unless($event->isFinalized())
+                            <a href="/events/edit/{{ $event->id }}" class="dash-btn-secondary inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold no-underline">Editar evento</a>
+                            <a href="/events/{{ $event->id }}/novidades" class="dash-btn-secondary inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold no-underline">Novidades</a>
+                            <a href="/events/{{ $event->id }}/patrocinadores" class="dash-btn-secondary inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold no-underline">Patrocinadores</a>
+                        @endunless
+                        <a href="/events/registered/{{ $event->id }}" class="dash-btn-secondary inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold no-underline">Inscritos</a>
+                        @if($event->acceptsSubmissions())
+                            <a href="{{ route('events.works.index', $event->id) }}" class="dash-btn-secondary inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold no-underline">Trabalhos</a>
+                            <a href="{{ route('events.presentations.manage', $event) }}" class="dash-btn-secondary inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold no-underline">Apresentações</a>
+                        @endif
+                        <a href="{{ route('events.certificates.index', $event) }}" class="dash-btn-secondary inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold no-underline">Certificados e presença</a>
+                        @if($event->isFinalized())
+                            <a href="{{ route('events.satisfaction.results', $event) }}" class="dash-btn-secondary inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold no-underline">Pesquisa de satisfação</a>
+                        @endif
+                    </div>
+                </div>
+            @empty
+                <div class="dash-card rounded-2xl p-8 text-center">
+                    <p class="dash-text m-0">Nenhum evento vinculado ainda.</p>
+                </div>
+            @endforelse
         </div>
         @endif
 

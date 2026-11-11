@@ -155,7 +155,7 @@ class EventSatisfactionController extends Controller
     private function authorizeCoordinator(Event $event): void
     {
         $user = auth()->user();
-        abort_unless($user && $user->isCoordinator() && (int) $user->id === (int) $event->user_id, 403);
+        abort_unless($user && $user->managesEvent($event), 403);
     }
 
     private function notYetOpen(Event $event): ?RedirectResponse

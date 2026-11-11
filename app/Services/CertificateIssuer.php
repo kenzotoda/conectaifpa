@@ -224,18 +224,12 @@ class CertificateIssuer
         $presence = $activity->activityPresences()
             ->where('user_id', $user->id)
             ->first();
-        $frequency = null;
 
-        if ($activity->is_extension) {
-            $frequency = $presence?->frequencia_percent !== null ? (int) $presence->frequencia_percent : null;
-            if ($frequency === null || $frequency < Activity::EXTENSION_MINIMUM_FREQUENCY) {
-                return false;
-            }
-        } elseif (! $presence || ! $presence->presente) {
+        if (! $presence || ! $presence->presente) {
             return false;
         }
 
-        $contentFingerprint = $this->activityCertificateContentFingerprint($user, $activity, $event, $frequency);
+        $contentFingerprint = $this->activityCertificateContentFingerprint($user, $activity, $event);
 
         $existing = Certificate::query()
             ->where('user_id', $user->id)
@@ -275,7 +269,7 @@ class CertificateIssuer
             'validationCode' => $code,
             'signatures' => $this->signatureBlocks($event),
         ];
-        $data = array_merge($data, CertificateDocument::pdfFields($user, $event, $code, Certificate::TYPE_ACTIVITY, $activity, null, $frequency));
+        $data = array_merge($data, CertificateDocument::pdfFields($user, $event, $code, Certificate::TYPE_ACTIVITY, $activity));
 
         $this->writePdf('certificates.pdf.atividade', $data, $relativePath);
 
@@ -305,7 +299,7 @@ class CertificateIssuer
         return true;
     }
 
-    private function activityCertificateContentFingerprint(User $user, Activity $activity, Event $event, ?int $frequency): string
+    private function activityCertificateContentFingerprint(User $user, Activity $activity, Event $event): string
     {
         $event->loadMissing('certificateSignatures');
 
@@ -316,13 +310,12 @@ class CertificateIssuer
             'organizer' => $event->certificateOrganizerDisplay(),
             'institution' => $event->certificateInstitutionDisplay(),
             'hours' => $activity->workload_hours !== null ? (string) $activity->workload_hours : '',
-            'frequency' => $frequency,
             'period' => CertificateDocument::period($event),
             'activityPeriod' => CertificateDocument::activityPeriod($activity),
             'place' => CertificateDocument::activityPlace($activity, $event),
             'modality' => CertificateDocument::modality($event),
             'matricula' => CertificateDocument::matricula($user),
-            'presence' => CertificateDocument::presenceText(Certificate::TYPE_ACTIVITY, null, $frequency),
+            'presence' => CertificateDocument::presenceText(Certificate::TYPE_ACTIVITY),
             'signatureIds' => $event->certificateSignatures->pluck('id')->map(fn ($id) => (int) $id)->values()->all(),
         ];
 
@@ -630,7 +623,8 @@ class CertificateIssuer
     {
         return EventGuest::query()
             ->where('event_id', $event->id)
-            ->whereIn('role_type', EventGuest::GUEST_CERTIFICATE_ROLES)
+            ->whereNotNull('role_type')
+            ->where('role_type', '!=', '')
             ->orderBy('name')
             ->get();
     }
@@ -700,8 +694,8 @@ class CertificateIssuer
 
         $event->loadMissing('certificateSignatures');
         $count = 0;
-        foreach ($this->eligibleOrganization($event) as $guest) {
-            if ($this->issueNamedGuest($guest, $event, Certificate::TYPE_ORGANIZATION)) {
+        foreach ($event->organizers()->get() as $user) {
+            if ($this->issueOrganizer($user, $event)) {
                 $count++;
             }
         }
@@ -752,8 +746,36 @@ class CertificateIssuer
         );
     }
 
+    public function issueOrganizer(User $user, Event $event): bool
+    {
+        $hours = $this->optionalEventHours($event, Certificate::TYPE_ORGANIZATION);
+        $role = $user->isCoordinator() ? 'Coordenador' : 'Organizador';
+        $body = 'Certificamos que <strong>'.e($user->name).'</strong> integrou a organização do evento <strong>'.e($event->title).'</strong>, na função de <strong>'.e($role).'</strong>'
+            .$this->hoursClause($hours)
+            .', na instituição <strong>'.e($event->certificateInstitutionDisplay()).'</strong>.';
+
+        return $this->persistOptional(
+            $event,
+            Certificate::TYPE_ORGANIZATION,
+            'Certificado de organização',
+            $body,
+            ['user_id' => $user->id, 'event_guest_id' => null, 'work_author_id' => null, 'work_id' => null],
+            [
+                'user_id' => $user->id,
+                'recipient_name' => $user->name,
+                'recipient_role' => $role,
+            ],
+            $user,
+            $user->name,
+            $role,
+            $hours,
+            null
+        );
+    }
+
     public function issueNamedGuest(EventGuest $guest, Event $event, string $tipo): bool
     {
+        $account = $guest->relationLoaded('user') ? $guest->user : ($guest->user_id ? User::query()->find($guest->user_id) : null);
         $role = EventGuest::roleTypeLabels()[$guest->role_type] ?? $guest->role_type;
         $hours = $this->optionalEventHours($event, $tipo);
         $function = e($role);
@@ -777,13 +799,13 @@ class CertificateIssuer
             $body,
             ['event_guest_id' => $guest->id],
             [
-                'user_id' => null,
+                'user_id' => $account?->id,
                 'event_guest_id' => $guest->id,
                 'recipient_name' => $guest->name,
                 'recipient_role' => $role,
             ],
-            null,
-            $guest->name,
+            $account,
+            $account?->name ?: $guest->name,
             $role,
             $hours,
             null

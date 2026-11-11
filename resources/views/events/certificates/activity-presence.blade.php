@@ -35,24 +35,7 @@
         </div>
     @endif
 
-    <section class="dash-card rounded-2xl p-6 space-y-4">
-        <h2 class="dash-title text-lg font-semibold m-0">Carga horária (certificado)</h2>
-        <form action="{{ route('events.certificates.activity.workload', [$event, $activity]) }}" method="POST" class="space-y-3">
-            @csrf
-            <div class="flex flex-wrap gap-3 items-end">
-                <div>
-                    <label class="block text-xs font-medium text-slate-600 mb-1">Horas</label>
-                    <input type="number" step="0.25" min="0" name="workload_hours" value="{{ old('workload_hours', $activity->workload_hours) }}" class="dash-field rounded-xl px-3 py-2 text-sm w-36">
-                </div>
-                <button type="submit" class="dash-btn inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-sm font-semibold">Salvar</button>
-            </div>
-            <input type="hidden" name="is_extension" value="0">
-            <label class="flex items-start gap-2 text-sm text-slate-700">
-                <input type="checkbox" name="is_extension" value="1" @checked(old('is_extension', $activity->is_extension)) class="mt-1">
-                <span>Atividade de extensão (certificado exige 75% de frequência)</span>
-            </label>
-        </form>
-    </section>
+    <p class="text-sm text-slate-600 m-0">Carga horária do certificado: <strong>{{ $activity->workload_hours !== null ? rtrim(rtrim((string) $activity->workload_hours, '0'), '.').' h' : 'não informada' }}</strong>. Altere na edição do evento, no card desta atividade.</p>
 
     <section class="dash-card rounded-2xl p-6 space-y-4">
         <h2 class="dash-title text-lg font-semibold m-0">Presença dos participantes</h2>
@@ -61,15 +44,6 @@
             <div class="space-y-2 max-h-96 overflow-y-auto border border-slate-100 rounded-xl p-3">
                 @if($participantUsers->isEmpty())
                     <p class="text-sm text-slate-500 m-0">Nenhum participante inscrito.</p>
-                @elseif($activity->is_extension)
-                    <p class="text-xs text-slate-600 m-0">Informe a frequência de 0 a 100. O certificado exige 75% ou mais.</p>
-                    @foreach($participantUsers as $u)
-                        @php $p = $presences->get($u->id); @endphp
-                        <label class="flex items-center justify-between gap-3 text-sm text-slate-800 py-1 border-b border-slate-50 last:border-0">
-                            <span>{{ $u->name }}</span>
-                            <input type="number" min="0" max="100" name="frequencia[{{ $u->id }}]" value="{{ old('frequencia.'.$u->id, $p?->frequencia_percent) }}" class="dash-field w-24 rounded-xl px-3 py-2 text-sm" placeholder="%">
-                        </label>
-                    @endforeach
                 @else
                     @foreach($participantUsers as $u)
                         @php $p = $presences->get($u->id); @endphp

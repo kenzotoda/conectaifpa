@@ -57,7 +57,7 @@ class PostEvaluationController extends Controller
 
     private function ensureCoordinator(Work $work): void
     {
-        if (auth()->id() !== $work->event->user_id) {
+        if (! auth()->user()?->managesEvent($work->event)) {
             abort(403);
         }
     }

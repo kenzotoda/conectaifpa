@@ -41,11 +41,29 @@ class OptionalCertificateTest extends TestCase
         $this->assertSame(0, Certificate::query()->count());
 
         $this->actingAs($coordinator)
+            ->from(route('events.certificates.index', $event))
+            ->post(route('events.certificates.optional', $event), [
+                'certificate_reviewer_enabled' => '1',
+                'certificate_guest_enabled' => '0',
+                'certificate_organization_enabled' => '0',
+                'certificate_coauthor_enabled' => '0',
+            ])
+            ->assertRedirect(route('events.certificates.index', $event))
+            ->assertSessionHasErrors([
+                'certificate_reviewer_hours',
+                'certificate_guest_hours',
+                'certificate_organization_hours',
+            ]);
+
+        $this->actingAs($coordinator)
             ->post(route('events.certificates.optional', $event), [
                 'certificate_reviewer_enabled' => '0',
                 'certificate_guest_enabled' => '0',
                 'certificate_organization_enabled' => '0',
                 'certificate_coauthor_enabled' => '1',
+                'certificate_reviewer_hours' => '4',
+                'certificate_guest_hours' => '8',
+                'certificate_organization_hours' => '20',
             ])
             ->assertRedirect();
 
@@ -118,13 +136,17 @@ class OptionalCertificateTest extends TestCase
         ]);
 
         $issuer = app(CertificateIssuer::class);
-        $this->assertSame(1, $issuer->batchGuests($event->fresh()));
-        $this->assertSame(1, $issuer->batchOrganization($event->fresh()));
+        $this->assertSame(2, $issuer->batchGuests($event->fresh()));
+        $this->assertSame(0, $issuer->batchOrganization($event->fresh()));
 
-        $guestCertificate = Certificate::query()->where('tipo', Certificate::TYPE_GUEST)->first();
+        $guestCertificate = Certificate::query()->where('recipient_name', 'Lia Palestrante')->first();
         $this->assertNull($guestCertificate->user_id);
-        $this->assertSame('Lia Palestrante', $guestCertificate->recipient_name);
+        $this->assertSame(Certificate::TYPE_GUEST, $guestCertificate->tipo);
         $this->assertSame('Palestrante', $guestCertificate->recipient_role);
+
+        $monitorCertificate = Certificate::query()->where('recipient_name', 'Caio Monitor')->first();
+        $this->assertSame(Certificate::TYPE_GUEST, $monitorCertificate->tipo);
+        $this->assertSame('Monitor', $monitorCertificate->recipient_role);
 
         $this->actingAs($coordinator)
             ->get(route('events.certificates.issued', $event))
@@ -196,6 +218,46 @@ class OptionalCertificateTest extends TestCase
             ->get(route('certificates.my'))
             ->assertOk()
             ->assertSee('coautoria de trabalho');
+    }
+
+    public function test_certificate_uses_every_organizer_name_and_the_event_campus(): void
+    {
+        [$event] = $this->readyEvent();
+        $event->update([
+            'certificate_organizer' => 'Texto antigo',
+            'certificate_institution' => 'Outra instituição',
+        ]);
+        $ana = User::factory()->create(['role' => User::ROLE_ORGANIZER, 'name' => 'Ana Lima']);
+        $bruno = User::factory()->create(['role' => User::ROLE_ORGANIZER, 'name' => 'Bruno Souza']);
+        $caio = User::factory()->create(['role' => User::ROLE_ORGANIZER, 'name' => 'Caio Reis']);
+        $event->organizers()->sync([$caio->id, $ana->id, $bruno->id]);
+
+        $fresh = $event->fresh();
+
+        $this->assertSame('Ana Lima, Bruno Souza e Caio Reis', $fresh->certificateOrganizerDisplay());
+        $this->assertSame(Event::FIXED_CAMPUS, $fresh->certificateInstitutionDisplay());
+    }
+
+    public function test_organization_certificates_go_to_every_listed_organizer_including_the_coordinator(): void
+    {
+        [$event, $coordinator] = $this->readyEvent();
+        $event->update(['certificate_organization_enabled' => true]);
+        $organizer = User::factory()->create([
+            'role' => User::ROLE_ORGANIZER,
+            'name' => 'Bruno Organizador',
+        ]);
+        $event->organizers()->sync([$organizer->id, $coordinator->id]);
+
+        $this->assertSame(2, app(CertificateIssuer::class)->batchOrganization($event->fresh()));
+
+        $organizerCertificate = Certificate::query()->where('user_id', $organizer->id)->first();
+        $coordinatorCertificate = Certificate::query()->where('user_id', $coordinator->id)->first();
+
+        $this->assertSame(Certificate::TYPE_ORGANIZATION, $organizerCertificate->tipo);
+        $this->assertSame('Organizador', $organizerCertificate->recipient_role);
+        $this->assertSame(Certificate::TYPE_ORGANIZATION, $coordinatorCertificate->tipo);
+        $this->assertSame('Coordenador', $coordinatorCertificate->recipient_role);
+        $this->assertSame(0, Certificate::query()->where('tipo', Certificate::TYPE_ORGANIZATION)->whereNull('user_id')->count());
     }
 
     /**

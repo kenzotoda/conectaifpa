@@ -136,7 +136,7 @@
               
               <!-- PERMISSÃO APENAS PARA O CRIADOR DO EVENTO -->
               @auth
-                  @if(auth()->user()->isCoordinator() && auth()->user()->id === $event->user_id)
+                  @if(auth()->user()->managesEvent($event))
                       <a href="#" class="nav-tab group flex-1 flex flex-col items-center justify-center py-4 px-3 lg:px-4 border-b-2 border-transparent text-gray-600 transition-all duration-200 hover:bg-gray-50 hover:text-emerald-600 hover:border-emerald-300 no-underline" data-page="participants">
                           <ion-icon name="people-outline" class="text-2xl lg:text-3xl mb-1.5 group-hover:scale-110 transition-transform duration-200"></ion-icon>
                           <span class="text-xs lg:text-sm font-semibold text-center leading-tight">Gerenciar Inscritos</span>
@@ -146,7 +146,7 @@
 
               <!-- PERMISSÃO APENAS PARA O CRIADOR DO EVENTO -->
               @auth
-                  @if(auth()->user()->isCoordinator() && auth()->user()->id === $event->user_id)
+                  @if(auth()->user()->managesEvent($event))
                       <a href="#" class="nav-tab group flex-1 flex flex-col items-center justify-center py-4 px-3 lg:px-4 border-b-2 border-transparent text-gray-600 transition-all duration-200 hover:bg-gray-50 hover:text-emerald-600 hover:border-emerald-300 no-underline" data-page="customize">
                           <ion-icon name="color-palette-outline" class="text-2xl lg:text-3xl mb-1.5 group-hover:scale-110 transition-transform duration-200"></ion-icon>
                           <span class="text-xs lg:text-sm font-semibold text-center leading-tight">Personalizar Evento</span>
@@ -156,7 +156,7 @@
               
               <!-- PERMISSÃO APENAS PARA O CRIADOR DO EVENTO -->
               @auth
-                  @if(auth()->user()->isCoordinator() && auth()->user()->id === $event->user_id)
+                  @if(auth()->user()->managesEvent($event))
                       <a href="#" class="nav-tab group flex-1 flex flex-col items-center justify-center py-4 px-3 lg:px-4 border-b-2 border-transparent text-gray-600 transition-all duration-200 hover:bg-gray-50 hover:text-emerald-600 hover:border-emerald-300 no-underline" data-page="news">
                           <ion-icon name="newspaper-outline" class="text-2xl lg:text-3xl mb-1.5 group-hover:scale-110 transition-transform duration-200"></ion-icon>
                           <span class="text-xs lg:text-sm font-semibold text-center leading-tight">Novidades</span>

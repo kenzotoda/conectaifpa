@@ -139,6 +139,11 @@ class Event extends Model
         return $this->hasMany(EventGuest::class)->orderBy('name');
     }
 
+    public function organizers()
+    {
+        return $this->belongsToMany(User::class, 'event_organizers')->withTimestamps()->orderBy('users.name');
+    }
+
     // Retorna os usuários participantes do evento. || (N:N)
     // Aqui não existe uma chave estrangeira direta nas tabelas users e events que resolva essa relação.
     // Então é necessário criar uma tabela intermediária (chamada de tabela pivô).
@@ -188,12 +193,41 @@ class Event extends Model
 
     public function certificateOrganizerDisplay(): string
     {
-        return trim((string) ($this->certificate_organizer ?: $this->coordinator_name)) ?: 'Coordenação';
+        $organizers = $this->relationLoaded('organizers')
+            ? $this->organizers
+            : $this->organizers()->get();
+        $names = $organizers
+            ->pluck('name')
+            ->map(fn ($name) => trim((string) $name))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($names !== []) {
+            return $this->joinPersonNames($names);
+        }
+
+        return trim((string) $this->coordinator_name) ?: 'Coordenação';
     }
 
     public function certificateInstitutionDisplay(): string
     {
-        return trim((string) ($this->certificate_institution ?: $this->campus)) ?: self::FIXED_CAMPUS;
+        return trim((string) $this->campus) ?: self::FIXED_CAMPUS;
+    }
+
+    /**
+     * @param  list<string>  $names
+     */
+    private function joinPersonNames(array $names): string
+    {
+        if (count($names) === 1) {
+            return $names[0];
+        }
+
+        $last = array_pop($names);
+
+        return implode(', ', $names).' e '.$last;
     }
 
     // Tipos de trabalho aceitos no evento.

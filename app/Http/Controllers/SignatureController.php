@@ -28,7 +28,7 @@ class SignatureController extends Controller
         $eventId = (int) $request->query('event', 0);
         if ($eventId > 0) {
             $ev = Event::query()->whereKey($eventId)->first();
-            if ($ev && (int) $ev->user_id === (int) auth()->id()) {
+            if ($ev && auth()->user()?->managesEvent($ev)) {
                 $certificatesReturnEvent = $ev;
             }
         }
@@ -145,7 +145,7 @@ class SignatureController extends Controller
         $eventId = (int) $request->query('event', 0);
         if ($eventId > 0) {
             $ev = Event::query()->whereKey($eventId)->first();
-            if ($ev && (int) $ev->user_id === (int) auth()->id()) {
+            if ($ev && auth()->user()?->managesEvent($ev)) {
                 return redirect()->route('signatures.index', ['event' => $ev->id]);
             }
         }
@@ -157,7 +157,7 @@ class SignatureController extends Controller
     {
         if ($returnEventId !== null && $returnEventId > 0) {
             $ev = Event::query()->whereKey($returnEventId)->first();
-            if ($ev && (int) $ev->user_id === (int) auth()->id()) {
+            if ($ev && auth()->user()?->managesEvent($ev)) {
                 return redirect()->route('signatures.index', ['event' => $ev->id]);
             }
         }
@@ -167,6 +167,10 @@ class SignatureController extends Controller
 
     private function authorizeCoordinator(): void
     {
-        abort_unless(auth()->user()?->isCoordinator(), 403);
+        $user = auth()->user();
+        abort_unless(
+            $user && ($user->isCoordinator() || ($user->isOrganizer() && $user->organizedEvents()->exists())),
+            403
+        );
     }
 }

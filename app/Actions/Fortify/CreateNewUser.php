@@ -22,6 +22,16 @@ class CreateNewUser implements CreatesNewUsers
      */
     public function create(array $input): User
     {
+        $allowedRoles = [
+            User::ROLE_PARTICIPANT,
+            User::ROLE_COORDINATOR,
+            User::ROLE_REVIEWER,
+        ];
+        if (auth()->user()?->isCoordinator()) {
+            $allowedRoles[] = User::ROLE_GUEST;
+            $allowedRoles[] = User::ROLE_ORGANIZER;
+        }
+
         $isParticipant = ($input['role'] ?? '') === User::ROLE_PARTICIPANT;
         $profile = $isParticipant ? (string) ($input['participant_profile'] ?? '') : '';
         $isExternalParticipant = $isParticipant && in_array($profile, User::EXTERNAL_PARTICIPANT_PROFILES, true);
@@ -64,11 +74,7 @@ class CreateNewUser implements CreatesNewUsers
                 'name' => ['required', 'string', 'max:255', 'regex:/^[\pL\s]+$/u'],
                 'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
                 'password' => $this->passwordRules(),
-                'role' => ['required', Rule::in([
-                    User::ROLE_PARTICIPANT,
-                    User::ROLE_COORDINATOR,
-                    User::ROLE_REVIEWER,
-                ])],
+                'role' => ['required', Rule::in($allowedRoles)],
 
                 'participant_profile' => [
                     Rule::requiredIf($isParticipant),

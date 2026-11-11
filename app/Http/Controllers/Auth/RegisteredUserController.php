@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Contracts\Auth\StatefulGuard;
 use Illuminate\Http\Request;
@@ -43,26 +44,27 @@ class RegisteredUserController extends Controller
 
     public function storeCoordinator(Request $request, CreatesNewUsers $creator)
     {
-        if (! auth()->user()->isCoordinator()) {
-            abort(403, 'Acesso negado');
-        }
-
-        if (config('fortify.lowercase_usernames') && $request->has(Fortify::username())) {
-            $request->merge([
-                Fortify::username() => Str::lower($request->{Fortify::username()}),
-            ]);
-        }
-
-        $user = $creator->create($request->all());
-
-        event(new Registered($user));
-
-        return redirect('/dashboard')->with('msg', 'Novo coordenador criado com sucesso!');
+        return $this->storePanelAccount($request, $creator, User::ROLE_COORDINATOR, 'Novo coordenador criado com sucesso!');
     }
 
     public function storeReviewer(Request $request, CreatesNewUsers $creator)
     {
-        if (! auth()->user()->isCoordinator()) {
+        return $this->storePanelAccount($request, $creator, User::ROLE_REVIEWER, 'Novo avaliador criado com sucesso!');
+    }
+
+    public function storeGuest(Request $request, CreatesNewUsers $creator)
+    {
+        return $this->storePanelAccount($request, $creator, User::ROLE_GUEST, 'Nova conta de convidado criada com sucesso!');
+    }
+
+    public function storeOrganizer(Request $request, CreatesNewUsers $creator)
+    {
+        return $this->storePanelAccount($request, $creator, User::ROLE_ORGANIZER, 'Nova conta de organizador criada com sucesso!');
+    }
+
+    private function storePanelAccount(Request $request, CreatesNewUsers $creator, string $role, string $message)
+    {
+        if (! auth()->user()?->isCoordinator()) {
             abort(403, 'Acesso negado');
         }
 
@@ -73,11 +75,13 @@ class RegisteredUserController extends Controller
         }
 
         $payload = $request->all();
-        $payload['role'] = 'reviewer';
+        $payload['role'] = $role;
         $user = $creator->create($payload);
+        $user->created_by_user_id = auth()->id();
+        $user->save();
 
         event(new Registered($user));
 
-        return redirect('/dashboard')->with('msg', 'Novo avaliador criado com sucesso!');
+        return redirect()->route('accounts.managed')->with('msg', $message);
     }
 }

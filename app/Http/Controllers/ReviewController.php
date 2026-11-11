@@ -306,7 +306,7 @@ class ReviewController extends Controller
         $review = Review::where('work_id', $work->id)->where('id', $reviewId)->firstOrFail();
 
         $userId = auth()->id();
-        $isCoordinator = $userId === $work->event->user_id;
+        $isCoordinator = auth()->user()?->managesEvent($work->event) ?? false;
         $isOwnerReviewer = (int) $review->reviewer_user_id === (int) $userId;
         if (! $isCoordinator && ! $isOwnerReviewer) {
             abort(403, 'Acesso negado.');
@@ -470,7 +470,7 @@ class ReviewController extends Controller
     {
         $event = Event::findOrFail($eventId);
 
-        if (auth()->id() !== $event->user_id) {
+        if (! auth()->user()?->managesEvent($event)) {
             abort(403, 'Acesso negado.');
         }
 
@@ -1082,7 +1082,7 @@ class ReviewController extends Controller
     public function exportEventReportCsv($eventId)
     {
         $event = Event::findOrFail($eventId);
-        if (auth()->id() !== $event->user_id) {
+        if (! auth()->user()?->managesEvent($event)) {
             abort(403, 'Acesso negado.');
         }
 
@@ -1139,7 +1139,7 @@ class ReviewController extends Controller
 
     private function ensureCoordinatorOwner(Work $work): void
     {
-        if (auth()->id() !== $work->event->user_id) {
+        if (! auth()->user()?->managesEvent($work->event)) {
             abort(403, 'Acesso negado.');
         }
     }

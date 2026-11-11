@@ -84,8 +84,7 @@
                         $modalityIsOnlineOnly = $event->modality === 'Online';
                         $modalityIsHybrid = $event->modality === 'Híbrido';
                         $seesVacancyDetails = auth()->check()
-                            && auth()->user()->isCoordinator()
-                            && (int) auth()->id() === (int) $event->user_id;
+                            && auth()->user()->managesEvent($event);
                         $audienceCounts = $event->audienceRegistrationCounts();
                         $viewer = auth()->user();
                         if ($viewer && $viewer->isParticipant() && $event->hasAudienceQuotas()) {
@@ -298,15 +297,19 @@
                             <p class="dash-panel dash-text text-sm leading-relaxed m-0 max-w-sm lg:text-right rounded-xl px-4 py-3">
                                 Avaliadores não fazem inscrição em evento. Para se inscrever, entre com uma conta de participante.
                             </p>
+                        @elseif(auth()->check() && auth()->user()->isOrganizer())
+                            <p class="dash-panel dash-text text-sm leading-relaxed m-0 max-w-sm lg:text-right rounded-xl px-4 py-3">
+                                Organizadores gerenciam os eventos em que foram designados e não se inscrevem como participante.
+                            </p>
                         @endif
                     @endif
                 </div>
             </div>
 
                     @auth
-                @if(auth()->user()->isCoordinator() && auth()->id() === $event->user_id)
+                @if(auth()->user()->managesEvent($event))
                     <div class="dash-rule mt-6 pt-6 border-t">
-                        <h3 class="dash-title text-sm font-semibold m-0 mb-3">Coordenação</h3>
+                        <h3 class="dash-title text-sm font-semibold m-0 mb-3">Gestão do evento</h3>
                         @if($event->isFinalized())
                             <p class="dash-text text-sm max-w-2xl mb-4">
                                 Evento finalizado: não é possível editar, gerenciar inscritos, novidades ou patrocinadores. A página permanece visível ao público e você pode excluir o evento no painel.

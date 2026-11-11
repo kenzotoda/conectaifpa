@@ -88,7 +88,7 @@ class EventCertificateController extends Controller
             'optionalEligible' => [
                 'reviewers' => $this->certificateIssuer->eligibleReviewers($event)->count(),
                 'guests' => $this->certificateIssuer->eligibleGuests($event)->count(),
-                'organization' => $this->certificateIssuer->eligibleOrganization($event)->count(),
+                'organization' => $event->organizers()->count(),
                 'coauthors' => $this->certificateIssuer->eligibleCoauthors($event)->count(),
             ],
             'optionalIssued' => [
@@ -262,39 +262,21 @@ class EventCertificateController extends Controller
         }
 
         $participantIds = $event->participantUsers()->pluck('users.id')->all();
+        $presentIds = collect($request->input('presente', []))
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => in_array($id, $participantIds, true))
+            ->unique()
+            ->all();
 
-        if ($activity->is_extension) {
-            $frequencies = (array) $request->input('frequencia', []);
-            foreach ($participantIds as $uid) {
-                $raw = $frequencies[$uid] ?? $frequencies[(string) $uid] ?? null;
-                $frequency = ($raw === null || $raw === '') ? null : max(0, min(100, (int) $raw));
-                ActivityPresence::updateOrCreate(
-                    ['activity_id' => $activity->id, 'user_id' => $uid],
-                    [
-                        'frequencia_percent' => $frequency,
-                        'presente' => $frequency !== null && $frequency >= Activity::EXTENSION_MINIMUM_FREQUENCY,
-                        'marcado_por' => auth()->id(),
-                        'data_marcacao' => now(),
-                    ]
-                );
-            }
-        } else {
-            $presentIds = collect($request->input('presente', []))
-                ->map(fn ($id) => (int) $id)
-                ->filter(fn ($id) => in_array($id, $participantIds, true))
-                ->unique()
-                ->all();
-
-            foreach ($participantIds as $uid) {
-                ActivityPresence::updateOrCreate(
-                    ['activity_id' => $activity->id, 'user_id' => $uid],
-                    [
-                        'presente' => in_array((int) $uid, $presentIds, true),
-                        'marcado_por' => auth()->id(),
-                        'data_marcacao' => now(),
-                    ]
-                );
-            }
+        foreach ($participantIds as $uid) {
+            ActivityPresence::updateOrCreate(
+                ['activity_id' => $activity->id, 'user_id' => $uid],
+                [
+                    'presente' => in_array((int) $uid, $presentIds, true),
+                    'marcado_por' => auth()->id(),
+                    'data_marcacao' => now(),
+                ]
+            );
         }
 
         return back()->with([
@@ -363,7 +345,7 @@ class EventCertificateController extends Controller
 
         return back()->with('msg', $count > 0
             ? "Geração em lote (atividades): {$count} certificado(s) emitido(s) ou atualizado(s). O e-mail sai só na primeira emissão."
-            : 'Geração em lote (atividades): nenhum PDF novo. Atividade de extensão exige frequência de 75% ou mais.');
+            : 'Geração em lote (atividades): nenhum PDF novo. O certificado já existente só é regravado quando o texto muda, e só sai para quem teve a presença marcada.');
     }
 
     public function generatePresentations(Event $event)
@@ -394,9 +376,16 @@ class EventCertificateController extends Controller
             'certificate_guest_enabled' => ['required', 'boolean'],
             'certificate_organization_enabled' => ['required', 'boolean'],
             'certificate_coauthor_enabled' => ['required', 'boolean'],
-            'certificate_reviewer_hours' => ['nullable', 'numeric', 'min:0', 'max:99999'],
-            'certificate_guest_hours' => ['nullable', 'numeric', 'min:0', 'max:99999'],
-            'certificate_organization_hours' => ['nullable', 'numeric', 'min:0', 'max:99999'],
+            'certificate_reviewer_hours' => ['required', 'numeric', 'min:0.5', 'max:99999'],
+            'certificate_guest_hours' => ['required', 'numeric', 'min:0.5', 'max:99999'],
+            'certificate_organization_hours' => ['required', 'numeric', 'min:0.5', 'max:99999'],
+        ], [
+            'certificate_reviewer_hours.required' => 'Informe a carga horária do certificado de avaliador.',
+            'certificate_guest_hours.required' => 'Informe a carga horária do certificado de convidado.',
+            'certificate_organization_hours.required' => 'Informe a carga horária do certificado de organização.',
+            'certificate_reviewer_hours.min' => 'A carga horária do certificado de avaliador precisa ser de pelo menos 0,5.',
+            'certificate_guest_hours.min' => 'A carga horária do certificado de convidado precisa ser de pelo menos 0,5.',
+            'certificate_organization_hours.min' => 'A carga horária do certificado de organização precisa ser de pelo menos 0,5.',
         ]);
 
         $event->fill($data);
@@ -410,6 +399,10 @@ class EventCertificateController extends Controller
 
     public function generateReviewers(Event $event)
     {
+        if ($event->certificate_reviewer_hours === null) {
+            return back()->with('msg', 'Informe a carga horária do certificado de avaliador e salve antes de gerar.');
+        }
+
         return $this->generateOptional(
             $event,
             (bool) $event->certificate_reviewer_enabled,
@@ -420,6 +413,10 @@ class EventCertificateController extends Controller
 
     public function generateGuests(Event $event)
     {
+        if ($event->certificate_guest_hours === null) {
+            return back()->with('msg', 'Informe a carga horária do certificado de convidado e salve antes de gerar.');
+        }
+
         return $this->generateOptional(
             $event,
             (bool) $event->certificate_guest_enabled,
@@ -430,6 +427,10 @@ class EventCertificateController extends Controller
 
     public function generateOrganization(Event $event)
     {
+        if ($event->certificate_organization_hours === null) {
+            return back()->with('msg', 'Informe a carga horária do certificado de organização e salve antes de gerar.');
+        }
+
         return $this->generateOptional(
             $event,
             (bool) $event->certificate_organization_enabled,
@@ -558,13 +559,9 @@ class EventCertificateController extends Controller
 
         $data = $request->validate([
             'workload_hours' => ['nullable', 'numeric', 'min:0', 'max:99999'],
-            'is_extension' => ['nullable', 'boolean'],
         ]);
 
         $activity->workload_hours = $data['workload_hours'] ?? null;
-        if ($request->has('is_extension')) {
-            $activity->is_extension = $request->boolean('is_extension');
-        }
         $activity->save();
 
         return back()->with([
@@ -616,7 +613,7 @@ class EventCertificateController extends Controller
         }
 
         if ($event->certificate_total_hours === null) {
-            return 'Informe e salve a carga horária total da participação (campos nesta página, antes da lista de presença).';
+            return 'Informe a carga horária do certificado de participação na criação ou na edição do evento.';
         }
 
         if (! $this->eventPresenceSavedForAllParticipants($event)) {
@@ -660,7 +657,7 @@ class EventCertificateController extends Controller
         }
 
         if ($this->rootActivitiesCount($event) > 0 && ! $this->allRootActivitiesHaveWorkloadForCertificate($event)) {
-            return 'Defina e salve a carga horária (CH) que entra no certificado em todas as atividades listadas antes de gerar.';
+            return 'Informe a carga horária do certificado em cada atividade, na criação ou na edição do evento, antes de gerar.';
         }
 
         if (! $this->activityPresencesSavedForAllRootActivities($event)) {
@@ -673,14 +670,10 @@ class EventCertificateController extends Controller
     /** Requisito comum antes de gerar qualquer tipo de certificado deste evento. */
     private function globalCertificateBlockedMessage(Event $event): ?string
     {
-        if (trim((string) ($event->certificate_organizer ?? '')) === '' || trim((string) ($event->certificate_institution ?? '')) === '') {
-            return 'Preencha e salve organização e instituição (primeiro quadro) com valores preenchidos antes de gerar qualquer certificado.';
-        }
-
         $event->loadMissing('certificateSignatures');
 
         if ($event->certificateSignatures->isEmpty()) {
-            return 'Selecione e salve pelo menos uma assinatura aplicada ao evento (segundo quadro) antes de gerar qualquer certificado.';
+            return 'Selecione e salve pelo menos uma assinatura aplicada ao evento antes de gerar qualquer certificado.';
         }
 
         return null;
@@ -871,7 +864,7 @@ class EventCertificateController extends Controller
 
     private function authorizeCoordinator(Event $event): void
     {
-        if (! auth()->user()?->isCoordinator() || auth()->id() !== $event->user_id) {
+        if (! auth()->user()?->managesEvent($event)) {
             abort(403);
         }
     }

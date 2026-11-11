@@ -57,6 +57,12 @@
                                class="site-nav-link px-4 py-2 text-sm font-medium transition-colors">
                                 Painel
                             </a>
+                            @if(auth()->user()->hasIssuedCertificates())
+                                <a href="{{ route('certificates.my') }}"
+                                   class="site-nav-link px-4 py-2 text-sm font-medium transition-colors">
+                                    Meus certificados
+                                </a>
+                            @endif
                         @endif
                         @if(auth()->user()->isParticipant())
                             <details class="relative">
@@ -79,6 +85,16 @@
                                     </a>
                                 </div>
                             </details>
+                        @endif
+                        @if(auth()->user()->isGuest() || auth()->user()->isOrganizer())
+                            <a href="/dashboard"
+                               class="site-nav-link px-4 py-2 text-sm font-medium transition-colors">
+                                Painel
+                            </a>
+                            <a href="{{ route('certificates.my') }}"
+                               class="site-nav-link px-4 py-2 text-sm font-medium transition-colors">
+                                Certificados
+                            </a>
                         @endif
                         @if(auth()->user()->isReviewer())
                             <a href="/dashboard"
@@ -169,6 +185,13 @@
                                 <ion-icon name="grid-outline" class="site-nav-icon text-xl"></ion-icon>
                                 Painel
                             </a>
+                            @if(auth()->user()->hasIssuedCertificates())
+                                <a href="{{ route('certificates.my') }}"
+                                   class="site-nav-link flex items-center gap-3 px-4 py-3 font-medium transition-colors">
+                                    <ion-icon name="ribbon-outline" class="site-nav-icon text-xl"></ion-icon>
+                                    Meus certificados
+                                </a>
+                            @endif
                         @endif
                         @if(auth()->user()->isParticipant())
                             <a href="/dashboard"
@@ -180,6 +203,18 @@
                                class="site-nav-link flex items-center gap-3 px-4 py-3 font-medium transition-colors">
                                 <ion-icon name="mic-outline" class="site-nav-icon text-xl"></ion-icon>
                                 Minha apresentação
+                            </a>
+                            <a href="{{ route('certificates.my') }}"
+                               class="site-nav-link flex items-center gap-3 px-4 py-3 font-medium transition-colors">
+                                <ion-icon name="ribbon-outline" class="site-nav-icon text-xl"></ion-icon>
+                                Certificados
+                            </a>
+                        @endif
+                        @if(auth()->user()->isGuest() || auth()->user()->isOrganizer())
+                            <a href="/dashboard"
+                               class="site-nav-link flex items-center gap-3 px-4 py-3 font-medium transition-colors">
+                                <ion-icon name="grid-outline" class="site-nav-icon text-xl"></ion-icon>
+                                Painel
                             </a>
                             <a href="{{ route('certificates.my') }}"
                                class="site-nav-link flex items-center gap-3 px-4 py-3 font-medium transition-colors">

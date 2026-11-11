@@ -129,7 +129,7 @@ class PresentationController extends Controller
 
     private function ensureEventCoordinator(Event $event): void
     {
-        if (auth()->id() !== $event->user_id) {
+        if (! auth()->user()?->managesEvent($event)) {
             abort(403, 'Acesso negado.');
         }
     }

@@ -1,11 +1,13 @@
 <?php
 
+use App\Http\Controllers\AccountLookupController;
 use App\Http\Controllers\Auth\ActivateEmailController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\CertificateDownloadController;
 use App\Http\Controllers\CertificateVerificationController;
 use App\Http\Controllers\EventCertificateController;
 use App\Http\Controllers\EventSatisfactionController;
+use App\Http\Controllers\ManagedAccountController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventPresentationScheduleController;
 use App\Http\Controllers\MyCertificatesController;
@@ -35,12 +37,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/events/{event}/pesquisa', [EventSatisfactionController::class, 'form'])->name('events.satisfaction.form');
     Route::post('/events/{event}/pesquisa', [EventSatisfactionController::class, 'store'])->name('events.satisfaction.store');
 });
-Route::delete('/events/{id}', [EventController::class, 'destroy'])->middleware(['auth', 'isCoordinator']);
-Route::get('/events/edit/{id}', [EventController::class, 'edit'])->middleware(['auth', 'isCoordinator']);
-Route::put('/events/update/{id}', [EventController::class, 'update'])->middleware(['auth', 'isCoordinator']);
-Route::post('/events/{id}/finalize', [EventController::class, 'finalizeEvent'])->middleware(['auth', 'isCoordinator']);
-Route::post('/events/{id}/anais', [EventController::class, 'storeAnnals'])->middleware(['auth', 'isCoordinator'])->name('events.annals.store');
-Route::delete('/events/{id}/anais', [EventController::class, 'destroyAnnals'])->middleware(['auth', 'isCoordinator'])->name('events.annals.destroy');
+Route::delete('/events/{id}', [EventController::class, 'destroy'])->middleware(['auth', 'managesEvent']);
+Route::get('/events/edit/{id}', [EventController::class, 'edit'])->middleware(['auth', 'managesEvent']);
+Route::put('/events/update/{id}', [EventController::class, 'update'])->middleware(['auth', 'managesEvent']);
+Route::post('/events/{id}/finalize', [EventController::class, 'finalizeEvent'])->middleware(['auth', 'managesEvent']);
+Route::post('/events/{id}/anais', [EventController::class, 'storeAnnals'])->middleware(['auth', 'managesEvent'])->name('events.annals.store');
+Route::delete('/events/{id}/anais', [EventController::class, 'destroyAnnals'])->middleware(['auth', 'managesEvent'])->name('events.annals.destroy');
 Route::post('/events/join/{id}', [EventController::class, 'joinEvent'])->middleware('auth');
 Route::delete('/events/leave/{id}', [EventController::class, 'leaveEvent'])->middleware('auth');
 
@@ -49,41 +51,50 @@ Route::middleware(['auth', 'isCoordinator'])->group(function () {
         ->name('register.coordinator');
     Route::get('/register/reviewer', [RegisteredUserController::class, 'create'])
         ->name('register.reviewer');
+    Route::get('/register/guest', [RegisteredUserController::class, 'create'])
+        ->name('register.guest');
+    Route::get('/register/organizer', [RegisteredUserController::class, 'create'])
+        ->name('register.organizer');
+    Route::get('/equipe', [ManagedAccountController::class, 'index'])
+        ->name('accounts.managed');
 
     Route::post('/register/coordinator', [RegisteredUserController::class, 'storeCoordinator']);
     Route::post('/register/reviewer', [RegisteredUserController::class, 'storeReviewer']);
+    Route::post('/register/guest', [RegisteredUserController::class, 'storeGuest']);
+    Route::post('/register/organizer', [RegisteredUserController::class, 'storeOrganizer']);
 });
 
-Route::get('/events/registered/{id}', [EventController::class, 'registered'])->middleware(['auth', 'isCoordinator']);
+Route::get('/events/registered/{id}', [EventController::class, 'registered'])->middleware(['auth', 'managesEvent']);
 
-Route::get('/events/{id}/export-csv', [EventController::class, 'exportCsv'])->middleware(['auth', 'isCoordinator']);
+Route::get('/events/{id}/export-csv', [EventController::class, 'exportCsv'])->middleware(['auth', 'managesEvent']);
 
-Route::delete('/events/{eventId}/remove/{userId}', [EventController::class, 'removeParticipant'])->middleware(['auth', 'isCoordinator']);
+Route::delete('/events/{eventId}/remove/{userId}', [EventController::class, 'removeParticipant'])->middleware(['auth', 'managesEvent']);
 
-Route::get('/events/{id}/novidades', [EventController::class, 'novidades'])->middleware(['auth', 'isCoordinator']);
-Route::post('/events/{id}/novidades', [EventController::class, 'storeNovidade'])->middleware(['auth', 'isCoordinator']);
-Route::delete('/events/{eventId}/novidades/{novidadeId}', [EventController::class, 'destroyNovidade'])->middleware(['auth', 'isCoordinator']);
-Route::get('/events/{id}/patrocinadores', [EventController::class, 'patrocinadores'])->middleware(['auth', 'isCoordinator']);
-Route::post('/events/{id}/patrocinadores', [EventController::class, 'storePatrocinador'])->middleware(['auth', 'isCoordinator']);
-Route::delete('/events/{eventId}/patrocinadores/{sponsorId}', [EventController::class, 'destroyPatrocinador'])->middleware(['auth', 'isCoordinator']);
-Route::post('/events/{eventId}/documentos', [EventController::class, 'storeDocument'])->middleware(['auth', 'isCoordinator'])->name('events.documents.store');
-Route::delete('/events/{eventId}/documentos/{documentId}', [EventController::class, 'destroyDocument'])->middleware(['auth', 'isCoordinator'])->name('events.documents.destroy');
-Route::post('/events/{eventId}/atividades', [EventController::class, 'storeActivity'])->middleware(['auth', 'isCoordinator'])->name('events.activities.store');
-Route::delete('/events/{eventId}/atividades/{activityId}', [EventController::class, 'destroyActivity'])->middleware(['auth', 'isCoordinator'])->name('events.activities.destroy');
+Route::get('/events/{id}/novidades', [EventController::class, 'novidades'])->middleware(['auth', 'managesEvent']);
+Route::post('/events/{id}/novidades', [EventController::class, 'storeNovidade'])->middleware(['auth', 'managesEvent']);
+Route::delete('/events/{eventId}/novidades/{novidadeId}', [EventController::class, 'destroyNovidade'])->middleware(['auth', 'managesEvent']);
+Route::get('/events/{id}/patrocinadores', [EventController::class, 'patrocinadores'])->middleware(['auth', 'managesEvent']);
+Route::post('/events/{id}/patrocinadores', [EventController::class, 'storePatrocinador'])->middleware(['auth', 'managesEvent']);
+Route::delete('/events/{eventId}/patrocinadores/{sponsorId}', [EventController::class, 'destroyPatrocinador'])->middleware(['auth', 'managesEvent']);
+Route::post('/events/{eventId}/documentos', [EventController::class, 'storeDocument'])->middleware(['auth', 'managesEvent'])->name('events.documents.store');
+Route::delete('/events/{eventId}/documentos/{documentId}', [EventController::class, 'destroyDocument'])->middleware(['auth', 'managesEvent'])->name('events.documents.destroy');
+Route::post('/events/{eventId}/atividades', [EventController::class, 'storeActivity'])->middleware(['auth', 'managesEvent'])->name('events.activities.store');
+Route::delete('/events/{eventId}/atividades/{activityId}', [EventController::class, 'destroyActivity'])->middleware(['auth', 'managesEvent'])->name('events.activities.destroy');
 // Route::get('/event/{id}', [EventController::class, 'newShow']);
 
 Route::post('/events/validate-step', [EventController::class, 'validateStep'])
     ->name('events.validate-step');
 
 Route::middleware(['auth'])->group(function () {
+    Route::get('/contas/consulta', AccountLookupController::class)->name('accounts.lookup');
     Route::get('/works/my-presentation', [PostEvaluationController::class, 'myPresentationSchedule'])
         ->name('works.my-presentation');
     Route::post('/works/{work}/post-eval/attendance', [PostEvaluationController::class, 'setAttendance'])
-        ->middleware('isCoordinator')
+        ->middleware('managesEvent')
         ->name('works.presentation.attendance');
 
     Route::get('/events/{event}/apresentacoes', [EventPresentationScheduleController::class, 'manage'])
-        ->middleware('isCoordinator')
+        ->middleware('managesEvent')
         ->name('events.presentations.manage');
     Route::get('/works/my', [WorkController::class, 'myWorks'])->name('works.my');
     Route::get('/works/{work}', [WorkController::class, 'show'])->name('works.show');
@@ -96,14 +107,14 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/works/{work}', [WorkController::class, 'update'])->name('works.update');
     Route::post('/works/{work}/submit-correction', [WorkController::class, 'submitCorrection'])->name('works.submit-correction');
     Route::delete('/works/{work}', [WorkController::class, 'destroy'])
-        ->middleware('isCoordinator')
+        ->middleware('managesEvent')
         ->name('works.destroy');
 
     Route::get('/events/{event}/works', [WorkController::class, 'indexByEvent'])
-        ->middleware('isCoordinator')
+        ->middleware('managesEvent')
         ->name('events.works.index');
     Route::post('/events/{event}/works/reviewers/distribute', [ReviewController::class, 'distributeReviewersForEvent'])
-        ->middleware('isCoordinator')
+        ->middleware('managesEvent')
         ->name('events.works.reviewers.distribute');
 
     Route::get('/events/{event}/works/create', [WorkController::class, 'create'])
@@ -112,28 +123,28 @@ Route::middleware(['auth'])->group(function () {
         ->name('events.works.store');
 
     Route::post('/works/{work}/reviewers', [ReviewController::class, 'assignReviewer'])
-        ->middleware('isCoordinator')
+        ->middleware('managesEvent')
         ->name('works.reviewers.assign');
     Route::delete('/works/{work}/reviewers/{reviewer}', [ReviewController::class, 'removeReviewer'])
-        ->middleware('isCoordinator')
+        ->middleware('managesEvent')
         ->name('works.reviewers.remove');
     Route::post('/works/{work}/decision', [ReviewController::class, 'decide'])
-        ->middleware('isCoordinator')
+        ->middleware('managesEvent')
         ->name('works.decision');
     Route::post('/works/{work}/desk-reject', [ReviewController::class, 'deskReject'])
-        ->middleware('isCoordinator')
+        ->middleware('managesEvent')
         ->name('works.desk-reject');
     Route::get('/works/{work}/reviews/{review}/feedback/download', [ReviewController::class, 'downloadEvaluatorFeedback'])
-        ->middleware('isCoordinator')
+        ->middleware('managesEvent')
         ->name('reviews.feedback.download');
     Route::post('/works/{work}/presentation', [PresentationController::class, 'upsert'])
-        ->middleware('isCoordinator')
+        ->middleware('managesEvent')
         ->name('works.presentation.upsert');
     Route::delete('/works/{work}/presentation', [PresentationController::class, 'destroy'])
-        ->middleware('isCoordinator')
+        ->middleware('managesEvent')
         ->name('works.presentation.destroy');
     Route::get('/events/{event}/reviews/export-csv', [ReviewController::class, 'exportEventReportCsv'])
-        ->middleware('isCoordinator')
+        ->middleware('managesEvent')
         ->name('events.reviews.export');
 });
 
@@ -159,12 +170,14 @@ Route::middleware('auth')->group(function () {
         ->name('certificates.download');
 });
 
-Route::middleware(['auth', 'isCoordinator'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     Route::get('/assinaturas', [SignatureController::class, 'index'])->name('signatures.index');
     Route::post('/assinaturas', [SignatureController::class, 'store'])->name('signatures.store');
     Route::delete('/assinaturas/{signature}', [SignatureController::class, 'destroy'])->name('signatures.destroy');
     Route::get('/assinaturas/{signature}/imagem', [SignatureController::class, 'showImage'])->name('signatures.image');
+});
 
+Route::middleware(['auth', 'managesEvent'])->group(function () {
     Route::get('/events/{event}/pesquisa/resultado', [EventSatisfactionController::class, 'results'])->name('events.satisfaction.results');
     Route::post('/events/{event}/pesquisa/convite', [EventSatisfactionController::class, 'invite'])->name('events.satisfaction.invite');
     Route::get('/events/{event}/certificates', [EventCertificateController::class, 'index'])->name('events.certificates.index');

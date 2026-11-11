@@ -190,8 +190,43 @@ class EventController extends Controller
 
             'image' => 'required|image|mimes:jpg,jpeg,png|max:5120',
 
-            'coordinator_name' => 'required|string|max:255',
+            'coordinator_name' => [$request->exists('organizers') ? 'nullable' : 'required', 'string', 'max:255'],
             'coordinator_email' => 'required|email|max:255',
+            'certificate_total_hours' => 'nullable|numeric|min:0|max:99999',
+            'organizers' => [
+                'nullable',
+                'array',
+                function ($attribute, $value, $fail) {
+                    if (! is_array($value)) {
+                        return;
+                    }
+                    $emails = [];
+                    $found = 0;
+                    foreach ($value as $index => $row) {
+                        $email = strtolower(trim((string) ($row['email'] ?? '')));
+                        if ($email === '') {
+                            continue;
+                        }
+                        if (in_array($email, $emails, true)) {
+                            $fail('O mesmo organizador foi informado mais de uma vez.');
+
+                            return;
+                        }
+                        $emails[] = $email;
+                        $user = $this->organizerAccountByEmail($email);
+                        if (! $user) {
+                            $fail('O organizador da linha '.((int) $index + 1).' precisa ter uma conta de organizador. O coordenador também pode informar o próprio e-mail.');
+
+                            return;
+                        }
+                        $found++;
+                    }
+                    if ($found === 0) {
+                        $fail('Informe ao menos um organizador com conta criada no sistema.');
+                    }
+                },
+            ],
+            'organizers.*.email' => 'nullable|email|max:255',
             'coordinator_phone' => [
                 'nullable',
                 'string',
@@ -305,6 +340,7 @@ class EventController extends Controller
                 },
             ],
             'activities_new.*.location' => 'nullable|string|max:255',
+            'activities_new.*.workload_hours' => 'nullable|numeric|min:0|max:99999',
 
             'guests_new' => [
                 'nullable',
@@ -312,14 +348,15 @@ class EventController extends Controller
                 function ($attribute, $value, $fail) {
                     $roleOptions = EventGuest::roleTypeOptions();
                     foreach (($value ?? []) as $index => $guest) {
+                        $email = strtolower(trim((string) ($guest['email'] ?? '')));
                         $name = trim((string) ($guest['name'] ?? ''));
                         $roleType = trim((string) ($guest['role_type'] ?? ''));
                         $role = trim((string) ($guest['role'] ?? ''));
-                        if ($name === '' && $roleType === '' && $role === '') {
+                        if ($email === '' && $name === '' && $roleType === '' && $role === '') {
                             continue;
                         }
-                        if ($name === '') {
-                            $fail('Informe o nome do convidado na linha '.($index + 1).'.');
+                        if ($this->guestAccountByEmail($email) === null) {
+                            $fail('O convidado da linha '.($index + 1).' precisa ter uma conta de convidado. Informe o e-mail dessa conta.');
 
                             return;
                         }
@@ -349,6 +386,7 @@ class EventController extends Controller
             'activities_existing.*.guest_refs' => 'nullable|array',
             'activities_existing.*.guest_refs.*' => 'nullable|string|max:50',
             'activities_existing.*.location' => 'nullable|string|max:255',
+            'activities_existing.*.workload_hours' => 'nullable|numeric|min:0|max:99999',
 
             'documents_new' => 'nullable|array',
             'documents_new.*.title' => 'nullable|string|max:255',
@@ -500,9 +538,10 @@ class EventController extends Controller
 
             // STEP 2: Coordenação + Configurações finais
             2 => [
-                'coordinator_name',
+                'organizers',
+                'organizers.*.email',
                 'coordinator_email',
-                'coordinator_phone',
+                'certificate_total_hours',
                 'datetime_registration',
                 'submission_deadline_at',
                 'review_deadline_at',
@@ -517,6 +556,7 @@ class EventController extends Controller
             ],
             4 => [
                 'activities_new',
+                'activities_new.*.workload_hours',
                 'documents_new',
             ],
         ];
@@ -746,9 +786,10 @@ class EventController extends Controller
         $event->address = Event::FIXED_ADDRESS;
         $event->location_details = Event::FIXED_LOCATION_DETAILS;
 
-        $event->coordinator_name = $request->coordinator_name;
-        $event->coordinator_email = $request->coordinator_email;
-        $event->coordinator_phone = $request->filled('coordinator_phone') ? trim($request->coordinator_phone) : null;
+        $this->applyOrganizationContact($event, $request);
+        if ($request->exists('certificate_total_hours')) {
+            $event->certificate_total_hours = $this->nullableHours($request->input('certificate_total_hours'));
+        }
 
         $event->datetime_registration = $request->datetime_registration ?? null;
         $event->submission_deadline_at = $request->submission_deadline_at ?? null;
@@ -799,6 +840,7 @@ class EventController extends Controller
 
         $event->user_id = auth()->id();
         $event->save();
+        $this->syncOrganizersFromRequest($event, $request);
         $this->syncScientificConfiguration($event, $request);
         $guestRefMap = $this->syncEventGuestsFromRequest($event, $request, false);
         $this->storeExtraActivitiesFromRequest($event, $request, $guestRefMap);
@@ -878,6 +920,22 @@ class EventController extends Controller
             ])
             ->get();
 
+        $eventsAsGuest = Event::query()
+            ->whereHas('guests', fn ($query) => $query->where('user_id', $user->id))
+            ->with(['guests' => fn ($query) => $query->where('user_id', $user->id)])
+            ->orderByDesc('start_date')
+            ->get();
+
+        $eventsAsOrganizer = $user->organizedEvents()
+            ->withCount([
+                'users as registered_count',
+                'users as external_registered_count' => function ($query) {
+                    $query->where('users.is_external_participant', true);
+                },
+            ])
+            ->orderByDesc('start_date')
+            ->get();
+
         // echo "<pre>"; print_r($events); echo "</pre>"; exit;
 
         $satisfactionAnsweredEventIds = \App\Models\EventSatisfactionResponse::query()
@@ -888,6 +946,8 @@ class EventController extends Controller
         return view('events.dashboard', [
             'events' => $events,
             'eventsAsParticipant' => $eventsAsParticipant,
+            'eventsAsGuest' => $eventsAsGuest,
+            'eventsAsOrganizer' => $eventsAsOrganizer,
             'satisfactionAnsweredEventIds' => $satisfactionAnsweredEventIds,
         ]);
     }
@@ -896,7 +956,7 @@ class EventController extends Controller
     {
         $event = Event::findOrFail($id);
 
-        if (auth()->id() != $event->user_id) {
+        if (! auth()->user()?->managesEvent($event)) {
             return redirect('/dashboard')->with('msg', 'Acesso negado.');
         }
 
@@ -914,10 +974,10 @@ class EventController extends Controller
 
         $user = auth()->user();
 
-        $event = Event::with(['guests', 'activities.eventGuests', 'activities.guest'])->findOrFail($id);
+        $event = Event::with(['guests', 'organizers', 'activities.eventGuests', 'activities.guest'])->findOrFail($id);
 
         // NÃO PERMITE EDIÇÃO DE UM USUÁRIO QUE NÃO SEJA DONO DO EVENTO.
-        if ($user->id != $event->user_id) {
+        if (! $user->managesEvent($event)) {
             return redirect('/dashboard');
         }
 
@@ -948,7 +1008,7 @@ class EventController extends Controller
     {
         $event = Event::findOrFail($id);
 
-        if (auth()->id() != $event->user_id) {
+        if (! auth()->user()?->managesEvent($event)) {
             return redirect('/dashboard');
         }
 
@@ -1024,8 +1084,43 @@ class EventController extends Controller
 
             'image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
 
-            'coordinator_name' => 'required|string|max:255',
+            'coordinator_name' => [$request->exists('organizers') ? 'nullable' : 'required', 'string', 'max:255'],
             'coordinator_email' => 'required|email|max:255',
+            'certificate_total_hours' => 'nullable|numeric|min:0|max:99999',
+            'organizers' => [
+                'nullable',
+                'array',
+                function ($attribute, $value, $fail) {
+                    if (! is_array($value)) {
+                        return;
+                    }
+                    $emails = [];
+                    $found = 0;
+                    foreach ($value as $index => $row) {
+                        $email = strtolower(trim((string) ($row['email'] ?? '')));
+                        if ($email === '') {
+                            continue;
+                        }
+                        if (in_array($email, $emails, true)) {
+                            $fail('O mesmo organizador foi informado mais de uma vez.');
+
+                            return;
+                        }
+                        $emails[] = $email;
+                        $user = $this->organizerAccountByEmail($email);
+                        if (! $user) {
+                            $fail('O organizador da linha '.((int) $index + 1).' precisa ter uma conta de organizador. O coordenador também pode informar o próprio e-mail.');
+
+                            return;
+                        }
+                        $found++;
+                    }
+                    if ($found === 0) {
+                        $fail('Informe ao menos um organizador com conta criada no sistema.');
+                    }
+                },
+            ],
+            'organizers.*.email' => 'nullable|email|max:255',
             'coordinator_phone' => [
                 'nullable',
                 'string',
@@ -1139,6 +1234,7 @@ class EventController extends Controller
                 },
             ],
             'activities_new.*.location' => 'nullable|string|max:255',
+            'activities_new.*.workload_hours' => 'nullable|numeric|min:0|max:99999',
 
             'guests_new' => [
                 'nullable',
@@ -1146,14 +1242,15 @@ class EventController extends Controller
                 function ($attribute, $value, $fail) {
                     $roleOptions = EventGuest::roleTypeOptions();
                     foreach (($value ?? []) as $index => $guest) {
+                        $email = strtolower(trim((string) ($guest['email'] ?? '')));
                         $name = trim((string) ($guest['name'] ?? ''));
                         $roleType = trim((string) ($guest['role_type'] ?? ''));
                         $role = trim((string) ($guest['role'] ?? ''));
-                        if ($name === '' && $roleType === '' && $role === '') {
+                        if ($email === '' && $name === '' && $roleType === '' && $role === '') {
                             continue;
                         }
-                        if ($name === '') {
-                            $fail('Informe o nome do convidado na linha '.($index + 1).'.');
+                        if ($this->guestAccountByEmail($email) === null) {
+                            $fail('O convidado da linha '.($index + 1).' precisa ter uma conta de convidado. Informe o e-mail dessa conta.');
 
                             return;
                         }
@@ -1183,6 +1280,12 @@ class EventController extends Controller
                             continue;
                         }
                         $roleType = trim((string) ($row['role_type'] ?? ''));
+                        $email = strtolower(trim((string) ($row['email'] ?? '')));
+                        if ($this->guestAccountByEmail($email) === null) {
+                            $fail('Cada convidado precisa estar vinculado a uma conta de convidado pelo e-mail.');
+
+                            return;
+                        }
                         if ($roleType === '' || ! in_array($roleType, $roleOptions, true)) {
                             $fail('Selecione a função de cada convidado cadastrado (campo obrigatório).');
 
@@ -1249,6 +1352,7 @@ class EventController extends Controller
             'activities_existing.*.guest_refs' => 'nullable|array',
             'activities_existing.*.guest_refs.*' => 'nullable|string|max:50',
             'activities_existing.*.location' => 'nullable|string|max:255',
+            'activities_existing.*.workload_hours' => 'nullable|numeric|min:0|max:99999',
 
             'documents_new' => 'nullable|array',
             'documents_new.*.title' => 'nullable|string|max:255',
@@ -1395,9 +1499,10 @@ class EventController extends Controller
         $event->venue = Event::FIXED_VENUE;
         $event->address = Event::FIXED_ADDRESS;
         $event->location_details = Event::FIXED_LOCATION_DETAILS;
-        $event->coordinator_name = $request->coordinator_name;
-        $event->coordinator_email = $request->coordinator_email;
-        $event->coordinator_phone = $request->filled('coordinator_phone') ? trim($request->coordinator_phone) : null;
+        $this->applyOrganizationContact($event, $request);
+        if ($request->exists('certificate_total_hours')) {
+            $event->certificate_total_hours = $this->nullableHours($request->input('certificate_total_hours'));
+        }
         $event->datetime_registration = $request->datetime_registration ?? null;
         $event->submission_deadline_at = $request->submission_deadline_at ?? null;
         $event->review_deadline_at = $request->review_deadline_at ?? null;
@@ -1457,6 +1562,7 @@ class EventController extends Controller
         }
 
         $event->save();
+        $this->syncOrganizersFromRequest($event, $request);
         $this->syncScientificConfiguration($event, $request);
         $this->syncExistingGuestsFromRequest($event, $request);
         $guestRefMap = $this->syncEventGuestsFromRequest($event, $request, true);
@@ -1657,9 +1763,9 @@ class EventController extends Controller
                 'start_at' => $startAt,
                 'end_at' => $endAt,
                 'location' => $location,
+                'workload_hours' => $this->nullableHours($row['workload_hours'] ?? null),
                 'guest_id' => null,
                 'speakers' => [],
-                'is_extension' => filter_var($row['is_extension'] ?? false, FILTER_VALIDATE_BOOLEAN),
             ]);
             $this->syncActivityEventGuests($activity, $guestIds);
         }
@@ -1744,6 +1850,18 @@ class EventController extends Controller
                 'Contas de avaliador não podem se inscrever em eventos.'
             );
         }
+        if ($user->isGuest()) {
+            return redirect()->back()->with(
+                'msg',
+                'Esta conta só acessa os eventos em que foi vinculada como convidado.'
+            );
+        }
+        if ($user->isOrganizer()) {
+            return redirect()->back()->with(
+                'msg',
+                'Contas de organizador gerenciam os eventos em que foram designadas e não se inscrevem como participante.'
+            );
+        }
 
         $result = DB::transaction(function () use ($id, $user) {
             $event = Event::query()->lockForUpdate()->findOrFail($id);
@@ -1790,7 +1908,7 @@ class EventController extends Controller
     {
         $event = Event::findOrFail($id);
 
-        if (auth()->id() != $event->user_id) {
+        if (! auth()->user()?->managesEvent($event)) {
             abort(403, 'Acesso negado.');
         }
 
@@ -1847,7 +1965,7 @@ class EventController extends Controller
     {
         $event = Event::findOrFail($id);
 
-        if (auth()->id() != $event->user_id) {
+        if (! auth()->user()?->managesEvent($event)) {
             return redirect('/dashboard');
         }
 
@@ -1868,7 +1986,7 @@ class EventController extends Controller
 
         $event = Event::findOrFail($id);
 
-        if (auth()->id() != $event->user_id) {
+        if (! auth()->user()?->managesEvent($event)) {
             return redirect('/dashboard');
         }
 
@@ -1918,7 +2036,7 @@ class EventController extends Controller
 
         $event = Event::findOrFail($eventId);
 
-        if (auth()->id() != $event->user_id) {
+        if (! auth()->user()?->managesEvent($event)) {
             return redirect('/dashboard')->with('msg', 'Acesso negado.');
         }
 
@@ -1941,7 +2059,7 @@ class EventController extends Controller
     {
         $event = Event::findOrFail($id);
 
-        if (auth()->id() != $event->user_id) {
+        if (! auth()->user()?->managesEvent($event)) {
             return redirect('/dashboard');
         }
 
@@ -1958,7 +2076,7 @@ class EventController extends Controller
     {
         $event = Event::findOrFail($id);
 
-        if (auth()->id() != $event->user_id) {
+        if (! auth()->user()?->managesEvent($event)) {
             return redirect('/dashboard');
         }
 
@@ -1996,7 +2114,7 @@ class EventController extends Controller
     {
         $event = Event::findOrFail($eventId);
 
-        if (auth()->id() != $event->user_id) {
+        if (! auth()->user()?->managesEvent($event)) {
             return redirect('/dashboard');
         }
 
@@ -2014,7 +2132,7 @@ class EventController extends Controller
     {
         $event = Event::findOrFail($id);
 
-        if (auth()->id() != $event->user_id) {
+        if (! auth()->user()?->managesEvent($event)) {
             return redirect('/dashboard');
         }
 
@@ -2031,7 +2149,7 @@ class EventController extends Controller
     {
         $event = Event::findOrFail($id);
 
-        if (auth()->id() != $event->user_id) {
+        if (! auth()->user()?->managesEvent($event)) {
             return redirect('/dashboard');
         }
 
@@ -2060,7 +2178,7 @@ class EventController extends Controller
     {
         $event = Event::findOrFail($eventId);
 
-        if (auth()->id() != $event->user_id) {
+        if (! auth()->user()?->managesEvent($event)) {
             return redirect('/dashboard');
         }
 
@@ -2078,7 +2196,7 @@ class EventController extends Controller
     {
         $event = Event::findOrFail($eventId);
 
-        if (auth()->id() != $event->user_id) {
+        if (! auth()->user()?->managesEvent($event)) {
             return redirect('/dashboard');
         }
 
@@ -2118,7 +2236,7 @@ class EventController extends Controller
     {
         $event = Event::findOrFail($eventId);
 
-        if (auth()->id() != $event->user_id) {
+        if (! auth()->user()?->managesEvent($event)) {
             return redirect('/dashboard');
         }
 
@@ -2167,7 +2285,7 @@ class EventController extends Controller
     {
         $event = Event::with('activities')->findOrFail($eventId);
 
-        if (auth()->id() != $event->user_id) {
+        if (! auth()->user()?->managesEvent($event)) {
             return redirect('/dashboard');
         }
 
@@ -2224,7 +2342,7 @@ class EventController extends Controller
     {
         $event = Event::findOrFail($eventId);
 
-        if (auth()->id() != $event->user_id) {
+        if (! auth()->user()?->managesEvent($event)) {
             return redirect('/dashboard');
         }
 
@@ -2246,6 +2364,91 @@ class EventController extends Controller
             'Híbrido' => 'hibrido',
             default => null,
         };
+    }
+
+    private function nullableHours(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return number_format((float) $value, 2, '.', '');
+    }
+
+    private function guestAccountByEmail(string $email): ?User
+    {
+        $email = strtolower(trim($email));
+        if ($email === '') {
+            return null;
+        }
+
+        return User::query()
+            ->whereRaw('LOWER(email) = ?', [$email])
+            ->where('role', User::ROLE_GUEST)
+            ->first();
+    }
+
+    private function organizerAccountByEmail(string $email): ?User
+    {
+        $email = strtolower(trim($email));
+        if ($email === '') {
+            return null;
+        }
+
+        $user = User::query()->whereRaw('LOWER(email) = ?', [$email])->first();
+        if (! $user) {
+            return null;
+        }
+
+        if ($user->role === User::ROLE_ORGANIZER) {
+            return $user;
+        }
+
+        $viewer = auth()->user();
+        if ($viewer && $viewer->isCoordinator() && (int) $user->id === (int) $viewer->id) {
+            return $user;
+        }
+
+        return null;
+    }
+
+    private function organizerUsersFromRequest(Request $request)
+    {
+        return collect($request->input('organizers', []))
+            ->map(fn ($row) => strtolower(trim((string) (is_array($row) ? ($row['email'] ?? '') : ''))))
+            ->filter()
+            ->unique()
+            ->map(fn (string $email) => $this->organizerAccountByEmail($email))
+            ->filter()
+            ->unique(fn (User $user) => $user->id)
+            ->values();
+    }
+
+    private function applyOrganizationContact(Event $event, Request $request): void
+    {
+        if ($request->exists('organizers')) {
+            $event->coordinator_name = $this->organizerUsersFromRequest($request)
+                ->pluck('name')
+                ->implode(', ');
+        } else {
+            $event->coordinator_name = $request->coordinator_name;
+        }
+
+        $event->coordinator_email = $request->coordinator_email;
+        $event->coordinator_phone = $request->filled('coordinator_phone')
+            ? trim((string) $request->coordinator_phone)
+            : null;
+    }
+
+    private function syncOrganizersFromRequest(Event $event, Request $request): void
+    {
+        if (! $request->exists('organizers')) {
+            return;
+        }
+
+        $event->organizers()->sync(
+            $this->organizerUsersFromRequest($request)->pluck('id')->all()
+        );
     }
 
     private function syncEventGuestsFromRequest(Event $event, Request $request, bool $allowRemoveExisting): array
@@ -2277,21 +2480,24 @@ class EventController extends Controller
         }
 
         foreach ($rows as $index => $row) {
-            $name = trim((string) ($row['name'] ?? ''));
+            $email = strtolower(trim((string) ($row['email'] ?? '')));
             $roleType = trim((string) ($row['role_type'] ?? ''));
             $role = trim((string) ($row['role'] ?? ''));
+            $account = $this->guestAccountByEmail($email);
 
-            if ($name === '' && $roleType === '' && $role === '') {
+            if ($account === null && $roleType === '' && $role === '') {
                 continue;
             }
 
-            if ($name === '') {
+            if ($account === null) {
                 continue;
             }
 
             $guest = EventGuest::create([
                 'event_id' => $event->id,
-                'name' => $name,
+                'user_id' => $account->id,
+                'name' => $account->name,
+                'email' => $account->email,
                 'role_type' => $roleType !== '' ? $roleType : null,
                 'role' => $role !== '' ? $role : null,
             ]);
@@ -2321,14 +2527,16 @@ class EventController extends Controller
                 continue;
             }
 
-            $name = trim((string) ($row['name'] ?? ''));
-            if ($name === '') {
+            $account = $this->guestAccountByEmail((string) ($row['email'] ?? ''));
+            if ($account === null) {
                 continue;
             }
 
             $role = trim((string) ($row['role'] ?? ''));
             $roleType = trim((string) ($row['role_type'] ?? ''));
-            $guest->name = $name;
+            $guest->user_id = $account->id;
+            $guest->name = $account->name;
+            $guest->email = $account->email;
             $guest->role_type = $roleType !== '' ? $roleType : null;
             $guest->role = $role !== '' ? $role : null;
             $guest->save();
@@ -2391,7 +2599,9 @@ class EventController extends Controller
             $activity->start_at = $startAt;
             $activity->end_at = $endAt;
             $activity->location = $location;
-            $activity->is_extension = filter_var($row['is_extension'] ?? false, FILTER_VALIDATE_BOOLEAN);
+            if (array_key_exists('workload_hours', $row)) {
+                $activity->workload_hours = $this->nullableHours($row['workload_hours']);
+            }
             $activity->save();
             $this->syncActivityEventGuests($activity, $guestIds);
         }
@@ -2635,12 +2845,7 @@ class EventController extends Controller
 
     private function assertCoordinatorOwner(Event $event): void
     {
-        abort_unless(
-            auth()->check()
-            && auth()->user()->isCoordinator()
-            && (int) auth()->id() === (int) $event->user_id,
-            403
-        );
+        abort_unless(auth()->user()?->managesEvent($event), 403);
     }
 
     private function uploadAnnalsToStorage(Event $event, UploadedFile $file): string

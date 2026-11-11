@@ -385,53 +385,77 @@
                             Organização e Contato do Evento
                         </h2>
                         
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                             <!-- Organized By -->
-                            <div class="md:col-span-2">
-                                <label class="form-label block text-sm font-montserrat mb-2">
-                                    Organizado por *
-                                </label>
-                                <input
-                                    id="coordinator_name"
-                                    name="coordinator_name"
-                                    type="text" 
-                                    class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
-                                    placeholder="Ex: Prof. Dr. João Silva / Coordenação do evento"
-                                    value="{{ $event->coordinator_name }}"
-                                    required
-                                >
-                            </div>
-                            
-                             <!-- Event Contact Email -->
-                            <div>
-                                <label class="form-label block text-sm font-montserrat mb-2">
-                                    Entrar em contato (e-mail) *
-                                </label>
-                                <input
-                                    id="coordinator_email"
-                                    name="coordinator_email"
-                                    type="email" 
-                                    class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
-                                    placeholder="evento@ifpa.edu.br"
-                                    value="{{ $event->coordinator_email }}"
-                                    required
-                                >
-                            </div>
-                            
-                             <!-- Contact Phone -->
-                            <div>
-                                <label class="form-label block text-sm font-montserrat mb-2">
-                                    Telefone para contato (opcional)
-                                </label>
-                                <input
-                                    id="coordinator_phone"
-                                    name="coordinator_phone"
-                                    type="tel" 
-                                    class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
-                                    placeholder="(11) 99999-9999"
-                                    value="{{ $event->coordinator_phone }}"
-                                >
-                            </div>
+                        <p class="text-sm text-slate-600 mb-4">Cada organizador precisa ter uma conta de organizador. Se quiser, inclua o seu e-mail de coordenador nesta lista. O organizador designado gerencia este evento como a coordenação e não cria outros eventos. O e-mail de contato é um só, da organização do evento.</p>
+                        @if ($event->organizers->isEmpty() && filled($event->coordinator_name))
+                            <p class="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-4">Nome usado até agora: {{ $event->coordinator_name }}. Substitua por contas de organizador.</p>
+                        @endif
+                        <div id="organizers-edit-list" class="space-y-3 mb-4">
+                            @php
+                                $organizerRows = old('organizers');
+                                if (! is_array($organizerRows)) {
+                                    $organizerRows = $event->organizers->map(fn ($user) => ['email' => $user->email, 'name' => $user->name])->all();
+                                }
+                                if (count($organizerRows) === 0) {
+                                    $organizerRows = [['email' => '', 'name' => '']];
+                                }
+                            @endphp
+                            @foreach ($organizerRows as $idx => $row)
+                                <div class="organizer-row account-lookup grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                                    <div>
+                                        <label class="form-label block text-sm font-montserrat mb-2">E-mail do organizador *</label>
+                                        <input type="email" name="organizers[{{ $idx }}][email]" value="{{ $row['email'] ?? '' }}"
+                                            class="account-lookup-email form-input w-full px-4 py-3 rounded-lg font-open-sans"
+                                            data-lookup-role="organizer" placeholder="organizador@email.com">
+                                    </div>
+                                    <div>
+                                        <label class="form-label block text-sm font-montserrat mb-2">Nome</label>
+                                        <input type="text" name="organizers[{{ $idx }}][name]" value="{{ $row['name'] ?? '' }}" readonly
+                                            class="account-lookup-name form-input w-full px-4 py-3 rounded-lg font-open-sans bg-slate-50 cursor-not-allowed"
+                                            placeholder="Preenchido pela conta">
+                                    </div>
+                                    <p class="account-lookup-status text-xs text-slate-500 m-0 md:col-span-2"></p>
+                                    <div class="md:col-span-2 flex justify-end">
+                                        <button type="button" class="btn-form-remove btn-remove-organizer">
+                                            <ion-icon name="trash-outline" aria-hidden="true"></ion-icon>
+                                            Remover
+                                        </button>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                        <div class="flex flex-wrap gap-2 mb-6">
+                            <button type="button" id="add-organizer-row" class="btn-outline px-4 py-2 rounded-lg text-sm">+ Outro organizador</button>
+                            <button type="button" id="include-self-organizer" data-email="{{ auth()->user()->email }}" class="btn-outline px-4 py-2 rounded-lg text-sm">Incluir meu e-mail</button>
+                        </div>
+                        <div class="max-w-xl">
+                            <label class="form-label block text-sm font-montserrat mb-2" for="coordinator_email">
+                                E-mail geral de contato *
+                            </label>
+                            <input
+                                id="coordinator_email"
+                                name="coordinator_email"
+                                type="email"
+                                class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
+                                placeholder="evento@ifpa.edu.br"
+                                value="{{ old('coordinator_email', $event->coordinator_email) }}"
+                                required
+                            >
+                        </div>
+                        <div class="max-w-xs mt-6">
+                            <label class="form-label block text-sm font-montserrat mb-2" for="certificate_total_hours">
+                                Carga horária do certificado de participação
+                            </label>
+                            <input
+                                id="certificate_total_hours"
+                                name="certificate_total_hours"
+                                type="number"
+                                step="0.5"
+                                min="0"
+                                class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
+                                placeholder="Ex.: 20"
+                                value="{{ old('certificate_total_hours', $event->certificate_total_hours) }}"
+                            >
+                            <p class="text-xs text-slate-500 mt-2 mb-0">Entra no certificado de participação geral. Em branco, esse certificado não pode ser emitido.</p>
                         </div>
                     </div>
 
@@ -566,7 +590,7 @@
                                     <label class="form-label block text-sm font-montserrat">
                                         Tipos personalizados
                                     </label>
-                                    <button type="button" onclick="addCustomWorkTypeEdit()" class="btn-outline px-3 py-1.5 rounded-lg text-xs">
+                                    <button type="button" onclick="addCustomWorkTypeEdit('', true)" class="btn-outline px-3 py-1.5 rounded-lg text-xs">
                                         + Adicionar outro tipo
                                     </button>
                                 </div>
@@ -617,76 +641,68 @@
                             Convidados
                         </h2>
 
-                        <div class="dash-panel rounded-lg p-4 mb-6">
-                            <p class="text-sm text-slate-700 m-0">
-                                Cadastre convidados para selecionar nas novas atividades abaixo.
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+                            <p class="text-sm text-slate-600 m-0">
+                                Informe o e-mail da conta de convidado. O nome é preenchido e fica bloqueado.
                             </p>
-                        </div>
-
-                        <div class="flex items-center justify-between mb-3">
-                            <h3 class="text-lg font-semibold text-slate-900">Lista de convidados</h3>
-                            <button type="button" onclick="addGuestEditRow()" class="btn-outline px-4 py-2 rounded-lg text-sm">
+                            <button type="button" onclick="addGuestEditRow(true)" class="btn-outline px-4 py-2 rounded-lg text-sm shrink-0">
                                 + Novo convidado
                             </button>
                         </div>
-                        <div class="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-                            <table class="min-w-full text-sm">
-                                <thead class="bg-slate-100 text-slate-700">
-                                    <tr>
-                                        <th class="text-left px-4 py-3 font-semibold">Nome do convidado *</th>
-                                        <th class="text-left px-4 py-3 font-semibold">Função *</th>
-                                        <th class="text-left px-4 py-3 font-semibold">Formação (opcional)</th>
-                                        <th class="text-left px-4 py-3 font-semibold w-48">Ações</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="guests-existing-list">
+                        <div class="space-y-4">
+                            <div id="guests-existing-list" class="space-y-4">
                                     @foreach($event->guests as $guest)
-                                        <tr class="border-b border-slate-100 guest-existing-row" data-guest-id="{{ $guest->id }}">
-                                            <td class="px-4 py-3 align-top">
-                                                <input type="hidden" name="guests_existing[{{ $guest->id }}][id]" value="{{ $guest->id }}">
-                                                <div class="guest-existing-summary-name font-medium text-slate-800 break-words">{{ $guest->name }}</div>
-                                                <input type="text" name="guests_existing[{{ $guest->id }}][name]"
-                                                    value="{{ $guest->name }}"
-                                                    class="form-input w-full px-3 py-2.5 rounded-lg font-open-sans guest-existing-name-input hidden"
-                                                    maxlength="255">
-                                            </td>
-                                            <td class="px-4 py-3 align-top">
-                                                <div class="guest-existing-summary-role-type text-slate-600 break-words">{{ ($guestRoleTypeLabels ?? [])[$guest->role_type] ?? '-' }}</div>
-                                                <select name="guests_existing[{{ $guest->id }}][role_type]"
-                                                    class="form-input w-full px-3 py-2.5 rounded-lg font-open-sans guest-existing-role-type-input hidden">
-                                                    <option value="">Selecione a função</option>
-                                                    @foreach(($guestRoleTypeOptions ?? []) as $guestRoleType)
-                                                        <option value="{{ $guestRoleType }}" @selected(($guest->role_type ?? '') === $guestRoleType)>
-                                                            {{ ($guestRoleTypeLabels ?? [])[$guestRoleType] ?? ucfirst($guestRoleType) }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                            </td>
-                                            <td class="px-4 py-3 align-top">
-                                                <div class="guest-existing-summary-role text-slate-600 whitespace-pre-line break-words">{{ $guest->role ?: '-' }}</div>
-                                                <textarea name="guests_existing[{{ $guest->id }}][role]"
-                                                    rows="3"
-                                                    maxlength="2000"
-                                                    class="form-input w-full px-3 py-2.5 rounded-lg font-open-sans resize-y guest-existing-role-input hidden">{{ $guest->role ?? '' }}</textarea>
-                                            </td>
-                                            <td class="px-4 py-3 align-top space-y-2">
-                                                <button type="button"
-                                                    class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-medium transition-colors btn-toggle-existing-guest-edit">
-                                                    <ion-icon name="create-outline"></ion-icon>
-                                                    Editar
-                                                </button>
+                                        <div class="guest-existing-row account-lookup rounded-2xl border border-slate-200 bg-white p-4 sm:p-5" data-guest-id="{{ $guest->id }}">
+                                            <input type="hidden" name="guests_existing[{{ $guest->id }}][id]" value="{{ $guest->id }}">
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                                                <div>
+                                                    <label class="form-label block text-sm font-montserrat mb-2">E-mail *</label>
+                                                    <input type="email" name="guests_existing[{{ $guest->id }}][email]"
+                                                        value="{{ $guest->email }}"
+                                                        class="account-lookup-email guest-existing-email-input form-input w-full h-12 px-3 rounded-lg font-open-sans"
+                                                        data-lookup-role="guest" placeholder="E-mail da conta de convidado">
+                                                </div>
+                                                <div>
+                                                    <label class="form-label block text-sm font-montserrat mb-2">Nome</label>
+                                                    <input type="text" name="guests_existing[{{ $guest->id }}][name]"
+                                                        value="{{ $guest->name }}" readonly
+                                                        class="account-lookup-name guest-existing-name-input form-input w-full h-12 px-3 rounded-lg font-open-sans bg-slate-50 cursor-not-allowed"
+                                                        maxlength="255" placeholder="Preenchido pela conta">
+                                                </div>
+                                                <div>
+                                                    <label class="form-label block text-sm font-montserrat mb-2">Função *</label>
+                                                    <select name="guests_existing[{{ $guest->id }}][role_type]"
+                                                        class="form-input w-full h-12 px-3 rounded-lg font-open-sans guest-existing-role-type-input">
+                                                        <option value="">Selecione a função</option>
+                                                        @foreach(($guestRoleTypeOptions ?? []) as $guestRoleType)
+                                                            <option value="{{ $guestRoleType }}" @selected(($guest->role_type ?? '') === $guestRoleType)>
+                                                                {{ ($guestRoleTypeLabels ?? [])[$guestRoleType] ?? ucfirst($guestRoleType) }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label class="form-label block text-sm font-montserrat mb-2">Formação</label>
+                                                    <input type="text" name="guests_existing[{{ $guest->id }}][role]"
+                                                        value="{{ $guest->role }}"
+                                                        maxlength="2000"
+                                                        class="form-input w-full h-12 px-3 rounded-lg font-open-sans guest-existing-role-input"
+                                                        placeholder="Ex.: Mestra em Saúde Coletiva">
+                                                </div>
+                                                <p class="account-lookup-status text-xs text-slate-500 m-0 md:col-span-2"></p>
+                                            </div>
+                                            <div class="flex justify-end mt-3">
                                                 <button type="button"
                                                     class="btn-form-remove btn-remove-existing-guest"
                                                     data-remove-id="{{ $guest->id }}">
                                                     <ion-icon name="trash-outline" aria-hidden="true"></ion-icon>
                                                     Remover
                                                 </button>
-                                            </td>
-                                        </tr>
+                                            </div>
+                                        </div>
                                     @endforeach
-                                </tbody>
-                                <tbody id="guests-edit-list"></tbody>
-                            </table>
+                            </div>
+                            <div id="guests-edit-list" class="space-y-4"></div>
                         </div>
                         <div id="guests-remove-inputs"></div>
                     </div>
@@ -702,19 +718,19 @@
                         <div class="mb-8">
                             <div class="flex items-center justify-between mb-3">
                                 <h3 class="text-lg font-semibold text-slate-900">Atividades cadastradas</h3>
-                                <button type="button" onclick="addActivityEditRow()" class="btn-outline px-4 py-2 rounded-lg text-sm">
+                                <button type="button" onclick="addActivityEditRow(true)" class="btn-outline px-4 py-2 rounded-lg text-sm">
                                     + Nova atividade
                                 </button>
                             </div>
                             @if($event->activities->isNotEmpty())
-                                <div class="space-y-2 mb-4">
+                                <div class="space-y-3 mb-4">
                                     @foreach($event->activities as $activity)
-                                        <div class="text-sm text-slate-700 dash-panel rounded-lg px-3 py-2 flex items-start justify-between gap-3 activity-existing-row"
+                                        <div class="activity-existing-row rounded-2xl border border-slate-200 bg-white p-4 sm:p-5"
                                             data-activity-id="{{ $activity->id }}">
-                                            <div class="w-full">
-                                                <div class="activity-existing-view">
-                                                    <div class="font-medium break-words activity-existing-summary-title">{{ $activity->title }}</div>
-                                                    <div class="text-slate-500 mt-1 break-words activity-existing-summary-meta">
+                                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                                <div class="activity-existing-view min-w-0 flex-1">
+                                                    <p class="font-semibold text-slate-900 m-0 break-words activity-existing-summary-title">{{ $activity->title }}</p>
+                                                    <p class="text-sm text-slate-500 mt-1 mb-0 leading-relaxed break-words activity-existing-summary-meta">
                                                         {{ (($activityTypeLabels ?? [])[$activity->type] ?? ucfirst((string) $activity->type)) }}
                                                         @if($activity->start_at)
                                                             · {{ $activity->start_at->format('d/m/Y H:i') }}
@@ -725,9 +741,26 @@
                                                         @if($activity->location)
                                                             · {{ $activity->location }}
                                                         @endif
-                                                    </div>
+                                                        @if($activity->workload_hours !== null)
+                                                            · {{ rtrim(rtrim((string) $activity->workload_hours, '0'), '.') }} h
+                                                        @endif
+                                                    </p>
                                                 </div>
-                                                <div class="activity-existing-editor hidden mt-2">
+                                                <div class="flex items-center gap-2 shrink-0 ml-auto">
+                                                    <button type="button"
+                                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-medium transition-colors btn-toggle-existing-activity-edit">
+                                                        <ion-icon name="create-outline"></ion-icon>
+                                                        Editar
+                                                    </button>
+                                                    <button type="button"
+                                                        class="btn-form-remove btn-remove-existing-activity"
+                                                        data-remove-id="{{ $activity->id }}">
+                                                        <ion-icon name="trash-outline" aria-hidden="true"></ion-icon>
+                                                        Remover
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="activity-existing-editor hidden mt-4 border-t border-slate-200 pt-4">
                                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
                                                         <div>
                                                             <label class="form-label block text-sm font-montserrat mb-2">Título da atividade</label>
@@ -770,6 +803,16 @@
                                                                 value="{{ $activity->end_at ? $activity->end_at->format('H:i') : '' }}"
                                                                 class="form-input w-full px-4 py-3 rounded-lg font-open-sans activity-existing-end-input">
                                                         </div>
+                                                        <div>
+                                                            <label class="form-label block text-sm font-montserrat mb-2">Carga horária do certificado</label>
+                                                            <input type="number"
+                                                                step="0.25"
+                                                                min="0"
+                                                                name="activities_existing[{{ $activity->id }}][workload_hours]"
+                                                                value="{{ old('activities_existing.'.$activity->id.'.workload_hours', $activity->workload_hours) }}"
+                                                                placeholder="Ex.: 4"
+                                                                class="form-input w-full px-4 py-3 rounded-lg font-open-sans activity-existing-hours-input">
+                                                        </div>
                                                         <div class="md:col-span-2">
                                                             <label class="form-label block text-sm font-montserrat mb-2">Local</label>
                                                             <input type="text"
@@ -779,13 +822,6 @@
                                                                 required
                                                                 placeholder="Ex.: Auditório, sala 3, link da videoconferência…"
                                                                 class="form-input w-full px-4 py-3 rounded-lg font-open-sans activity-existing-location-input">
-                                                        </div>
-                                                        <div class="md:col-span-2">
-                                                            <input type="hidden" name="activities_existing[{{ $activity->id }}][is_extension]" value="0">
-                                                            <label class="flex items-start gap-2 text-sm font-montserrat">
-                                                                <input type="checkbox" name="activities_existing[{{ $activity->id }}][is_extension]" value="1" @checked($activity->is_extension)>
-                                                                <span>Atividade de extensão (certificado exige 75% de frequência)</span>
-                                                            </label>
                                                         </div>
                                                         @php
                                                             $activityGuestsLinked = $activity->eventGuests;
@@ -828,20 +864,6 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                            <div class="flex flex-col items-end gap-2 shrink-0">
-                                                <button type="button"
-                                                    class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-medium transition-colors btn-toggle-existing-activity-edit">
-                                                    <ion-icon name="create-outline"></ion-icon>
-                                                    Editar
-                                                </button>
-                                                <button type="button"
-                                                    class="btn-form-remove btn-remove-existing-activity"
-                                                    data-remove-id="{{ $activity->id }}">
-                                                    <ion-icon name="trash-outline" aria-hidden="true"></ion-icon>
-                                                    Remover
-                                                </button>
-                                            </div>
                                         </div>
                                     @endforeach
                                 </div>
@@ -855,25 +877,40 @@
                         <div>
                             <div class="flex items-center justify-between mb-3">
                                 <h3 class="text-lg font-semibold text-slate-900">Documentos e anexos</h3>
-                                <button type="button" onclick="addDocumentEditRow()" class="btn-outline px-4 py-2 rounded-lg text-sm">
+                                <button type="button" onclick="addDocumentEditRow(true)" class="btn-outline px-4 py-2 rounded-lg text-sm">
                                     + Novo documento
                                 </button>
                             </div>
                             @if($event->documents->isNotEmpty())
                                 <div class="space-y-3 mb-4">
                                     @foreach($event->documents as $document)
-                                        <div class="text-sm text-slate-700 dash-panel rounded-xl px-3 py-2 flex items-start justify-between gap-3 document-existing-row"
+                                        <div class="document-existing-row rounded-2xl border border-slate-200 bg-white p-4 sm:p-5"
                                             data-document-id="{{ $document->id }}">
-                                            <div class="w-full min-w-0">
-                                                <div class="document-existing-view">
-                                                    <div class="flex items-start justify-between gap-3">
-                                                        <p class="font-semibold text-slate-900 m-0 break-words min-w-0 flex-1 document-existing-summary-title">{{ $document->title }}</p>
-                                                        <a href="{{ route('events.documents.download', [$event->id, $document->id]) }}"
-                                                            class="document-existing-summary-file text-sm text-slate-600 font-semibold shrink-0 max-w-[42%] sm:max-w-[50%] text-right truncate hover:text-emerald-700 hover:underline"
-                                                            title="{{ $document->file_name }}">{{ $document->file_name }}</a>
-                                                    </div>
+                                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                                <div class="document-existing-view min-w-0 flex-1">
+                                                    <p class="font-semibold text-slate-900 m-0 break-words document-existing-summary-title">{{ $document->title }}</p>
+                                                    <a href="{{ route('events.documents.download', [$event->id, $document->id]) }}"
+                                                        class="document-existing-summary-file inline-flex items-center gap-1.5 mt-1 max-w-full text-sm text-emerald-700 hover:underline"
+                                                        title="{{ $document->file_name }}">
+                                                        <ion-icon name="document-outline" class="shrink-0 text-base" aria-hidden="true"></ion-icon>
+                                                        <span class="truncate">{{ $document->file_name }}</span>
+                                                    </a>
                                                 </div>
-                                                <div class="document-existing-editor hidden mt-2">
+                                                <div class="flex items-center gap-2 shrink-0 ml-auto">
+                                                    <button type="button"
+                                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-medium transition-colors btn-toggle-document-existing-edit">
+                                                        <ion-icon name="create-outline"></ion-icon>
+                                                        Editar
+                                                    </button>
+                                                    <button type="button"
+                                                        class="btn-form-remove btn-delete-event-document"
+                                                        data-delete-url="{{ route('events.documents.destroy', [$event->id, $document->id]) }}">
+                                                        <ion-icon name="trash-outline" aria-hidden="true"></ion-icon>
+                                                        Remover
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="document-existing-editor hidden mt-4 border-t border-slate-200 pt-4">
                                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
                                                         <div>
                                                             <label class="form-label block text-sm font-montserrat mb-2">Título do documento *</label>
@@ -898,20 +935,6 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                            <div class="flex flex-col items-end gap-2 shrink-0">
-                                                <button type="button"
-                                                    class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-medium transition-colors btn-toggle-document-existing-edit">
-                                                    <ion-icon name="create-outline"></ion-icon>
-                                                    Editar
-                                                </button>
-                                                <button type="button"
-                                                    class="btn-form-remove btn-delete-event-document"
-                                                    data-delete-url="{{ route('events.documents.destroy', [$event->id, $document->id]) }}">
-                                                    <ion-icon name="trash-outline" aria-hidden="true"></ion-icon>
-                                                    Remover
-                                                </button>
-                                            </div>
                                         </div>
                                     @endforeach
                                 </div>
@@ -1075,7 +1098,7 @@
             refreshCustomWorkTypesEditEmptyState();
         }
 
-        function addCustomWorkTypeEdit(value = '') {
+        function addCustomWorkTypeEdit(value = '', scroll = false) {
             if (!customWorkTypesEditList) {
                 return;
             }
@@ -1100,6 +1123,9 @@
             item.appendChild(removeBtn);
             customWorkTypesEditList.appendChild(item);
             refreshCustomWorkTypesEditEmptyState();
+            if (scroll) {
+                scrollAddedIntoView(item);
+            }
         }
 
         window.addCustomWorkTypeEdit = addCustomWorkTypeEdit;
@@ -1126,7 +1152,7 @@
             const show = !!acceptedWorkTypeOtherEditCheckbox?.checked;
             customWorkTypesEditBox?.classList.toggle('hidden', !show);
             if (show && customWorkTypesEditList && customWorkTypesEditList.children.length === 0) {
-                addCustomWorkTypeEdit('');
+                addCustomWorkTypeEdit('', true);
             }
             if (!show && customWorkTypesEditList) {
                 customWorkTypesEditList.innerHTML = '';
@@ -1186,6 +1212,21 @@
 </script>
 
 <script>
+    function scrollAddedIntoView(element) {
+        if (!element) {
+            return;
+        }
+        element.style.scrollMarginTop = '5.5rem';
+        element.style.scrollMarginBottom = '5.5rem';
+        requestAnimationFrame(function () {
+            element.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+            const field = element.querySelector('input:not([type="hidden"]):not([readonly]), select, textarea');
+            if (field) {
+                field.focus({ preventScroll: true });
+            }
+        });
+    }
+
     let guestEditIndex = 0;
     let activityEditIndex = 0;
     let documentEditIndex = 0;
@@ -1194,12 +1235,12 @@
         if (!row) return;
         const isOpen = forceOpen !== null
             ? forceOpen
-            : row.querySelector('.guest-existing-name-input')?.classList.contains('hidden');
+            : row.querySelector('.guest-existing-account')?.classList.contains('hidden');
 
         row.querySelector('.guest-existing-summary-name')?.classList.toggle('hidden', isOpen);
         row.querySelector('.guest-existing-summary-role-type')?.classList.toggle('hidden', isOpen);
         row.querySelector('.guest-existing-summary-role')?.classList.toggle('hidden', isOpen);
-        row.querySelector('.guest-existing-name-input')?.classList.toggle('hidden', !isOpen);
+        row.querySelector('.guest-existing-account')?.classList.toggle('hidden', !isOpen);
         row.querySelector('.guest-existing-role-type-input')?.classList.toggle('hidden', !isOpen);
         row.querySelector('.guest-existing-role-input')?.classList.toggle('hidden', !isOpen);
 
@@ -1234,6 +1275,7 @@
         const startValue = row.querySelector('.activity-existing-start-input')?.value || '';
         const endValue = row.querySelector('.activity-existing-end-input')?.value || '';
         const locationValue = (row.querySelector('.activity-existing-location-input')?.value || '').trim();
+        const hoursValue = (row.querySelector('.activity-existing-hours-input')?.value || '').trim();
 
         let dateLabel = '';
         if (dateValue) {
@@ -1252,6 +1294,9 @@
             let meta = schedule ? `${typeLabel} · ${schedule}${timeRange}` : typeLabel;
             if (locationValue) {
                 meta += ` · ${locationValue}`;
+            }
+            if (hoursValue) {
+                meta += ` · ${hoursValue} h`;
             }
             metaSummary.textContent = meta;
         }
@@ -1379,41 +1424,53 @@
         });
     }
 
-    function addGuestEditRow() {
+    function addGuestEditRow(scroll = false) {
         const list = document.getElementById('guests-edit-list');
         const idx = guestEditIndex++;
 
-        const row = document.createElement('tr');
-        row.className = 'guest-edit-row border-b border-slate-100';
+        const row = document.createElement('div');
+        row.className = 'guest-edit-row account-lookup rounded-2xl border border-slate-200 bg-white p-4 sm:p-5';
         row.dataset.guestIndex = String(idx);
         const roleOptions = @json($guestRoleTypeLabels ?? []);
         const roleOptionsHtml = Object.entries(roleOptions).map(([value, label]) => {
             return `<option value="${value}">${label}</option>`;
         }).join('');
         row.innerHTML = `
-            <td class="px-4 py-3 align-top">
-                <input type="text" name="guests_new[${idx}][name]" maxlength="255" required
-                    class="form-input w-full px-3 py-2.5 rounded-lg font-open-sans"
-                    placeholder="Ex.: Juliana Clementino Pimentel">
-            </td>
-            <td class="px-4 py-3 align-top">
-                <select name="guests_new[${idx}][role_type]" required
-                    class="form-input w-full px-3 py-2.5 rounded-lg font-open-sans">
-                    <option value="">Selecione a função</option>
-                    ${roleOptionsHtml}
-                </select>
-            </td>
-            <td class="px-4 py-3 align-top">
-                <textarea name="guests_new[${idx}][role]" maxlength="2000" rows="3"
-                    class="form-input w-full px-3 py-2.5 rounded-lg font-open-sans resize-y"
-                    placeholder="Ex.: Enfermeira, Mestra em Saúde Coletiva, pesquisadora em saúde pública..."></textarea>
-            </td>
-            <td class="px-4 py-3 align-top">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                <div>
+                    <label class="form-label block text-sm font-montserrat mb-2">E-mail *</label>
+                    <input type="email" name="guests_new[${idx}][email]" required
+                        class="account-lookup-email form-input w-full h-12 px-3 rounded-lg font-open-sans"
+                        data-lookup-role="guest" placeholder="E-mail da conta de convidado">
+                </div>
+                <div>
+                    <label class="form-label block text-sm font-montserrat mb-2">Nome</label>
+                    <input type="text" name="guests_new[${idx}][name]" maxlength="255" readonly
+                        class="account-lookup-name form-input w-full h-12 px-3 rounded-lg font-open-sans bg-slate-50 cursor-not-allowed"
+                        placeholder="Preenchido pela conta">
+                </div>
+                <div>
+                    <label class="form-label block text-sm font-montserrat mb-2">Função *</label>
+                    <select name="guests_new[${idx}][role_type]" required
+                        class="form-input w-full h-12 px-3 rounded-lg font-open-sans">
+                        <option value="">Selecione a função</option>
+                        ${roleOptionsHtml}
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label block text-sm font-montserrat mb-2">Formação</label>
+                    <input type="text" name="guests_new[${idx}][role]" maxlength="2000"
+                        class="form-input w-full h-12 px-3 rounded-lg font-open-sans"
+                        placeholder="Ex.: Mestra em Saúde Coletiva">
+                </div>
+                <p class="account-lookup-status text-xs text-slate-500 m-0 md:col-span-2"></p>
+            </div>
+            <div class="flex justify-end mt-3">
                 <button type="button" class="btn-form-remove btn-remove-guest-edit">
                     <ion-icon name="trash-outline" aria-hidden="true"></ion-icon>
                     Remover
                 </button>
-            </td>
+            </div>
         `;
         list.appendChild(row);
 
@@ -1426,9 +1483,12 @@
             updateGuestOptionsEdit();
         });
         updateGuestOptionsEdit();
+        if (scroll) {
+            scrollAddedIntoView(row);
+        }
     }
 
-    function addActivityEditRow() {
+    function addActivityEditRow(scroll = false) {
         const list = document.getElementById('activities-edit-list');
         const idx = activityEditIndex++;
         const options = @json($activityTypeLabels ?? []);
@@ -1468,18 +1528,17 @@
                     <input type="time" name="activities_new[${idx}][end_time]" required
                         class="form-input w-full px-4 py-3 rounded-lg font-open-sans">
                 </div>
+                <div>
+                    <label class="form-label block text-sm font-montserrat mb-2">Carga horária do certificado</label>
+                    <input type="number" step="0.25" min="0" name="activities_new[${idx}][workload_hours]"
+                        placeholder="Ex.: 4"
+                        class="form-input w-full px-4 py-3 rounded-lg font-open-sans">
+                </div>
                 <div class="md:col-span-2">
                     <label class="form-label block text-sm font-montserrat mb-2">Local</label>
                     <input type="text" name="activities_new[${idx}][location]" maxlength="255" required
                         placeholder="Ex.: Auditório, sala 3, link da videoconferência…"
                         class="form-input w-full px-4 py-3 rounded-lg font-open-sans">
-                </div>
-                <div class="md:col-span-2">
-                    <input type="hidden" name="activities_new[${idx}][is_extension]" value="0">
-                    <label class="flex items-start gap-2 text-sm font-montserrat">
-                        <input type="checkbox" name="activities_new[${idx}][is_extension]" value="1">
-                        <span>Atividade de extensão (certificado exige 75% de frequência)</span>
-                    </label>
                 </div>
                 <div class="md:col-span-2 activity-guests-block">
                     <label class="form-label block text-sm font-montserrat mb-2">Convidados</label>
@@ -1508,6 +1567,28 @@
         `;
         list.appendChild(row);
         updateGuestOptionsEdit();
+        if (scroll) {
+            scrollAddedIntoView(row);
+        }
+    }
+
+    function cloneActivityGuestRow(template) {
+        const row = template.cloneNode(true);
+        const select = row.querySelector('select');
+        if (select) {
+            let shell = select.parentElement;
+            while (shell && shell !== row && shell.hasAttribute('data-app-select-root')) {
+                const next = shell.parentElement;
+                shell.replaceWith(select);
+                shell = next;
+            }
+            select.classList.remove('app-select-native');
+            select.removeAttribute('tabindex');
+            select.hidden = false;
+            select.value = '';
+            select.removeAttribute('required');
+        }
+        return row;
     }
 
     function refreshActivityGuestRequiredForBlockEdit(block) {
@@ -1528,17 +1609,13 @@
             const container = block?.querySelector('.activity-guest-rows');
             const template = container?.querySelector('.activity-guest-row');
             if (!block || !container || !template) return;
-            const row = template.cloneNode(true);
-            const sel = row.querySelector('select');
-            if (sel) {
-                sel.value = '';
-                sel.removeAttribute('required');
-            }
+            const row = cloneActivityGuestRow(template);
             container.appendChild(row);
             refreshActivityGuestRequiredForBlockEdit(block);
             updateGuestOptionsEdit();
             const activityRow = block.closest('.activity-existing-row');
             if (activityRow) refreshActivityExistingSummary(activityRow);
+            scrollAddedIntoView(row);
             return;
         }
 
@@ -1655,7 +1732,7 @@
     });
 
     document.querySelectorAll(
-        '.activity-existing-title-input, .activity-existing-type-input, .activity-existing-date-input, .activity-existing-start-input, .activity-existing-end-input, .activity-existing-location-input, .activity-existing-guest-input'
+        '.activity-existing-title-input, .activity-existing-type-input, .activity-existing-date-input, .activity-existing-start-input, .activity-existing-end-input, .activity-existing-location-input, .activity-existing-hours-input, .activity-existing-guest-input'
     ).forEach((input) => {
         input.addEventListener('input', () => {
             const row = input.closest('.activity-existing-row');
@@ -1669,7 +1746,6 @@
 
     document.querySelectorAll('.guest-existing-row').forEach((row) => {
         refreshGuestExistingSummary(row);
-        toggleExistingGuestEdit(row, false);
     });
 
     document.querySelectorAll('.activity-existing-row').forEach((row) => {
@@ -1712,7 +1788,7 @@
 
     updateGuestOptionsEdit();
 
-    function addDocumentEditRow() {
+    function addDocumentEditRow(scroll = false) {
         const list = document.getElementById('documents-edit-list');
         const idx = documentEditIndex++;
 
@@ -1739,6 +1815,9 @@
             </div>
         `;
         list.appendChild(row);
+        if (scroll) {
+            scrollAddedIntoView(row);
+        }
     }
 </script>
 
@@ -1775,5 +1854,6 @@ document.addEventListener('DOMContentLoaded', function() {
 @endpush
 
 </div>
+@include('partials.account-lookup')
 @endsection
 

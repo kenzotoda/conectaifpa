@@ -92,33 +92,31 @@ class AbntFollowupTest extends TestCase
         Notification::assertSentToTimes($participant, \App\Notifications\CertificateAvailable::class, 1);
     }
 
-    public function test_extension_activity_requires_seventy_five_percent_frequency(): void
+    public function test_activity_certificate_requires_recorded_presence(): void
     {
         [$event] = $this->readyEvent();
         $participant = User::factory()->create(['role' => User::ROLE_PARTICIPANT]);
         $event->users()->attach($participant->id);
         $activity = Activity::create([
             'event_id' => $event->id,
-            'title' => 'Oficina de extensão',
+            'title' => 'Oficina',
             'type' => Activity::TYPE_WORKSHOP,
             'start_at' => now()->subDay(),
             'end_at' => now()->subDay()->addHour(),
             'location' => 'Sala 1',
-            'is_extension' => true,
             'workload_hours' => 8,
         ]);
         $presence = ActivityPresence::create([
             'activity_id' => $activity->id,
             'user_id' => $participant->id,
-            'presente' => true,
-            'frequencia_percent' => 70,
+            'presente' => false,
             'data_marcacao' => now(),
         ]);
 
         $issuer = app(CertificateIssuer::class);
         $this->assertFalse($issuer->issueActivity($participant, $activity->fresh(), $event));
 
-        $presence->update(['frequencia_percent' => 80, 'presente' => true]);
+        $presence->update(['presente' => true]);
         $this->assertTrue($issuer->issueActivity($participant, $activity->fresh(), $event));
         $this->assertSame(1, Certificate::query()->where('tipo', Certificate::TYPE_ACTIVITY)->count());
     }

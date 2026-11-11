@@ -351,56 +351,71 @@
                                 Organização e Contato do Evento
                             </h2>
                             
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <!-- Organized By -->
-                                <div class="md:col-span-2">
-                                    <label class="form-label block text-sm font-montserrat mb-2">
-                                        Organizado por *
-                                    </label>
-                                    <input
-                                        id="coordinator_name"
-                                        name="coordinator_name"
-                                        type="text"
-                                        class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
-                                        placeholder="Ex: Prof. Dr. João Silva / Coordenação do evento"
-                                        value="{{ old('coordinator_name') }}"
-                                        required
-                                    >
-                                </div>
-                                
-                                <!-- Event Contact Email -->
-                                <div>
-                                    <label class="form-label block text-sm font-montserrat mb-2">
-                                        Entrar em contato (e-mail) *
-                                    </label>
-                                    <input
-                                        id="coordinator_email"
-                                        name="coordinator_email"
-                                        type="email" 
-                                        class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
-                                        placeholder="evento@ifpa.edu.br"
-                                        value="{{ old('coordinator_email') }}"
-                                        required
-                                    >
-                                </div>
-                                
-                                <!-- Contact Phone -->
-                                <div>
-                                    <label class="form-label block text-sm font-montserrat mb-2">
-                                        Telefone para contato (opcional)
-                                    </label>
-                                    <input
-                                        id="coordinator_phone"
-                                        name="coordinator_phone"
-                                        type="tel"
-                                        inputmode="numeric"
-                                        autocomplete="tel"
-                                        maxlength="15"
-                                        class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
-                                        placeholder="(11) 99999-9999"
-                                        value="{{ old('coordinator_phone') }}"
-                                    >
-                                </div>
+                            <p class="text-sm text-slate-600 mb-4">Cada organizador precisa ter uma conta de organizador. Se quiser, inclua o seu e-mail de coordenador nesta lista. O e-mail de contato é um só, da organização do evento.</p>
+                            <div id="organizers-create-list" class="space-y-3 mb-4">
+                                @php
+                                    $organizerRows = old('organizers', [['email' => '', 'name' => '']]);
+                                    if (! is_array($organizerRows) || count($organizerRows) === 0) {
+                                        $organizerRows = [['email' => '', 'name' => '']];
+                                    }
+                                @endphp
+                                @foreach ($organizerRows as $idx => $row)
+                                    <div class="organizer-row account-lookup grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                                        <div>
+                                            <label class="form-label block text-sm font-montserrat mb-2">E-mail do organizador *</label>
+                                            <input type="email" name="organizers[{{ $idx }}][email]" value="{{ $row['email'] ?? '' }}"
+                                                class="account-lookup-email form-input w-full px-4 py-3 rounded-lg font-open-sans"
+                                                data-lookup-role="organizer" placeholder="organizador@email.com">
+                                        </div>
+                                        <div>
+                                            <label class="form-label block text-sm font-montserrat mb-2">Nome</label>
+                                            <input type="text" name="organizers[{{ $idx }}][name]" value="{{ $row['name'] ?? '' }}" readonly
+                                                class="account-lookup-name form-input w-full px-4 py-3 rounded-lg font-open-sans bg-slate-50 cursor-not-allowed"
+                                                placeholder="Preenchido pela conta">
+                                        </div>
+                                        <p class="account-lookup-status text-xs text-slate-500 m-0 md:col-span-2"></p>
+                                        <div class="md:col-span-2 flex justify-end">
+                                            <button type="button" class="btn-form-remove btn-remove-organizer">
+                                                <ion-icon name="trash-outline" aria-hidden="true"></ion-icon>
+                                                Remover
+                                            </button>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                            <div class="flex flex-wrap gap-2 mb-6">
+                                <button type="button" id="add-organizer-row" class="btn-outline px-4 py-2 rounded-lg text-sm">+ Outro organizador</button>
+                                <button type="button" id="include-self-organizer" data-email="{{ auth()->user()->email }}" class="btn-outline px-4 py-2 rounded-lg text-sm">Incluir meu e-mail</button>
+                            </div>
+                            <div class="max-w-xl">
+                                <label class="form-label block text-sm font-montserrat mb-2" for="coordinator_email">
+                                    E-mail geral de contato *
+                                </label>
+                                <input
+                                    id="coordinator_email"
+                                    name="coordinator_email"
+                                    type="email"
+                                    class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
+                                    placeholder="evento@ifpa.edu.br"
+                                    value="{{ old('coordinator_email') }}"
+                                    required
+                                >
+                            </div>
+                            <div class="max-w-xs mt-6">
+                                <label class="form-label block text-sm font-montserrat mb-2" for="certificate_total_hours">
+                                    Carga horária do certificado de participação
+                                </label>
+                                <input
+                                    id="certificate_total_hours"
+                                    name="certificate_total_hours"
+                                    type="number"
+                                    step="0.5"
+                                    min="0"
+                                    class="form-input w-full px-4 py-3 rounded-lg font-open-sans"
+                                    placeholder="Ex.: 20"
+                                    value="{{ old('certificate_total_hours') }}"
+                                >
+                                <p class="text-xs text-slate-500 mt-2 mb-0">Entra no certificado de participação geral. Em branco, esse certificado não pode ser emitido.</p>
                             </div>
                         </div>
 
@@ -519,7 +534,7 @@
                                         <label class="form-label block text-sm font-montserrat">
                                             Tipos personalizados
                                         </label>
-                                        <button type="button" onclick="addCustomWorkType()" class="btn-outline px-3 py-1.5 rounded-lg text-xs">
+                                        <button type="button" onclick="addCustomWorkType('', true)" class="btn-outline px-3 py-1.5 rounded-lg text-xs">
                                             + Adicionar outro tipo
                                         </button>
                                     </div>
@@ -582,31 +597,15 @@
                                 Convidados
                             </h2>
 
-                            <div class="dash-panel rounded-lg p-4 mb-6">
-                                <p class="text-sm text-slate-700 m-0">
-                                    Cadastre os convidados para selecionar nas atividades na próxima etapa.
+                            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+                                <p class="text-sm text-slate-600 m-0">
+                                    Informe o e-mail da conta de convidado. O nome é preenchido e fica bloqueado.
                                 </p>
-                            </div>
-
-                            <div class="flex items-center justify-between mb-3">
-                                <h3 class="text-lg font-semibold text-slate-900">Lista de convidados</h3>
-                                <button type="button" onclick="addGuestRow()" class="btn-outline px-4 py-2 rounded-lg text-sm">
+                                <button type="button" onclick="addGuestRow(null, true)" class="btn-outline px-4 py-2 rounded-lg text-sm shrink-0">
                                     + Novo convidado
                                 </button>
                             </div>
-                            <div class="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-                                <table class="min-w-full text-sm">
-                                    <thead class="bg-slate-100 text-slate-700">
-                                        <tr>
-                                            <th class="text-left px-4 py-3 font-semibold">Nome do convidado *</th>
-                                            <th class="text-left px-4 py-3 font-semibold">Função *</th>
-                                            <th class="text-left px-4 py-3 font-semibold">Formação (opcional)</th>
-                                            <th class="text-left px-4 py-3 font-semibold w-40">Ações</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="guests-create-list"></tbody>
-                                </table>
-                            </div>
+                            <div id="guests-create-list" class="space-y-4"></div>
                         </div>
 
                         <div class="flex justify-between mt-8">
@@ -638,7 +637,7 @@
                             <div class="mb-8">
                                 <div class="flex items-center justify-between mb-3">
                                     <h3 class="text-lg font-semibold text-slate-900">Atividades</h3>
-                                    <button type="button" onclick="addActivityRow()" class="btn-outline px-4 py-2 rounded-lg text-sm">
+                                    <button type="button" onclick="addActivityRow(null, true)" class="btn-outline px-4 py-2 rounded-lg text-sm">
                                         + Nova atividade
                                     </button>
                                 </div>
@@ -648,7 +647,7 @@
                             <div>
                                 <div class="flex items-center justify-between mb-3">
                                     <h3 class="text-lg font-semibold text-slate-900">Documentos e Anexos</h3>
-                                    <button type="button" onclick="addDocumentRow()" class="btn-outline px-4 py-2 rounded-lg text-sm">
+                                    <button type="button" onclick="addDocumentRow(null, true)" class="btn-outline px-4 py-2 rounded-lg text-sm">
                                         + Novo documento
                                     </button>
                                 </div>
@@ -855,7 +854,22 @@
             refreshCustomWorkTypesEmptyState();
         }
 
-        function addCustomWorkType(value = '') {
+        function scrollAddedIntoView(element) {
+            if (!element) {
+                return;
+            }
+            element.style.scrollMarginTop = '5.5rem';
+            element.style.scrollMarginBottom = '5.5rem';
+            requestAnimationFrame(function () {
+                element.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+                const field = element.querySelector('input:not([type="hidden"]):not([readonly]), select, textarea');
+                if (field) {
+                    field.focus({ preventScroll: true });
+                }
+            });
+        }
+
+        function addCustomWorkType(value = '', scroll = false) {
             if (!customWorkTypesList) {
                 return;
             }
@@ -880,6 +894,9 @@
             item.appendChild(removeBtn);
             customWorkTypesList.appendChild(item);
             refreshCustomWorkTypesEmptyState();
+            if (scroll) {
+                scrollAddedIntoView(item);
+            }
         }
 
         window.addCustomWorkType = addCustomWorkType;
@@ -906,7 +923,7 @@
             const show = !!acceptedWorkTypeOtherCheckbox?.checked;
             customWorkTypesBox?.classList.toggle('hidden', !show);
             if (show && customWorkTypesList && customWorkTypesList.children.length === 0) {
-                addCustomWorkType('');
+                addCustomWorkType('', true);
             }
             if (!show && customWorkTypesList) {
                 customWorkTypesList.innerHTML = '';
@@ -961,6 +978,7 @@
             }
             if (matchesAny([
                 /^coordinator_/,
+                /^organizers/,
                 /^datetime_registration/,
                 /^submission_deadline_at/,
                 /^review_deadline_at/,
@@ -1014,7 +1032,16 @@
                 if (!Array.isArray(texts) || !texts.length) return;
                 var msg = texts[0];
 
-                var mGuest = /^guests_new\.(\d+)\.(name|role_type|role)$/.exec(key);
+                if (key === 'organizers') {
+                    attach(document.querySelector('#organizers-create-list .account-lookup-email'), msg);
+                    return;
+                }
+                if (key === 'guests_new') {
+                    attach(document.querySelector('#guests-create-list .account-lookup-email'), msg);
+                    return;
+                }
+
+                var mGuest = /^guests_new\.(\d+)\.(name|email|role_type|role)$/.exec(key);
                 if (mGuest) {
                     attach(document.querySelector('[name="guests_new[' + mGuest[1] + '][' + mGuest[2] + ']"]'), msg);
                     return;
@@ -1141,7 +1168,7 @@
             });
         }
 
-        function addGuestRow(prefill = null) {
+        function addGuestRow(prefill = null, scroll = false) {
             const list = document.getElementById('guests-create-list');
             const idx = guestCreateIndex++;
             const roleOptions = @json($guestRoleTypeLabels ?? []);
@@ -1149,40 +1176,56 @@
                 return `<option value="${value}">${label}</option>`;
             }).join('');
 
-            const row = document.createElement('tr');
-            row.className = 'guest-row border-b border-slate-100';
+            const row = document.createElement('div');
+            row.className = 'guest-row account-lookup rounded-2xl border border-slate-200 bg-white p-4 sm:p-5';
             row.dataset.guestIndex = String(idx);
             row.innerHTML = `
-                <td class="px-4 py-3 align-top">
-                    <input type="text" name="guests_new[${idx}][name]" maxlength="255" required
-                        class="form-input w-full px-3 py-2.5 rounded-lg font-open-sans"
-                        placeholder="Ex.: Juliana Clementino Pimentel">
-                </td>
-                <td class="px-4 py-3 align-top">
-                    <select name="guests_new[${idx}][role_type]" required
-                        class="form-input w-full px-3 py-2.5 rounded-lg font-open-sans">
-                        <option value="">Selecione a função</option>
-                        ${roleOptionsHtml}
-                    </select>
-                </td>
-                <td class="px-4 py-3 align-top">
-                    <textarea name="guests_new[${idx}][role]" maxlength="2000" rows="3"
-                        class="form-input w-full px-3 py-2.5 rounded-lg font-open-sans resize-y"
-                        placeholder="Ex.: Enfermeira, Mestra em Saúde Coletiva, pesquisadora em saúde pública..."></textarea>
-                </td>
-                <td class="px-4 py-3 align-top">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                    <div>
+                        <label class="form-label block text-sm font-montserrat mb-2">E-mail *</label>
+                        <input type="email" name="guests_new[${idx}][email]" required
+                            class="account-lookup-email form-input w-full h-12 px-3 rounded-lg font-open-sans"
+                            data-lookup-role="guest" placeholder="E-mail da conta de convidado">
+                    </div>
+                    <div>
+                        <label class="form-label block text-sm font-montserrat mb-2">Nome</label>
+                        <input type="text" name="guests_new[${idx}][name]" maxlength="255" readonly
+                            class="account-lookup-name form-input w-full h-12 px-3 rounded-lg font-open-sans bg-slate-50 cursor-not-allowed"
+                            placeholder="Preenchido pela conta">
+                    </div>
+                    <div>
+                        <label class="form-label block text-sm font-montserrat mb-2">Função *</label>
+                        <select name="guests_new[${idx}][role_type]" required
+                            class="form-input w-full h-12 px-3 rounded-lg font-open-sans">
+                            <option value="">Selecione a função</option>
+                            ${roleOptionsHtml}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label block text-sm font-montserrat mb-2">Formação</label>
+                        <input type="text" name="guests_new[${idx}][role]" maxlength="2000"
+                            class="form-input w-full h-12 px-3 rounded-lg font-open-sans"
+                            placeholder="Ex.: Mestra em Saúde Coletiva">
+                    </div>
+                    <p class="account-lookup-status text-xs text-slate-500 m-0 md:col-span-2"></p>
+                </div>
+                <div class="flex justify-end mt-3">
                     <button type="button" class="btn-form-remove btn-remove-guest">
                         <ion-icon name="trash-outline" aria-hidden="true"></ion-icon>
                         Remover
                     </button>
-                </td>
+                </div>
             `;
             list.appendChild(row);
 
             if (prefill && typeof prefill === 'object') {
                 const nameInput = row.querySelector(`input[name="guests_new[${idx}][name]"]`);
+                const emailInput = row.querySelector(`input[name="guests_new[${idx}][email]"]`);
                 const roleTypeSel = row.querySelector(`select[name="guests_new[${idx}][role_type]"]`);
-                const roleArea = row.querySelector(`textarea[name="guests_new[${idx}][role]"]`);
+                const roleArea = row.querySelector(`[name="guests_new[${idx}][role]"]`);
+                if (emailInput != null && prefill.email != null) {
+                    emailInput.value = String(prefill.email);
+                }
                 if (nameInput != null && prefill.name != null) {
                     nameInput.value = String(prefill.name);
                 }
@@ -1203,9 +1246,12 @@
                 updateGuestOptions();
             });
             updateGuestOptions();
+            if (scroll) {
+                scrollAddedIntoView(row);
+            }
         }
 
-        function addActivityRow(prefill = null) {
+        function addActivityRow(prefill = null, scroll = false) {
             const list = document.getElementById('activities-create-list');
             const idx = activityCreateIndex++;
             const options = @json($activityTypeLabels ?? []);
@@ -1245,18 +1291,17 @@
                         <input type="time" name="activities_new[${idx}][end_time]" required
                             class="form-input w-full px-4 py-3 rounded-lg font-open-sans">
                     </div>
+                    <div>
+                        <label class="form-label block text-sm font-montserrat mb-2">Carga horária do certificado</label>
+                        <input type="number" step="0.25" min="0" name="activities_new[${idx}][workload_hours]"
+                            placeholder="Ex.: 4"
+                            class="form-input w-full px-4 py-3 rounded-lg font-open-sans">
+                    </div>
                     <div class="md:col-span-2">
                         <label class="form-label block text-sm font-montserrat mb-2">Local</label>
                         <input type="text" name="activities_new[${idx}][location]" maxlength="255" required
                             placeholder="Ex.: Auditório, sala 3, link da videoconferência…"
                             class="form-input w-full px-4 py-3 rounded-lg font-open-sans">
-                    </div>
-                    <div class="md:col-span-2">
-                        <input type="hidden" name="activities_new[${idx}][is_extension]" value="0">
-                        <label class="flex items-start gap-2 text-sm font-montserrat">
-                            <input type="checkbox" name="activities_new[${idx}][is_extension]" value="1">
-                            <span>Atividade de extensão (certificado exige 75% de frequência)</span>
-                        </label>
                     </div>
                     <div class="md:col-span-2 activity-guests-block">
                         <label class="form-label block text-sm font-montserrat mb-2">Convidados</label>
@@ -1298,6 +1343,7 @@
                 setInput('activity_date', prefill.activity_date);
                 setInput('start_time', prefill.start_time);
                 setInput('end_time', prefill.end_time);
+                setInput('workload_hours', prefill.workload_hours);
                 setInput('location', prefill.location);
 
                 let refs = prefill.guest_refs ?? [];
@@ -1318,18 +1364,37 @@
                     }
                     const template = container.querySelector('.activity-guest-row');
                     if (!template) return;
-                    const nrow = template.cloneNode(true);
+                    const nrow = cloneActivityGuestRow(template);
                     const sel = nrow.querySelector('select');
-                    if (sel) {
-                        sel.value = refVal;
-                        sel.removeAttribute('required');
-                    }
+                    if (sel) sel.value = refVal;
                     container.appendChild(nrow);
                 });
                 refreshActivityGuestRequiredForBlock(block);
             }
 
             updateGuestOptions();
+            if (scroll) {
+                scrollAddedIntoView(row);
+            }
+        }
+
+        function cloneActivityGuestRow(template) {
+            const row = template.cloneNode(true);
+            const select = row.querySelector('select');
+            if (select) {
+                let shell = select.parentElement;
+                while (shell && shell !== row && shell.hasAttribute('data-app-select-root')) {
+                    const next = shell.parentElement;
+                    shell.replaceWith(select);
+                    shell = next;
+                }
+                select.classList.remove('app-select-native');
+                select.removeAttribute('tabindex');
+                select.hidden = false;
+                select.value = '';
+                select.removeAttribute('required');
+            }
+            return row;
         }
 
         function refreshActivityGuestRequiredForBlock(block) {
@@ -1350,15 +1415,11 @@
                 const container = block?.querySelector('.activity-guest-rows');
                 const template = container?.querySelector('.activity-guest-row');
                 if (!block || !container || !template) return;
-                const row = template.cloneNode(true);
-                const sel = row.querySelector('select');
-                if (sel) {
-                    sel.value = '';
-                    sel.removeAttribute('required');
-                }
+                const row = cloneActivityGuestRow(template);
                 container.appendChild(row);
                 refreshActivityGuestRequiredForBlock(block);
                 updateGuestOptions();
+                scrollAddedIntoView(row);
                 return;
             }
 
@@ -1388,7 +1449,7 @@
             updateGuestOptions();
         });
 
-        function addDocumentRow(prefill = null) {
+        function addDocumentRow(prefill = null, scroll = false) {
             const list = document.getElementById('documents-create-list');
             const idx = documentCreateIndex++;
 
@@ -1419,6 +1480,9 @@
             if (prefill && typeof prefill === 'object' && prefill.title != null) {
                 const inp = row.querySelector(`input[name="documents_new[${idx}][title]"]`);
                 if (inp) inp.value = String(prefill.title);
+            }
+            if (scroll) {
+                scrollAddedIntoView(row);
             }
         }
     </script>
@@ -1809,5 +1873,6 @@ document.addEventListener('DOMContentLoaded', function() {
 @endpush
 
 </div>
+@include('partials.account-lookup')
 @endsection
 

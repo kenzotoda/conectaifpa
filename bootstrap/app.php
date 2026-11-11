@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureVerifiedEmail;
 use App\Http\Middleware\IsCoordinator;
+use App\Http\Middleware\ManagesEvent;
 use App\Http\Middleware\IsReviewer;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\TrustProxies;
@@ -32,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // 👇 seus aliases continuam intactos
         $middleware->alias([
             'isCoordinator' => IsCoordinator::class,
+            'managesEvent' => ManagesEvent::class,
             'isReviewer' => IsReviewer::class,
         ]);
     })

@@ -16,6 +16,7 @@ use App\Services\WorkScoreService;
 use Carbon\Carbon;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
@@ -44,7 +45,7 @@ class WorkController extends Controller
     {
         $event = Event::findOrFail($eventId);
 
-        if (auth()->id() !== $event->user_id) {
+        if (! auth()->user()?->managesEvent($event)) {
             abort(403, 'Acesso negado.');
         }
 
@@ -309,7 +310,7 @@ class WorkController extends Controller
         $work = Work::with('event')->findOrFail($workId);
 
         $isOwner = $work->submitter_user_id === auth()->id();
-        $isCoordinator = $work->event->user_id === auth()->id();
+        $isCoordinator = auth()->user()?->managesEvent($work->event) ?? false;
 
         if (! $isOwner && ! $isCoordinator) {
             abort(403, 'Acesso negado.');
@@ -525,7 +526,7 @@ class WorkController extends Controller
         $work = Work::with(['event', 'reviews', 'versions'])->findOrFail($workId);
         $event = $work->event;
 
-        if (auth()->id() !== $event->user_id) {
+        if (! auth()->user()?->managesEvent($event)) {
             abort(403, 'Acesso negado.');
         }
 
@@ -584,29 +585,59 @@ class WorkController extends Controller
     }
 
     /**
-     * @return list<array{author_name: string, author_email: ?string, institution: ?string}>
+     * @return list<array{user_id: int, author_name: string, author_email: string, institution: ?string}>
      */
     private function normalizedManualCoauthors(Request $request, User $submitter): array
     {
         $manual = [];
-        foreach ($request->input('coauthors_manual', []) as $row) {
+        $errors = [];
+        $seen = [];
+
+        foreach ($request->input('coauthors_manual', []) as $index => $row) {
             if (! is_array($row)) {
                 continue;
             }
-            $name = isset($row['author_name']) ? trim((string) $row['author_name']) : '';
-            if ($name === '') {
+            $email = strtolower(trim((string) ($row['author_email'] ?? '')));
+            $name = trim((string) ($row['author_name'] ?? ''));
+            $institution = trim((string) ($row['institution'] ?? ''));
+            if ($email === '' && $name === '' && $institution === '') {
                 continue;
             }
-            $email = isset($row['author_email']) ? trim((string) $row['author_email']) : '';
-            if ($email !== '' && strcasecmp($email, $submitter->email) === 0) {
+            if ($email === '') {
+                $errors["coauthors_manual.$index.author_email"] = 'Informe o e-mail de um participante cadastrado.';
+
                 continue;
             }
-            $inst = isset($row['institution']) ? trim((string) $row['institution']) : '';
+            if (strcasecmp($email, $submitter->email) === 0) {
+                $errors["coauthors_manual.$index.author_email"] = 'O autor principal não pode ser incluído como coautor.';
+
+                continue;
+            }
+            if (in_array($email, $seen, true)) {
+                $errors["coauthors_manual.$index.author_email"] = 'Este coautor já foi informado.';
+
+                continue;
+            }
+            $account = User::query()
+                ->whereRaw('LOWER(email) = ?', [$email])
+                ->where('role', User::ROLE_PARTICIPANT)
+                ->first();
+            if (! $account) {
+                $errors["coauthors_manual.$index.author_email"] = 'Não existe conta de participante com este e-mail. A pessoa precisa criar a conta antes.';
+
+                continue;
+            }
+            $seen[] = $email;
             $manual[] = [
-                'author_name' => $name,
-                'author_email' => $email !== '' ? $email : null,
-                'institution' => $inst !== '' ? $inst : null,
+                'user_id' => $account->id,
+                'author_name' => $account->name,
+                'author_email' => $account->email,
+                'institution' => $account->participantAffiliationForWorks(),
             ];
+        }
+
+        if ($errors !== []) {
+            throw ValidationException::withMessages($errors);
         }
 
         return $manual;
@@ -639,7 +670,7 @@ class WorkController extends Controller
             }
             WorkAuthor::create([
                 'work_id' => $work->id,
-                'user_id' => null,
+                'user_id' => $row['user_id'],
                 'author_name' => $row['author_name'],
                 'author_email' => $em,
                 'institution' => $row['institution'] ?? null,
@@ -755,7 +786,7 @@ class WorkController extends Controller
     {
         $user = auth()->user();
         $isOwner = $work->submitter_user_id === $user->id;
-        $isCoordinator = $work->event->user_id === $user->id;
+        $isCoordinator = $user->managesEvent($work->event);
         // Usa a tabela de designações diretamente para evitar inconsistências de pivot.
         $isAssignedReviewer = $work->reviewerAssignments()
             ->where('reviewer_user_id', $user->id)

@@ -22,7 +22,7 @@ class CertificateDownloadController extends Controller
         $event = $certificate->event;
 
         $isOwner = (int) $certificate->user_id === (int) $user->id;
-        $isCoordinatorOfEvent = $user->isCoordinator() && (int) $event->user_id === (int) $user->id;
+        $isCoordinatorOfEvent = $event && $user->managesEvent($event);
 
         if (! $isOwner && ! $isCoordinatorOfEvent) {
             abort(403);

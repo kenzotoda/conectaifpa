@@ -1,11 +1,22 @@
 @extends('layouts.auth')
 
 @php
-    $isCoordinatorRegister = request()->routeIs('register.coordinator');
-    $isReviewerRegister = request()->routeIs('register.reviewer');
+    $panelAccounts = [
+        'register.coordinator' => ['role' => 'coordinator', 'title' => 'Cadastrar Coordenador', 'headline' => 'Crie sua conta de coordenador', 'text' => 'Cadastre-se como coordenador e organize eventos incríveis para sua comunidade.', 'button' => 'Cadastrar Coordenador'],
+        'register.reviewer' => ['role' => 'reviewer', 'title' => 'Cadastrar Avaliador', 'headline' => 'Crie sua conta de avaliador', 'text' => 'Cadastre-se como avaliador e participe do processo científico dos eventos.', 'button' => 'Cadastrar Avaliador'],
+        'register.guest' => ['role' => 'guest', 'title' => 'Cadastrar Convidado', 'headline' => 'Crie a conta de convidado', 'text' => 'Esta conta vê apenas os eventos em que for vinculada como convidado e os próprios certificados.', 'button' => 'Cadastrar Convidado'],
+        'register.organizer' => ['role' => 'organizer', 'title' => 'Cadastrar Organizador', 'headline' => 'Crie a conta de organizador', 'text' => 'Depois de ativar o e-mail, esta conta gerencia somente os eventos em que for designada como organizador. Ela não cria outros eventos.', 'button' => 'Cadastrar Organizador'],
+    ];
+    $panelAccount = null;
+    foreach ($panelAccounts as $routeName => $account) {
+        if (request()->routeIs($routeName)) {
+            $panelAccount = $account;
+            break;
+        }
+    }
 @endphp
 
-@section('title', $isCoordinatorRegister ? 'Cadastrar Coordenador' : ($isReviewerRegister ? 'Cadastrar Avaliador' : 'Criar conta'))
+@section('title', $panelAccount['title'] ?? 'Criar conta')
 
 @section('content')
 
@@ -29,22 +40,10 @@
                 <span class="font-outfit font-bold text-2xl sm:text-3xl text-white">ConectaIFPA</span>
             </div>
             <h1 class="font-outfit font-bold text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white leading-tight mb-3 sm:mb-4">
-                @if ($isCoordinatorRegister)
-                    Crie sua conta de coordenador
-                @elseif($isReviewerRegister)
-                    Crie sua conta de avaliador
-                @else
-                    Faça parte da comunidade
-                @endif
+                {{ $panelAccount['headline'] ?? 'Faça parte da comunidade' }}
             </h1>
             <p class="text-white/90 text-base sm:text-lg max-w-sm">
-                @if ($isCoordinatorRegister)
-                    Cadastre-se como coordenador e organize eventos incríveis para sua comunidade.
-                @elseif($isReviewerRegister)
-                    Cadastre-se como avaliador e participe do processo científico dos eventos.
-                @else
-                    Cadastre-se e comece a participar dos eventos que vão transformar sua trajetória.
-                @endif
+                {{ $panelAccount['text'] ?? 'Cadastre-se e comece a participar dos eventos que vão transformar sua trajetória.' }}
             </p>
         </div>
     </div>
@@ -62,20 +61,14 @@
             </div>
 
             <h2 class="font-outfit font-bold text-xl sm:text-2xl lg:text-xl dash-title mb-1 lg:leading-tight">
-                @if ($isCoordinatorRegister)
-                    Cadastrar Coordenador
-                @elseif($isReviewerRegister)
-                    Cadastrar Avaliador
-                @else
-                    Criar conta
-                @endif
+                {{ $panelAccount['title'] ?? 'Criar conta' }}
             </h2>
             <p class="dash-muted text-sm mb-4 sm:mb-5 lg:mb-3">Preencha os dados abaixo</p>
 
             <x-validation-errors class="mb-4 lg:mb-3" />
 
             <form method="POST"
-                action="{{ $isCoordinatorRegister ? route('register.coordinator') : ($isReviewerRegister ? route('register.reviewer') : route('register')) }}"
+                action="{{ $panelAccount ? url()->current() : route('register') }}"
                 class="space-y-4 lg:space-y-3">
                 @csrf
 
@@ -95,7 +88,7 @@
                             placeholder="seu@email.com">
                     </div>
 
-                    @if (!$isCoordinatorRegister && !$isReviewerRegister)
+                    @if (!$panelAccount)
                         <div class="sm:col-span-2 min-w-0">
                             <label id="participant_profile_label" for="participant_profile_trigger" class="block font-outfit font-medium dash-title mb-2 lg:mb-1.5 text-sm">Perfil de participação</label>
                             <div class="profile-picker" data-profile-picker>
@@ -205,7 +198,7 @@
                     </div>
                 </div>
 
-                <input type="hidden" name="role" value="{{ $isCoordinatorRegister ? 'coordinator' : ($isReviewerRegister ? 'reviewer' : 'participant') }}">
+                <input type="hidden" name="role" value="{{ $panelAccount['role'] ?? 'participant' }}">
 
                 @if (Laravel\Jetstream\Jetstream::hasTermsAndPrivacyPolicyFeature())
                     <label class="flex items-start gap-3 cursor-pointer min-w-0">
@@ -221,7 +214,7 @@
                 @endif
 
                 <div class="flex flex-col gap-3 pt-1 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-4 sm:gap-y-3 lg:gap-y-2 min-w-0">
-                    @if (!$isCoordinatorRegister && !$isReviewerRegister)
+                    @if (!$panelAccount)
                         <a href="{{ route('login') }}" class="dash-link text-sm font-medium">
                             Já tem conta? Entrar
                         </a>
@@ -230,13 +223,7 @@
                     @endif
                     <button type="submit"
                         class="w-full sm:w-auto sm:shrink-0 px-8 py-3.5 lg:py-2.5 lg:px-6 rounded-xl dash-btn font-outfit font-semibold text-base lg:text-sm">
-                        @if ($isCoordinatorRegister)
-                            Cadastrar Coordenador
-                        @elseif($isReviewerRegister)
-                            Cadastrar Avaliador
-                        @else
-                            Criar conta
-                        @endif
+                        {{ $panelAccount['button'] ?? 'Criar conta' }}
                     </button>
                 </div>
             </form>
@@ -244,7 +231,7 @@
     </div>
 </div>
 
-@if(!$isCoordinatorRegister && !$isReviewerRegister)
+@if(!$panelAccount)
 <style>
     .profile-picker { position: relative; }
     .profile-picker-native {

@@ -9,8 +9,7 @@ class EventPresentationScheduleController extends Controller
 {
     public function manage(Event $event)
     {
-        $userId = (int) (auth()->id() ?? 0);
-        abort_unless($event->user_id === $userId && auth()->user()->isCoordinator(), 403);
+        abort_unless(auth()->user()?->managesEvent($event), 403);
 
         $works = Work::with(['authors.user', 'event', 'presentation'])
             ->where('event_id', $event->id)

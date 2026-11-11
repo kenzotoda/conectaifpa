@@ -29,4 +29,22 @@
     min-height: 2.75rem;
     align-self: flex-start;
 }
+.activity-guest-row {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+.activity-guest-row > .app-select,
+.activity-guest-row > select {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+    max-width: 100%;
+}
+.activity-guest-row > .btn-form-remove {
+    flex: 0 0 auto;
+    align-self: center;
+    min-height: 3rem;
+}
 </style>

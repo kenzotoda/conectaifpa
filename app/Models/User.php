@@ -32,6 +32,12 @@ class User extends Authenticatable implements MustVerifyEmail
 
     const ROLE_REVIEWER = 'reviewer';
 
+    const ROLE_GUEST = 'guest';
+
+    const ROLE_ORGANIZER = 'organizer';
+
+    private ?bool $ownsIssuedCertificates = null;
+
     public const PROFILE_DISCENTE = 'discente';
 
     public const PROFILE_DOCENTE = 'docente';
@@ -117,6 +123,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'password',
         'role',
+        'created_by_user_id',
         'matricula',
         'curso',
         'is_external_participant',
@@ -198,6 +205,65 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isReviewer()
     {
         return $this->role === self::ROLE_REVIEWER;
+    }
+
+    public function isGuest()
+    {
+        return $this->role === self::ROLE_GUEST;
+    }
+
+    public function isOrganizer()
+    {
+        return $this->role === self::ROLE_ORGANIZER;
+    }
+
+    public function hasIssuedCertificates(): bool
+    {
+        return $this->ownsIssuedCertificates ??= Certificate::query()
+            ->where('user_id', $this->id)
+            ->exists();
+    }
+
+    public function roleLabel(): string
+    {
+        return match ($this->role) {
+            self::ROLE_COORDINATOR => 'Coordenador',
+            self::ROLE_REVIEWER => 'Avaliador',
+            self::ROLE_GUEST => 'Convidado',
+            self::ROLE_ORGANIZER => 'Organizador',
+            default => 'Participante',
+        };
+    }
+
+    public function organizedEvents()
+    {
+        return $this->belongsToMany(Event::class, 'event_organizers')->withTimestamps();
+    }
+
+    public function managesEvent(Event|int|null $event): bool
+    {
+        $eventId = $event instanceof Event ? (int) $event->id : (int) $event;
+        if ($eventId <= 0) {
+            return false;
+        }
+
+        if ($this->isCoordinator()) {
+            $ownerId = $event instanceof Event
+                ? (int) $event->user_id
+                : (int) Event::query()->whereKey($eventId)->value('user_id');
+
+            return $ownerId === (int) $this->id;
+        }
+
+        if (! $this->isOrganizer()) {
+            return false;
+        }
+
+        if ($event instanceof Event && $event->relationLoaded('organizers')) {
+            return $event->organizers->contains(fn (User $organizer) => (int) $organizer->id === (int) $this->id);
+        }
+
+        return $this->organizedEvents()->where('events.id', $eventId)->exists();
     }
 
     public function submittedWorks()

@@ -113,8 +113,8 @@
                                     <span class="block text-sm text-slate-600 mt-1 leading-relaxed">{{ $help }}</span>
                                 </span>
                             </label>
-                            @if($event->{$field})
-                                <button type="submit" form="optional-generate-{{ $field }}" class="dash-btn-secondary px-3 py-2 rounded-xl text-xs font-semibold shrink-0" @disabled($optionalCertificateBlock)>Gerar</button>
+                            @if($event->{$field} && ! $globalCertificatesBlockMessage && ! $optionalCertificateBlock)
+                                <button type="submit" form="optional-generate-{{ $field }}" class="dash-btn-secondary px-3 py-2 rounded-xl text-xs font-semibold shrink-0">Gerar</button>
                             @endif
                         </div>
                         <p class="m-0 flex flex-wrap gap-2">
@@ -144,7 +144,7 @@
             'certificate_organization_enabled' => ['events.certificates.generate.organization', 'Gerar certificados de organização', 'Gerar o certificado de organização deste evento.'],
             'certificate_coauthor_enabled' => ['events.certificates.generate.coauthors', 'Gerar certificados de coautor', 'Gerar o certificado de coautor deste evento.'],
         ] as $field => [$generateRoute, $swalTitle, $swalText])
-            @if($event->{$field})
+            @if($event->{$field} && ! $globalCertificatesBlockMessage && ! $optionalCertificateBlock)
                 <form id="optional-generate-{{ $field }}" method="POST" action="{{ route($generateRoute, $event) }}" class="hidden cert-batch-swal-confirm" data-swal-title="{{ $swalTitle }}" data-swal-text="{{ $swalText }}">
                     @csrf
                 </form>
@@ -167,7 +167,7 @@
                 </div>
             </div>
             <div class="rounded-xl border border-slate-200/70 bg-gradient-to-b from-slate-50/80 to-white p-4 sm:p-5 shadow-inner shadow-slate-200/40 space-y-4">
-                <form action="{{ route('events.certificates.signatures', $event) }}" method="POST" class="space-y-4">
+                <form id="event-signatures-form" action="{{ route('events.certificates.signatures', $event) }}" method="POST" class="space-y-4">
                     @csrf
                     <p class="text-xs font-medium text-slate-500 m-0">Rolagem automática quando houver várias assinaturas cadastradas.</p>
                     <div class="grid sm:grid-cols-2 gap-2 max-h-[min(22rem,50svh)] overflow-y-auto overscroll-y-contain rounded-xl border border-slate-100 bg-white/70 p-3 shadow-inner">
@@ -180,7 +180,11 @@
                             <p class="text-sm text-slate-500 m-0 col-span-full py-4 text-center">Nenhuma assinatura cadastrada.</p>
                         @endforelse
                     </div>
-                    <button type="submit" class="dash-btn-secondary inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-sm font-semibold">Salvar assinaturas do evento</button>
+                    <p id="event-signatures-error" class="hidden m-0 text-sm text-red-800">Selecione pelo menos uma assinatura antes de salvar.</p>
+                    <button type="submit" class="dash-btn-secondary inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-sm font-semibold" @disabled($signatures->isEmpty())>Salvar assinaturas do evento</button>
+                    @if($signatures->isEmpty())
+                        <p class="m-0 text-sm text-amber-900">Cadastre uma assinatura antes de salvar.</p>
+                    @endif
                 </form>
             </div>
         </div>
@@ -358,30 +362,6 @@
                 </div>
             </div>
         </section>
-        <section id="cert-publicacao" class="dash-card scroll-mt-6 overflow-hidden rounded-2xl">
-            <div class="p-6 sm:p-7 space-y-4">
-                <h2 class="dash-title text-lg font-bold m-0">Publicação em anais ou e-book</h2>
-                @if($presentationWorks->isEmpty())
-                    <p class="text-sm text-slate-600 m-0">Não há trabalhos submetidos neste evento.</p>
-                @elseif(! $event->hasAnnalsPublication())
-                    <p class="text-sm text-amber-900 m-0">Publique o PDF dos anais ou do e-book antes de gerar este certificado.</p>
-                @else
-                    <p class="text-sm text-slate-600 m-0">O certificado sai para o autor principal de cada trabalho aceito para os anais. Trabalhos elegíveis: {{ $publicationEligible }}.</p>
-                    <form action="{{ route('events.certificates.meta', $event) }}" method="POST" class="flex flex-wrap items-end gap-3">
-                        @csrf
-                        <div>
-                            <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Carga horária da publicação</label>
-                            <input type="number" step="0.5" min="0" name="certificate_publication_hours" value="{{ old('certificate_publication_hours', $event->certificate_publication_hours) }}" placeholder="Em branco omite as horas" class="dash-field rounded-xl px-3 py-2.5 text-sm">
-                        </div>
-                        <button type="submit" class="dash-btn px-4 py-2.5 rounded-xl text-sm font-semibold">Salvar horas</button>
-                    </form>
-                    <form action="{{ route('events.certificates.generate.publications', $event) }}" method="POST" class="inline-block cert-batch-swal-confirm" data-swal-title="Gerar certificados de publicação" data-swal-text="Gerar o certificado de publicação dos trabalhos elegíveis. O e-mail sai só na primeira emissão.">
-                        @csrf
-                        <button type="submit" class="dash-btn px-4 py-2.5 rounded-xl text-sm font-semibold" @disabled($optionalCertificateBlock)>Gerar certificados de publicação</button>
-                    </form>
-                @endif
-            </div>
-        </section>
     @else
         <section class="overflow-hidden rounded-2xl border border-dashed border-slate-300/90 bg-gradient-to-br from-slate-50 to-white p-6 sm:p-7 shadow-inner">
             <h2 class="text-base font-bold text-slate-900 tracking-tight m-0">Apresentação de trabalhos</h2>
@@ -478,6 +458,24 @@ document.addEventListener('DOMContentLoaded', function () {
         el.addEventListener('input', applyUpper);
         applyUpper();
     });
+
+    var signaturesForm = document.getElementById('event-signatures-form');
+    if (signaturesForm) {
+        signaturesForm.addEventListener('submit', function (e) {
+            var picked = signaturesForm.querySelector('input[name="assinatura_ids[]"]:checked');
+            var error = document.getElementById('event-signatures-error');
+            if (picked) {
+                if (error) {
+                    error.classList.add('hidden');
+                }
+                return;
+            }
+            e.preventDefault();
+            if (error) {
+                error.classList.remove('hidden');
+            }
+        });
+    }
 
     document.querySelectorAll('form.cert-batch-swal-confirm').forEach(function (form) {
         function onConfirmSubmit(e) {

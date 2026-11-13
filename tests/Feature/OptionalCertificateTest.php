@@ -6,6 +6,7 @@ use App\Models\Certificate;
 use App\Models\Event;
 use App\Models\EventGuest;
 use App\Models\Review;
+use App\Models\Signature;
 use App\Models\User;
 use App\Models\Work;
 use App\Models\WorkAuthor;
@@ -258,6 +259,44 @@ class OptionalCertificateTest extends TestCase
         $this->assertSame(Certificate::TYPE_ORGANIZATION, $coordinatorCertificate->tipo);
         $this->assertSame('Coordenador', $coordinatorCertificate->recipient_role);
         $this->assertSame(0, Certificate::query()->where('tipo', Certificate::TYPE_ORGANIZATION)->whereNull('user_id')->count());
+    }
+
+    public function test_signatures_must_be_selected_before_saving_or_generating(): void
+    {
+        [$event, $coordinator] = $this->readyEvent();
+        $signature = Signature::query()->create([
+            'nome' => 'Ana Lima',
+            'cargo' => 'Coordenadora',
+            'created_by_user_id' => $coordinator->id,
+        ]);
+
+        $this->actingAs($coordinator)
+            ->from(route('events.certificates.index', $event))
+            ->post(route('events.certificates.signatures', $event), [])
+            ->assertRedirect(route('events.certificates.index', $event))
+            ->assertSessionHasErrors('assinatura_ids')
+            ->assertSessionMissing('saved_ok');
+
+        $this->assertSame(0, $event->certificateSignatures()->count());
+
+        $this->actingAs($coordinator)
+            ->post(route('events.certificates.generate.participation', $event))
+            ->assertRedirect()
+            ->assertSessionMissing('msg');
+
+        $this->assertSame(0, Certificate::query()->count());
+
+        $this->actingAs($coordinator)
+            ->post(route('events.certificates.signatures', $event), [
+                'assinatura_ids' => [$signature->id],
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('saved_ok', true);
+
+        $this->assertSame(
+            [$signature->id],
+            $event->certificateSignatures()->pluck('assinaturas.id')->all()
+        );
     }
 
     /**

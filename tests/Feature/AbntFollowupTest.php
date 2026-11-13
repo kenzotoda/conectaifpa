@@ -35,34 +35,24 @@ class AbntFollowupTest extends TestCase
         });
     }
 
-    public function test_publication_certificate_waits_for_the_annals_pdf(): void
+    public function test_annals_reference_appears_only_after_the_pdf_is_published(): void
     {
-        [$event, $author, $work] = $this->publishedWork();
+        [, , $work] = $this->publishedWork();
 
-        $this->assertSame(0, app(CertificateIssuer::class)->batchPublications($event));
         $this->assertNull(AbntWorkReference::forWork($work));
 
-        $event->update([
+        $work->event->update([
             'annals_kind' => 'anais',
             'annals_file_name' => 'anais.pdf',
             'annals_storage_path' => 'anais/anais.pdf',
             'annals_uploaded_at' => now(),
-            'certificate_publication_hours' => 4,
         ]);
-
-        $this->assertSame(1, app(CertificateIssuer::class)->batchPublications($event->fresh()));
-        $certificate = Certificate::query()->where('tipo', Certificate::TYPE_PUBLICATION)->first();
-        $this->assertNotNull($certificate);
-        $this->assertSame($author->id, $certificate->user_id);
-        $code = $certificate->codigo_validacao;
-
-        $this->assertSame(0, app(CertificateIssuer::class)->batchPublications($event->fresh()));
-        $this->assertSame($code, $certificate->fresh()->codigo_validacao);
 
         $reference = AbntWorkReference::forWork($work->fresh());
         $this->assertNotNull($reference);
         $this->assertStringContainsString('DISCENTE, Ana', $reference);
         $this->assertStringContainsString('Anais', $reference);
+        $this->assertSame(0, Certificate::query()->count());
     }
 
     public function test_participation_rewrite_keeps_the_validation_code_and_does_not_email_again(): void
@@ -119,6 +109,43 @@ class AbntFollowupTest extends TestCase
         $presence->update(['presente' => true]);
         $this->assertTrue($issuer->issueActivity($participant, $activity->fresh(), $event));
         $this->assertSame(1, Certificate::query()->where('tipo', Certificate::TYPE_ACTIVITY)->count());
+    }
+
+    public function test_activity_presence_saves_the_whole_list_in_one_request(): void
+    {
+        [$event, $coordinator] = $this->readyEvent();
+        $present = User::factory()->create(['role' => User::ROLE_PARTICIPANT, 'name' => 'Ana Presente']);
+        $absent = User::factory()->create(['role' => User::ROLE_PARTICIPANT, 'name' => 'Bruno Ausente']);
+        $outsider = User::factory()->create(['role' => User::ROLE_PARTICIPANT]);
+        $event->users()->attach([$present->id, $absent->id]);
+        $activity = Activity::create([
+            'event_id' => $event->id,
+            'title' => 'Oficina',
+            'type' => Activity::TYPE_WORKSHOP,
+            'start_at' => now()->subDay(),
+            'end_at' => now()->subDay()->addHour(),
+            'location' => 'Sala 1',
+            'workload_hours' => 8,
+        ]);
+
+        $this->actingAs($coordinator)
+            ->get(route('events.certificates.activity.presence', [$event, $activity]))
+            ->assertOk()
+            ->assertSee('Ana Presente')
+            ->assertSee('Bruno Ausente')
+            ->assertDontSee('Depois de');
+
+        $this->actingAs($coordinator)
+            ->post(route('events.certificates.activity.presence.update', [$event, $activity]), [
+                'presentes' => $present->id.','.$outsider->id,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('presence_msg', 'Presença salva.');
+
+        $this->assertTrue((bool) ActivityPresence::query()->where('activity_id', $activity->id)->where('user_id', $present->id)->value('presente'));
+        $this->assertFalse((bool) ActivityPresence::query()->where('activity_id', $activity->id)->where('user_id', $absent->id)->value('presente'));
+        $this->assertNull(ActivityPresence::query()->where('activity_id', $activity->id)->where('user_id', $outsider->id)->first());
+        $this->assertNotNull(ActivityPresence::query()->where('activity_id', $activity->id)->where('user_id', $absent->id)->value('data_marcacao'));
     }
 
     public function test_hybrid_presence_records_both_channels(): void

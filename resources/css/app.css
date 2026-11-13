@@ -379,6 +379,17 @@
     border-bottom: 1px solid var(--dash-border);
 }
 
+@media (min-width: 1024px) {
+    .site-nav-desktop {
+        display: flex !important;
+    }
+
+    #menu-toggle,
+    #mobile-menu {
+        display: none !important;
+    }
+}
+
 .site-brand {
     color: var(--dash-title);
 }

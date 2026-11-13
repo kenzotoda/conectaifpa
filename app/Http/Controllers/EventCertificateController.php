@@ -82,9 +82,6 @@ class EventCertificateController extends Controller
             'activitiesBatchBlock' => $this->activitiesBatchReadyMessage($event),
             'activityAttendanceCompleteById' => $this->activityAttendanceCompleteMap($participantIds, $activities),
             'optionalCertificateBlock' => $this->optionalCertificateReadyMessage($event),
-            'publicationEligible' => $event->acceptsSubmissions()
-                ? Work::query()->where('event_id', $event->id)->whereIn('status', Work::annalsCertificateStatuses())->count()
-                : 0,
             'optionalEligible' => [
                 'reviewers' => $this->certificateIssuer->eligibleReviewers($event)->count(),
                 'guests' => $this->certificateIssuer->eligibleGuests($event)->count(),
@@ -237,19 +234,17 @@ class EventCertificateController extends Controller
             abort(404);
         }
 
-        $this->ensureActivityPresenceRows($event, $activity);
-
-        $participantIds = $event->participantUsers()->pluck('users.id');
+        $participantUsers = $event->participantUsers()->get(['users.id', 'users.name', 'users.email']);
         $presences = ActivityPresence::query()
             ->where('activity_id', $activity->id)
-            ->whereIn('user_id', $participantIds)
+            ->whereIn('user_id', $participantUsers->pluck('id'))
             ->get()
             ->keyBy('user_id');
 
         return view('events.certificates.activity-presence', [
             'event' => $event,
             'activity' => $activity,
-            'participantUsers' => $event->participantUsers()->get(),
+            'participantUsers' => $participantUsers,
             'presences' => $presences,
         ]);
     }
@@ -261,26 +256,47 @@ class EventCertificateController extends Controller
             abort(404);
         }
 
-        $participantIds = $event->participantUsers()->pluck('users.id')->all();
-        $presentIds = collect($request->input('presente', []))
-            ->map(fn ($id) => (int) $id)
-            ->filter(fn ($id) => in_array($id, $participantIds, true))
-            ->unique()
-            ->all();
+        $participantIds = $event->participantUsers()->pluck('users.id')->map(fn ($id) => (int) $id)->all();
+        $allowed = array_fill_keys($participantIds, true);
+        $splitIds = preg_split('/\s*,\s*/', (string) $request->input('presentes'), -1, PREG_SPLIT_NO_EMPTY);
+        $rawIds = $request->exists('presentes')
+            ? (is_array($splitIds) ? $splitIds : [])
+            : $request->input('presente', []);
+        $presentSet = [];
+        foreach ($rawIds as $id) {
+            $id = (int) $id;
+            if (isset($allowed[$id])) {
+                $presentSet[$id] = true;
+            }
+        }
 
-        foreach ($participantIds as $uid) {
-            ActivityPresence::updateOrCreate(
-                ['activity_id' => $activity->id, 'user_id' => $uid],
-                [
-                    'presente' => in_array((int) $uid, $presentIds, true),
-                    'marcado_por' => auth()->id(),
-                    'data_marcacao' => now(),
-                ]
-            );
+        if ($participantIds !== []) {
+            $now = now();
+            $actor = auth()->id();
+            $rows = [];
+            foreach ($participantIds as $uid) {
+                $rows[] = [
+                    'user_id' => $uid,
+                    'activity_id' => $activity->id,
+                    'presente' => isset($presentSet[$uid]),
+                    'marcado_por' => $actor,
+                    'data_marcacao' => $now,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+
+            foreach (array_chunk($rows, 500) as $chunk) {
+                ActivityPresence::query()->upsert(
+                    $chunk,
+                    ['user_id', 'activity_id'],
+                    ['presente', 'marcado_por', 'data_marcacao', 'updated_at']
+                );
+            }
         }
 
         return back()->with([
-            'msg' => 'Gravado com sucesso. Presença desta atividade.',
+            'presence_msg' => 'Presença salva.',
             'saved_ok' => true,
         ]);
     }
@@ -290,8 +306,11 @@ class EventCertificateController extends Controller
         $this->authorizeCoordinator($event);
 
         $data = $request->validate([
-            'assinatura_ids' => ['nullable', 'array'],
+            'assinatura_ids' => ['required', 'array', 'min:1'],
             'assinatura_ids.*' => ['integer', Rule::exists('assinaturas', 'id')],
+        ], [
+            'assinatura_ids.required' => 'Selecione pelo menos uma assinatura antes de salvar.',
+            'assinatura_ids.min' => 'Selecione pelo menos uma assinatura antes de salvar.',
         ]);
 
         $ordered = array_values(array_unique(array_map('intval', $data['assinatura_ids'] ?? [])));
@@ -313,7 +332,7 @@ class EventCertificateController extends Controller
         $this->authorizeCoordinator($event);
 
         if ($msg = $this->participationBatchReadyMessage($event)) {
-            return back()->with('msg', $msg);
+            return $this->redirectWhenBatchBlocked($event, $msg);
         }
 
         $count = $this->certificateIssuer->batchParticipation($event);
@@ -338,7 +357,7 @@ class EventCertificateController extends Controller
         $this->authorizeCoordinator($event);
 
         if ($msg = $this->activitiesBatchReadyMessage($event)) {
-            return back()->with('msg', $msg);
+            return $this->redirectWhenBatchBlocked($event, $msg);
         }
 
         $count = $this->certificateIssuer->batchActivitiesForEvent($event);
@@ -357,7 +376,7 @@ class EventCertificateController extends Controller
         }
 
         if ($msg = $this->presentationsBatchReadyMessage($event)) {
-            return back()->with('msg', $msg);
+            return $this->redirectWhenBatchBlocked($event, $msg);
         }
 
         $count = $this->certificateIssuer->batchPresentations($event);
@@ -449,28 +468,6 @@ class EventCertificateController extends Controller
         );
     }
 
-    public function generatePublications(Event $event)
-    {
-        $this->authorizeCoordinator($event);
-
-        if ($msg = $this->optionalCertificateReadyMessage($event)) {
-            return back()->with('msg', $msg);
-        }
-
-        if (! $event->hasAnnalsPublication()) {
-            return back()->with('msg', 'Publique o PDF dos anais ou do e-book antes de gerar o certificado de publicação.');
-        }
-
-        $count = $this->certificateIssuer->batchPublications($event);
-
-        return back()->with([
-            'msg' => $count > 0
-                ? 'Gravado com sucesso. '.$count.' certificado(s) de publicação gerado(s) ou atualizado(s). O e-mail sai só na primeira emissão.'
-                : 'Nenhum certificado novo de publicação. O PDF só é regravado quando o texto muda.',
-            'saved_ok' => true,
-        ]);
-    }
-
     public function issuedList(Event $event)
     {
         $this->authorizeCoordinator($event);
@@ -493,9 +490,6 @@ class EventCertificateController extends Controller
         if ($request->has('certificate_total_hours')) {
             $rules['certificate_total_hours'] = ['nullable', 'numeric', 'min:0', 'max:99999'];
         }
-        if ($request->has('certificate_publication_hours')) {
-            $rules['certificate_publication_hours'] = ['nullable', 'numeric', 'min:0', 'max:99999'];
-        }
         if ($request->has('certificate_organizer')) {
             $rules['certificate_organizer'] = ['nullable', 'string', 'max:255'];
         }
@@ -515,9 +509,6 @@ class EventCertificateController extends Controller
 
         if (array_key_exists('certificate_total_hours', $data)) {
             $event->certificate_total_hours = $data['certificate_total_hours'] ?? null;
-        }
-        if (array_key_exists('certificate_publication_hours', $data)) {
-            $event->certificate_publication_hours = $data['certificate_publication_hours'] ?? null;
         }
         if (array_key_exists('certificate_organizer', $data)) {
             $event->certificate_organizer = $data['certificate_organizer'] ?? null;
@@ -592,7 +583,7 @@ class EventCertificateController extends Controller
         }
 
         if ($msg = $this->optionalCertificateReadyMessage($event)) {
-            return back()->with('msg', $msg);
+            return $this->redirectWhenBatchBlocked($event, $msg);
         }
 
         $count = $batch();
@@ -665,6 +656,15 @@ class EventCertificateController extends Controller
         }
 
         return null;
+    }
+
+    private function redirectWhenBatchBlocked(Event $event, string $message)
+    {
+        if ($this->globalCertificateBlockedMessage($event) !== null) {
+            return back();
+        }
+
+        return back()->with('msg', $message);
     }
 
     /** Requisito comum antes de gerar qualquer tipo de certificado deste evento. */
@@ -879,13 +879,4 @@ class EventCertificateController extends Controller
         }
     }
 
-    private function ensureActivityPresenceRows(Event $event, Activity $activity): void
-    {
-        foreach ($event->participantUsers()->pluck('users.id') as $uid) {
-            ActivityPresence::firstOrCreate(
-                ['activity_id' => $activity->id, 'user_id' => $uid],
-                ['presente' => false]
-            );
-        }
-    }
 }

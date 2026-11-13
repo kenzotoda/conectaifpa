@@ -24,7 +24,6 @@
             <h2 class="dash-title font-semibold text-lg mb-2">Vinculação de avaliadores</h2>
             <p class="dash-text text-sm mb-4">
                 Depois do prazo de submissão e dentro do prazo de avaliação, selecione os trabalhos (por tipo), escolha os avaliadores e distribua.
-                Trabalhos recusados na triagem ficam fora desta lista.
                 Cada trabalho marcado deve ficar com no mínimo <span class="font-semibold">{{ $minReviewers }}</span> e no máximo
                 <span class="font-semibold">{{ $maxReviewers }}</span> avaliadores.
                 @if($event->review_deadline_at)
@@ -471,31 +470,6 @@
                                         <ion-icon name="eye-outline" class="text-base"></ion-icon>
                                         Detalhes
                                     </a>
-                                    @if($work->canBeDeskRejected())
-                                        <form action="{{ route('works.desk-reject', $work->id) }}" method="POST" class="mt-3 space-y-2 text-left">
-                                            @csrf
-                                            <input type="hidden" name="_desk_work_id" value="{{ $work->id }}">
-                                            <label class="block text-xs font-medium text-slate-600" for="desk-reason-{{ $work->id }}">Recusar na triagem</label>
-                                            <textarea
-                                                id="desk-reason-{{ $work->id }}"
-                                                name="author_feedback"
-                                                rows="2"
-                                                required
-                                                maxlength="5000"
-                                                placeholder="Motivo, visível para o autor"
-                                                class="dash-field w-full min-w-[12rem] px-3 py-2 rounded-lg text-xs"
-                                            >{{ (string) old('_desk_work_id') === (string) $work->id ? old('author_feedback') : '' }}</textarea>
-                                            @if((string) old('_desk_work_id') === (string) $work->id)
-                                                @error('author_feedback')
-                                                    <p class="text-xs text-red-600 m-0">{{ $message }}</p>
-                                                @enderror
-                                            @endif
-                                            <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-50 text-red-900 ring-1 ring-red-200">
-                                                <ion-icon name="close-circle-outline" class="text-base"></ion-icon>
-                                                Recusar na triagem
-                                            </button>
-                                        </form>
-                                    @endif
                                 </td>
                             </tr>
                         @endforeach

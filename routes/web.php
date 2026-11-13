@@ -131,9 +131,6 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/works/{work}/decision', [ReviewController::class, 'decide'])
         ->middleware('managesEvent')
         ->name('works.decision');
-    Route::post('/works/{work}/desk-reject', [ReviewController::class, 'deskReject'])
-        ->middleware('managesEvent')
-        ->name('works.desk-reject');
     Route::get('/works/{work}/reviews/{review}/feedback/download', [ReviewController::class, 'downloadEvaluatorFeedback'])
         ->middleware('managesEvent')
         ->name('reviews.feedback.download');
@@ -192,7 +189,6 @@ Route::middleware(['auth', 'managesEvent'])->group(function () {
     Route::post('/events/{event}/certificates/generate/guests', [EventCertificateController::class, 'generateGuests'])->name('events.certificates.generate.guests');
     Route::post('/events/{event}/certificates/generate/organization', [EventCertificateController::class, 'generateOrganization'])->name('events.certificates.generate.organization');
     Route::post('/events/{event}/certificates/generate/coauthors', [EventCertificateController::class, 'generateCoauthors'])->name('events.certificates.generate.coauthors');
-    Route::post('/events/{event}/certificates/generate/publications', [EventCertificateController::class, 'generatePublications'])->name('events.certificates.generate.publications');
     Route::post('/events/{event}/certificates/generate/activities-all', [EventCertificateController::class, 'generateActivitiesAll'])->name('events.certificates.generate.activities-all');
     Route::get('/events/{event}/certificates/issued', [EventCertificateController::class, 'issuedList'])->name('events.certificates.issued');
 

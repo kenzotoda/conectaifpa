@@ -37,7 +37,7 @@
                 </div>
 
                 <!-- Desktop Navigation -->
-                <div class="hidden md:flex items-center gap-1 lg:gap-2 flex-shrink-0 min-w-0">
+                <div class="site-nav-desktop hidden items-center gap-1 lg:gap-2 flex-shrink-0 min-w-0">
                     <a href="/#eventos"
                        class="site-nav-link px-4 py-2 text-sm font-medium transition-colors">
                         Eventos
@@ -97,18 +97,26 @@
                             </a>
                         @endif
                         @if(auth()->user()->isReviewer())
-                            <a href="/dashboard"
-                               class="site-nav-link px-4 py-2 text-sm font-medium transition-colors">
-                                Painel
-                            </a>
-                            <a href="{{ route('reviews.assigned') }}"
-                               class="site-nav-link px-4 py-2 text-sm font-medium transition-colors">
-                                Avaliações
-                            </a>
-                            <a href="{{ route('certificates.my') }}"
-                               class="site-nav-link px-4 py-2 text-sm font-medium transition-colors">
-                                Certificados
-                            </a>
+                            <details class="relative">
+                                <summary class="site-nav-link list-none px-4 py-2 text-sm font-medium transition-colors cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap">
+                                    Área do avaliador
+                                    <ion-icon name="chevron-down-outline" class="text-base"></ion-icon>
+                                </summary>
+                                <div class="site-menu absolute right-0 mt-2 w-56 rounded-xl p-1 z-50">
+                                    <a href="/dashboard"
+                                       class="site-nav-link block px-3 py-2 text-sm transition-colors">
+                                        Painel
+                                    </a>
+                                    <a href="{{ route('reviews.assigned') }}"
+                                       class="site-nav-link block px-3 py-2 text-sm transition-colors">
+                                        Avaliações
+                                    </a>
+                                    <a href="{{ route('certificates.my') }}"
+                                       class="site-nav-link block px-3 py-2 text-sm transition-colors">
+                                        Certificados
+                                    </a>
+                                </div>
+                            </details>
                         @endif
                     @endauth
 
@@ -143,7 +151,7 @@
                 </div>
 
                 <button id="menu-toggle" type="button"
-                        class="site-icon-btn md:hidden shrink-0 p-2.5 transition-colors touch-manipulation"
+                        class="site-icon-btn shrink-0 p-2.5 transition-colors touch-manipulation"
                         aria-label="Menu"
                         aria-expanded="false"
                         aria-controls="mobile-menu">
@@ -153,7 +161,7 @@
 
             <!-- Mobile Navigation -->
             <div id="mobile-menu"
-                 class="md:hidden hidden overflow-hidden transition-all duration-300 ease-out">
+                 class="hidden overflow-hidden transition-all duration-300 ease-out">
                 <div class="site-drawer-rule border-t">
                     <div class="site-drawer-tools px-4 pt-4 pb-3" aria-labelledby="mobile-a11y-section-label">
                         <p class="site-drawer-label text-xs font-semibold uppercase tracking-wide mb-3 m-0" id="mobile-a11y-section-label">

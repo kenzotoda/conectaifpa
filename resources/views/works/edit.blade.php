@@ -3,6 +3,7 @@
 @section('title', 'Editar Trabalho')
 
 @section('content')
+@include('partials.event-form-remove-button-styles')
 <div class="dash-page min-h-screen">
     @php
         $workTypeLabels = \App\Models\Work::workTypeLabels();
@@ -57,25 +58,33 @@
                     @endphp
                     <div id="coauthors-manual-container" class="space-y-3">
                         @foreach($manualRows as $idx => $row)
-                            <div class="coauthor-row account-lookup dash-panel grid grid-cols-1 sm:grid-cols-3 gap-2 p-3 rounded-xl items-start">
-                                <div>
-                                    <input type="email" name="coauthors_manual[{{ $idx }}][author_email]"
-                                           value="{{ $row['author_email'] ?? '' }}"
-                                           placeholder="E-mail do participante"
-                                           data-lookup-role="participant"
-                                           class="account-lookup-email dash-field w-full px-3 py-2 rounded-lg text-sm outline-none">
-                                    <p class="account-lookup-status dash-muted text-xs mt-1 m-0"></p>
+                            <div class="coauthor-row account-lookup dash-panel p-3 rounded-xl space-y-2">
+                                <div class="flex justify-end">
+                                    <button type="button" class="btn-form-remove btn-remove-coauthor">
+                                        <ion-icon name="trash-outline" aria-hidden="true"></ion-icon>
+                                        Remover
+                                    </button>
                                 </div>
-                                <input type="text" name="coauthors_manual[{{ $idx }}][author_name]"
-                                       value="{{ $row['author_name'] ?? '' }}"
-                                       placeholder="Nome"
-                                       readonly
-                                       class="account-lookup-name dash-field w-full px-3 py-2 rounded-lg text-sm outline-none bg-slate-50 cursor-not-allowed">
-                                <input type="text" name="coauthors_manual[{{ $idx }}][institution]"
-                                       value="{{ $row['institution'] ?? '' }}"
-                                       placeholder="Instituição / curso"
-                                       readonly
-                                       class="account-lookup-extra dash-field w-full px-3 py-2 rounded-lg text-sm outline-none bg-slate-50 cursor-not-allowed">
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 items-start">
+                                    <div>
+                                        <input type="email" name="coauthors_manual[{{ $idx }}][author_email]"
+                                               value="{{ $row['author_email'] ?? '' }}"
+                                               placeholder="E-mail do participante"
+                                               data-lookup-role="participant"
+                                               class="account-lookup-email dash-field w-full px-3 py-2 rounded-lg text-sm outline-none">
+                                        <p class="account-lookup-status dash-muted text-xs mt-1 m-0"></p>
+                                    </div>
+                                    <input type="text" name="coauthors_manual[{{ $idx }}][author_name]"
+                                           value="{{ $row['author_name'] ?? '' }}"
+                                           placeholder="Nome"
+                                           readonly
+                                           class="account-lookup-name dash-field w-full px-3 py-2 rounded-lg text-sm outline-none bg-slate-50 cursor-not-allowed">
+                                    <input type="text" name="coauthors_manual[{{ $idx }}][institution]"
+                                           value="{{ $row['institution'] ?? '' }}"
+                                           placeholder="Instituição / curso"
+                                           readonly
+                                           class="account-lookup-extra dash-field w-full px-3 py-2 rounded-lg text-sm outline-none bg-slate-50 cursor-not-allowed">
+                                </div>
                             </div>
                         @endforeach
                     </div>
@@ -108,20 +117,39 @@
     var btn = document.getElementById('add-coauthor-row');
     if (!container || !btn) return;
     var inputClass = 'dash-field w-full px-3 py-2 rounded-lg text-sm outline-none';
-    btn.addEventListener('click', function () {
-        var rows = container.querySelectorAll('.coauthor-row');
-        var idx = rows.length;
-        var wrap = document.createElement('div');
-        wrap.className = 'coauthor-row account-lookup dash-panel grid grid-cols-1 sm:grid-cols-3 gap-2 p-3 rounded-xl';
-        wrap.innerHTML =
+    function reindexCoauthors() {
+        container.querySelectorAll('.coauthor-row').forEach(function (row, idx) {
+            row.querySelectorAll('[name]').forEach(function (input) {
+                input.name = input.name.replace(/coauthors_manual\[\d+\]/, 'coauthors_manual[' + idx + ']');
+            });
+        });
+    }
+    function coauthorRowHtml(idx) {
+        return '<div class="flex justify-end"><button type="button" class="btn-form-remove btn-remove-coauthor">' +
+            '<ion-icon name="trash-outline" aria-hidden="true"></ion-icon> Remover</button></div>' +
+            '<div class="grid grid-cols-1 sm:grid-cols-3 gap-2 items-start">' +
             '<div><input type="email" name="coauthors_manual[' + idx + '][author_email]" placeholder="E-mail do participante" data-lookup-role="participant" class="account-lookup-email ' + inputClass + '">' +
             '<p class="account-lookup-status dash-muted text-xs mt-1 m-0"></p></div>' +
             '<input type="text" name="coauthors_manual[' + idx + '][author_name]" placeholder="Nome" readonly class="account-lookup-name ' + inputClass + ' bg-slate-50 cursor-not-allowed">' +
-            '<input type="text" name="coauthors_manual[' + idx + '][institution]" placeholder="Instituição / curso" readonly class="account-lookup-extra ' + inputClass + ' bg-slate-50 cursor-not-allowed">';
+            '<input type="text" name="coauthors_manual[' + idx + '][institution]" placeholder="Instituição / curso" readonly class="account-lookup-extra ' + inputClass + ' bg-slate-50 cursor-not-allowed">' +
+            '</div>';
+    }
+    btn.addEventListener('click', function () {
+        var idx = container.querySelectorAll('.coauthor-row').length;
+        var wrap = document.createElement('div');
+        wrap.className = 'coauthor-row account-lookup dash-panel p-3 rounded-xl space-y-2';
+        wrap.innerHTML = coauthorRowHtml(idx);
         container.appendChild(wrap);
         if (typeof window.scrollAddedIntoView === 'function') {
             window.scrollAddedIntoView(wrap);
         }
+    });
+    container.addEventListener('click', function (event) {
+        var button = event.target.closest('.btn-remove-coauthor');
+        if (!button || !container.contains(button)) return;
+        var row = button.closest('.coauthor-row');
+        if (row) row.remove();
+        reindexCoauthors();
     });
 })();
 </script>

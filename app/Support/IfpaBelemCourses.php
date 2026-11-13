@@ -6,6 +6,8 @@ namespace App\Support;
  * Cursos do Campus Belém publicados no Portal de Dados Abertos do IFPA
  * (conjunto "Cursos 2025", posição janeiro/2026). Turnos repetidos foram
  * unificados. Cursos FIC ficaram de fora.
+ * Técnico em Aquicultura (Subsequente) não consta nesse conjunto, mas é
+ * ofertado no campus (SIGAA, site do campus e PSU 2025/2026).
  */
 class IfpaBelemCourses
 {
@@ -51,6 +53,7 @@ class IfpaBelemCourses
             'Técnico subsequente' => [
                 'Técnico em Agente Comunitário de Saúde (Subsequente)',
                 'Técnico em Agrimensura (Subsequente)',
+                'Técnico em Aquicultura (Subsequente)',
                 'Técnico em Design de Interiores (Subsequente)',
                 'Técnico em Edificações (Subsequente)',
                 'Técnico em Eletrônica (Subsequente)',

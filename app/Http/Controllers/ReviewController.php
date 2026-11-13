@@ -887,39 +887,6 @@ class ReviewController extends Controller
         return back()->with('msg', $successMsg);
     }
 
-    public function deskReject(Request $request, $workId)
-    {
-        $work = Work::with(['event', 'submitter', 'reviewerAssignments'])->findOrFail($workId);
-        $this->ensureCoordinatorOwner($work);
-
-        if (! $work->canBeDeskRejected()) {
-            return back()->with('msg', 'Só é possível recusar na triagem um trabalho ainda não distribuído a avaliadores.');
-        }
-
-        $request->merge([
-            'author_feedback' => trim((string) $request->input('author_feedback')),
-        ]);
-
-        $data = $request->validate([
-            'author_feedback' => ['required', 'string', 'max:5000'],
-        ], [
-            'author_feedback.required' => 'Informe o motivo da recusa na triagem.',
-            'author_feedback.max' => 'O motivo da triagem pode ter no máximo 5000 caracteres.',
-        ]);
-
-        $work->status = Work::STATUS_DESK_REJECTED;
-        $work->author_feedback = $data['author_feedback'];
-        $work->decision_at = now();
-        $work->decision_by = auth()->id();
-        $work->save();
-
-        if ($work->submitter) {
-            EventMailer::notify($work->submitter, new WorkDecisionRecorded($work, WorkDecisionRecorded::DESK_REJECTED));
-        }
-
-        return back()->with('msg', 'Trabalho recusado na triagem. O autor foi avisado por e-mail.');
-    }
-
     public function downloadMyEvaluatorFeedback($workId)
     {
         $work = Work::with('event')->findOrFail($workId);

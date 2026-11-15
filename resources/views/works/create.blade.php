@@ -46,7 +46,7 @@
                         <strong class="dash-title">Autor principal:</strong> {{ auth()->user()->name }} ({{ auth()->user()->email }}).
                     </p>
                     <label class="dash-title block text-sm font-medium mb-1">Outros autores (opcional)</label>
-                    <p class="dash-muted text-xs mb-3 m-0">Informe primeiro o e-mail de uma conta de participante. O nome e a instituição são preenchidos com os dados dessa conta.</p>
+                    <p class="dash-muted text-xs mb-3 m-0">Informe o e-mail de uma conta de participante. O envio só segue quando essa conta é encontrada.</p>
                     @php
                         $manualRows = old('coauthors_manual');
                         if (!is_array($manualRows)) {

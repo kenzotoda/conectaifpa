@@ -29,11 +29,13 @@
                     const extra = box.querySelector('.account-lookup-extra');
                     const email = input.value.trim();
                     if (email === '') {
+                        input.dataset.accountState = '';
                         if (name) name.value = '';
                         if (extra) extra.value = '';
                         if (status) status.textContent = '';
                         return;
                     }
+                    input.dataset.accountState = 'pending';
                     const params = new URLSearchParams({
                         email: email,
                         papel: input.dataset.lookupRole || 'participant',
@@ -43,16 +45,21 @@
                         credentials: 'same-origin',
                     });
                     if (response.status === 403) {
+                        input.dataset.accountState = 'missing';
                         if (status) status.textContent = 'Esta consulta não está disponível para a sua conta.';
                         return;
                     }
                     const data = await response.json();
                     if (!data.found) {
+                        input.dataset.accountState = 'missing';
                         if (name) name.value = '';
                         if (extra) extra.value = '';
                         if (status) status.textContent = data.message || 'Conta não encontrada.';
+                        input.setAttribute('aria-invalid', 'true');
                         return;
                     }
+                    input.dataset.accountState = 'found';
+                    input.removeAttribute('aria-invalid');
                     if (name) name.value = data.name || '';
                     if (extra) extra.value = data.institution || '';
                     if (status) status.textContent = 'Conta encontrada.';
@@ -67,6 +74,27 @@
                     input.lookupTimer = setTimeout(function () {
                         lookup(input);
                     }, 350);
+                });
+                document.addEventListener('submit', async function (event) {
+                    const form = event.target;
+                    if (!(form instanceof HTMLFormElement) || form.dataset.coauthorGate === 'pass') {
+                        return;
+                    }
+                    const emails = [...form.querySelectorAll('.coauthor-row .account-lookup-email')]
+                        .filter((input) => input.value.trim() !== '');
+                    if (emails.length === 0) {
+                        return;
+                    }
+                    event.preventDefault();
+                    for (const input of emails) {
+                        await lookup(input);
+                        if (input.dataset.accountState !== 'found') {
+                            input.focus();
+                            return;
+                        }
+                    }
+                    form.dataset.coauthorGate = 'pass';
+                    HTMLFormElement.prototype.submit.call(form);
                 });
                 document.addEventListener('focusout', function (event) {
                     const input = event.target.closest?.('.account-lookup-email');

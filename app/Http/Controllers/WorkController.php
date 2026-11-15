@@ -150,11 +150,12 @@ class WorkController extends Controller
             return back()->withErrors(['file' => 'Envie um arquivo válido (PDF, DOC, DOCX ou ODT).'])->withInput();
         }
 
-        $filePath = $this->uploadWorkFile($request->file('file'));
         $submitter = auth()->user();
         $manualCoauthors = $this->normalizedManualCoauthors($request, $submitter);
+        $filePath = $this->uploadWorkFile($request->file('file'));
 
-        $work = DB::transaction(function () use ($data, $event, $filePath, $submitter, $manualCoauthors) {
+        try {
+            $work = DB::transaction(function () use ($data, $event, $filePath, $submitter, $manualCoauthors) {
             $work = Work::create([
                 'event_id' => $event->id,
                 'submitter_user_id' => $submitter->id,
@@ -175,7 +176,11 @@ class WorkController extends Controller
             );
 
             return $work;
-        });
+            });
+        } catch (\Throwable $e) {
+            $this->deleteFileFromStorage($filePath);
+            throw $e;
+        }
 
         EventMailer::notify($submitter, new WorkSubmitted($work));
 
@@ -369,15 +374,17 @@ class WorkController extends Controller
             $this->ensureSubmitterHasNoWorkOfType($work->event, $work->submitter_user_id, $data['work_type'], $work->id);
         }
 
+        $manualCoauthors = $this->normalizedManualCoauthors($request, $work->submitter);
+
         $newPath = null;
         if ($request->hasFile('file') && $request->file('file')->isValid()) {
             $newPath = $this->uploadWorkFile($request->file('file'));
         }
 
         $previousFilePath = $newPath ? $work->file_path : null;
-        $manualCoauthors = $this->normalizedManualCoauthors($request, $work->submitter);
 
-        DB::transaction(function () use ($work, $data, $newPath, $manualCoauthors) {
+        try {
+            DB::transaction(function () use ($work, $data, $newPath, $manualCoauthors) {
             if ($newPath) {
                 $work->file_path = $newPath;
             }
@@ -395,7 +402,13 @@ class WorkController extends Controller
                     uploadedByUserId: auth()->id()
                 );
             }
-        });
+            });
+        } catch (\Throwable $e) {
+            if ($newPath) {
+                $this->deleteFileFromStorage($newPath);
+            }
+            throw $e;
+        }
 
         if ($previousFilePath !== null && $previousFilePath !== '') {
             $this->deleteFileFromStorage($previousFilePath);

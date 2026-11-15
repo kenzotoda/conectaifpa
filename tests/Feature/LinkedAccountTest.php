@@ -8,6 +8,8 @@ use App\Models\EventGuest;
 use App\Models\User;
 use App\Models\Work;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class LinkedAccountTest extends TestCase
@@ -143,6 +145,8 @@ class LinkedAccountTest extends TestCase
             ])
             ->assertSessionHasErrors('coauthors_manual.0.author_email');
 
+        $this->assertNull($work->authors()->where('author_email', 'ninguem@example.com')->first());
+
         $this->actingAs($author)
             ->put(route('works.update', $work), [
                 'work_type' => 'resumo_simples',
@@ -156,6 +160,57 @@ class LinkedAccountTest extends TestCase
         $this->assertSame($coauthor->id, $saved->user_id);
         $this->assertSame('Coautor Real', $saved->author_name);
         $this->assertSame('coautor@example.com', $saved->author_email);
+    }
+
+    public function test_submission_with_unknown_coauthor_is_refused_before_the_file_is_stored(): void
+    {
+        config([
+            'services.supabase.url' => 'https://supabase.test',
+            'services.supabase.service_role' => 'test-key',
+            'services.supabase.bucket_works' => 'works-test',
+        ]);
+        Http::fake();
+
+        $author = User::factory()->create([
+            'role' => User::ROLE_PARTICIPANT,
+            'email' => 'autor@example.com',
+        ]);
+        $event = Event::create([
+            'user_id' => User::factory()->create()->id,
+            'title' => 'Evento',
+            'category' => 'Tecnologia',
+            'event_type' => 'Congresso',
+            'modality' => 'Presencial',
+            'capacity' => 20,
+            'internal_capacity' => 10,
+            'external_capacity' => 10,
+            'description' => 'Descricao',
+            'start_date' => now()->toDateString(),
+            'end_date' => now()->addDay()->toDateString(),
+            'campus' => Event::FIXED_CAMPUS,
+            'building' => Event::FIXED_BUILDING,
+            'venue' => Event::FIXED_VENUE,
+            'address' => Event::FIXED_ADDRESS,
+            'image' => 'teste.png',
+            'coordinator_name' => 'Coordenacao',
+            'coordinator_email' => 'coord@example.com',
+            'accepts_submissions' => true,
+            'submission_deadline_at' => now()->addDay(),
+        ]);
+        $event->users()->attach($author->id);
+
+        $this->actingAs($author)
+            ->post(route('events.works.store', $event), [
+                'work_type' => 'resumo_simples',
+                'file' => UploadedFile::fake()->create('trabalho.pdf', 20, 'application/pdf'),
+                'coauthors_manual' => [
+                    ['author_email' => 'sem-conta@example.com', 'author_name' => 'Herica Ellen'],
+                ],
+            ])
+            ->assertSessionHasErrors('coauthors_manual.0.author_email');
+
+        $this->assertSame(0, Work::query()->count());
+        Http::assertNothingSent();
     }
 
     public function test_guest_only_sees_linked_events_and_cannot_open_event_creation(): void

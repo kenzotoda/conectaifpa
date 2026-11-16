@@ -36,6 +36,15 @@
 #eventDescription .ql-size-small { font-size: 0.75em; }
 #eventDescription .ql-size-large { font-size: 1.5em; }
 #eventDescription .ql-size-huge { font-size: 2.5em; }
+/* Linha em branco do Quill (<p><br></p>): uma linha, sem a margem dos parágrafos. */
+#eventDescription p:has(> br:only-child) {
+    margin-top: 0;
+    margin-bottom: 0;
+    line-height: 1.6;
+}
+#eventDescription p:has(+ p > br:only-child) {
+    margin-bottom: 0;
+}
 /* Fundo do banner (áreas vazias) */
 .banner-bg {
     background: var(--dash-canvas);

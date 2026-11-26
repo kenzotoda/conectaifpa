@@ -41,7 +41,7 @@ class WorkController extends Controller
         return view('works.my', compact('works'));
     }
 
-    public function indexByEvent(Request $request, $eventId)
+    public function indexByEvent($eventId)
     {
         $event = Event::findOrFail($eventId);
 
@@ -49,23 +49,16 @@ class WorkController extends Controller
             abort(403, 'Acesso negado.');
         }
 
-        $worksQuery = Work::with(['submitter', 'authors', 'decisionByUser'])
+        $works = Work::with(['submitter', 'authors', 'decisionByUser'])
             ->withCount([
                 'reviewerAssignments',
                 'reviewerAssignments as reviewer_assignments_completed_count' => static function ($q) {
                     $q->where('status', WorkReviewer::STATUS_COMPLETED);
                 },
             ])
-            ->where('event_id', $event->id);
-
-        $selectedType = $request->query('work_type');
-        if (! empty($selectedType)) {
-            $worksQuery->where('work_type', $selectedType);
-        }
-
-        $works = $worksQuery->orderBy('id')
-            ->paginate(self::WORK_LIST_PER_PAGE)
-            ->withQueryString();
+            ->where('event_id', $event->id)
+            ->orderBy('id')
+            ->get();
 
         $distributionAllowed = $event->reviewersEvaluationWindowOpen();
 
@@ -95,14 +88,6 @@ class WorkController extends Controller
             ->orderBy('name')
             ->get();
 
-        $availableTypes = Work::query()
-            ->where('event_id', $event->id)
-            ->distinct()
-            ->orderBy('work_type')
-            ->pluck('work_type')
-            ->filter()
-            ->values();
-
         $minReviewers = $event->minReviewersPerWork();
         $maxReviewers = $event->maxReviewersPerWork();
 
@@ -112,8 +97,6 @@ class WorkController extends Controller
             'availableReviewers',
             'minReviewers',
             'maxReviewers',
-            'availableTypes',
-            'selectedType',
             'distributionAllowed',
             'worksGroupedByType',
             'oldWorkIds'

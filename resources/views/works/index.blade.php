@@ -331,90 +331,47 @@
             @endif
         </div>
 
-        <div class="dash-card rounded-2xl p-5 sm:p-6 mb-6">
-            <h2 class="dash-title font-semibold text-lg mb-3">Filtrar trabalhos</h2>
-            <form method="GET" action="{{ route('events.works.index', $event->id) }}"
-                  class="flex flex-col sm:flex-row gap-3 sm:items-end">
-                <div class="flex-1">
-                    <label for="work_type_filter" class="block text-sm font-medium text-slate-700 mb-2">
-                        Tipo de trabalho
-                    </label>
-                    <select id="work_type_filter" name="work_type"
-                            class="dash-field w-full px-4 py-3 rounded-xl outline-none">
-                        <option value="">Todos os tipos</option>
-                        @foreach($availableTypes as $type)
-                            <option value="{{ $type }}" @selected(($selectedType ?? '') === $type)>
-                                {{ $workTypeLabels[$type] ?? $type }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="flex gap-2">
-                    <button type="submit"
-                            class="dash-btn inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold transition-colors">
-                        <ion-icon name="filter-outline"></ion-icon>
-                        Filtrar
-                    </button>
-                    @if(!empty($selectedType))
-                        <a href="{{ route('events.works.index', $event->id) }}"
-                           class="dash-btn-secondary inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold no-underline transition-colors">
-                            <ion-icon name="close-outline"></ion-icon>
-                            Limpar
-                        </a>
-                    @endif
-                </div>
-            </form>
-        </div>
+        <h2 class="dash-title font-semibold text-lg mb-3">Trabalhos</h2>
 
         @if($works->isEmpty())
             <div class="dash-card rounded-2xl p-8 text-center">
-                <h3 class="dash-title font-semibold text-lg mb-2">
-                    @if(!empty($selectedType))
-                        Nenhum trabalho deste tipo
-                    @else
-                        Nenhuma submissão ainda
-                    @endif
-                </h3>
-                <p class="dash-muted m-0">
-                    @if(!empty($selectedType))
-                        Não há submissões para o tipo selecionado. Tente outro filtro.
-                    @else
-                        As submissões aparecerão aqui quando os estudantes enviarem trabalhos.
-                    @endif
-                </p>
+                <h3 class="dash-title font-semibold text-lg mb-2">Nenhuma submissão ainda</h3>
+                <p class="dash-muted m-0">As submissões aparecerão aqui quando os estudantes enviarem trabalhos.</p>
             </div>
         @else
-            <div class="dash-card dash-table overflow-x-auto overflow-y-auto max-h-[min(75vh,52rem)] rounded-2xl">
-                <table class="w-full text-sm text-left min-w-[62rem]">
-                    <thead class="sticky top-0 z-10 font-semibold border-b">
+            <div class="dash-card dash-table works-datatable rounded-2xl">
+                <table id="worksTable" class="w-full text-sm text-left">
+                    <thead class="font-semibold border-b">
                         <tr>
-                            <th scope="col" class="px-4 py-3">ID</th>
-                            <th scope="col" class="px-4 py-3">Trabalho</th>
-                            <th scope="col" class="px-4 py-3">Autor principal</th>
-                            <th scope="col" class="px-4 py-3">Tipo</th>
-                            <th scope="col" class="px-4 py-3">Status</th>
-                            <th scope="col" class="px-4 py-3 text-center">Avaliadores</th>
-                            <th scope="col" class="px-4 py-3 text-center whitespace-nowrap">Decisão final</th>
-                            <th scope="col" class="px-4 py-3 text-right">Ações</th>
+                            <th scope="col" class="works-col-id px-3 py-3">ID</th>
+                            <th scope="col" class="works-col-title px-3 py-3">Trabalho</th>
+                            <th scope="col" class="works-col-author px-3 py-3">Autor principal</th>
+                            <th scope="col" class="works-col-type px-3 py-3">Tipo</th>
+                            <th scope="col" class="works-col-status px-3 py-3">Status</th>
+                            <th scope="col" class="works-col-reviewers px-3 py-3 text-center">Avaliadores</th>
+                            <th scope="col" class="works-col-decision px-3 py-3 text-center">Decisão final</th>
+                            <th scope="col" class="works-col-actions px-3 py-3 text-right">Ações</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200">
+                        @php $workSequence = 0; @endphp
                         @foreach($works as $work)
-                            <tr class="hover:bg-slate-50/80 align-top">
-                                <td class="px-4 py-3 text-slate-500 font-mono whitespace-nowrap">#{{ $work->id }}</td>
-                                <td class="px-4 py-3 font-medium text-slate-900 break-words [overflow-wrap:anywhere] max-w-[14rem]">
+                            @php $workSequence++; @endphp
+                            <tr class="hover:bg-slate-50/80 align-middle">
+                                <td data-label="ID" class="px-3 py-3 text-slate-500 font-mono whitespace-nowrap" data-order="{{ $workSequence }}">#{{ $workSequence }}</td>
+                                <td data-label="Trabalho" class="px-3 py-3 font-medium text-slate-900">
                                     {{ $work->listTitleCompact(false) }}
                                 </td>
-                                <td class="px-4 py-3 text-slate-700 break-words [overflow-wrap:anywhere] max-w-[12rem]">
+                                <td data-label="Autor principal" class="px-3 py-3 text-slate-700">
                                     {{ $work->submitter->name ?? 'não informado' }}
                                 </td>
-                                <td class="px-4 py-3 text-slate-700 whitespace-nowrap">
+                                <td data-label="Tipo" class="px-3 py-3 text-slate-700">
                                     {{ $workTypeLabels[$work->work_type] ?? $work->work_type }}
                                 </td>
-                                <td class="px-4 py-3 text-slate-700 whitespace-nowrap">
+                                <td data-label="Status" class="px-3 py-3 text-slate-700">
                                     {{ $work->statusLabel() }}
                                 </td>
-                                <td class="px-4 py-3 text-center text-slate-700">
+                                <td data-label="Avaliadores" class="px-3 py-3 text-center text-slate-700">
                                     {{ $work->reviewer_assignments_count }}
                                 </td>
                                 @php
@@ -425,7 +382,7 @@
                                         ? 'Decisão registrada em '.$work->decision_at->format('d/m/Y H:i').'. '.$work->statusLabel().($work->decisionByUser ? ' · '.$work->decisionByUser->name : '')
                                         : null;
                                 @endphp
-                                <td class="px-4 py-3 text-center align-middle">
+                                <td data-label="Decisão final" class="px-3 py-3 text-center align-middle">
                                     @if(!$distributionAllowed)
                                         <span class="text-xs text-slate-400 cursor-default" title="Após encerrar o prazo de submissão você verá quando todos os pareceres foram enviados.">-</span>
                                     @elseif($work->coordinatorDecisionIsTerminal())
@@ -464,7 +421,7 @@
                                         </span>
                                     @endif
                                 </td>
-                                <td class="px-4 py-3 text-right">
+                                <td data-label="Ações" class="px-3 py-3 text-right">
                                     <a href="{{ route('works.show', $work->id) }}"
                                        class="dash-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold no-underline transition-colors">
                                         <ion-icon name="eye-outline" class="text-base"></ion-icon>
@@ -476,11 +433,6 @@
                     </tbody>
                 </table>
             </div>
-            @if($works->hasPages())
-                <div class="mt-4">
-                    {{ $works->links() }}
-                </div>
-            @endif
         @endif
     </div>
 </div>

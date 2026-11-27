@@ -300,11 +300,9 @@
                                             && !$event->isFinalized()
                                             && (!$event->calendarEnded() || \App\Models\Event::flowUnlocked())
                                             && $event->workSubmissionWindowOpen();
-                                        $hasUnusedWorkType = \App\Models\Work::submitterCanSubmitAnotherWork($event, auth()->id());
-                                        $canSubmitWork = $submissionWindowOpen && $hasUnusedWorkType;
                                     @endphp
 
-                                    @if($canSubmitWork)
+                                    @if($submissionWindowOpen)
                                         <a href="{{ route('events.works.create', $event->id) }}"
                                            class="dash-btn inline-flex flex-wrap items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold no-underline transition-colors text-center break-words [overflow-wrap:anywhere]">
                                             <ion-icon name="cloud-upload-outline" aria-hidden="true"></ion-icon>
@@ -314,11 +312,6 @@
                                         <span class="dash-badge inline-flex flex-wrap items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-center break-words [overflow-wrap:anywhere]">
                                             <ion-icon name="ban-outline" aria-hidden="true"></ion-icon>
                                             Sem submissão
-                                        </span>
-                                    @elseif($submissionWindowOpen && !$hasUnusedWorkType)
-                                        <span class="dash-badge inline-flex flex-wrap items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-center break-words [overflow-wrap:anywhere]">
-                                            <ion-icon name="checkmark-done-outline" aria-hidden="true"></ion-icon>
-                                            Tipos de trabalho já submetidos
                                         </span>
                                     @else
                                         <span class="dash-badge inline-flex flex-wrap items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-center break-words [overflow-wrap:anywhere]">

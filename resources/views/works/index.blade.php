@@ -493,7 +493,7 @@
                             <tr class="hover:bg-slate-50/80 align-middle">
                                 <td data-label="ID" class="px-3 py-3 text-slate-500 font-mono whitespace-nowrap" data-order="{{ $workSequence }}">#{{ $workSequence }}</td>
                                 <td data-label="Trabalho" class="px-3 py-3 font-medium text-slate-900">
-                                    {{ $work->listTitleCompact(false) }}
+                                    {{ $work->listTitleCompact(true) }}
                                 </td>
                                 <td data-label="Autor principal" class="px-3 py-3 text-slate-700">
                                     {{ $work->submitter->name ?? 'não informado' }}

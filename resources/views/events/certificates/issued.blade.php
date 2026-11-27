@@ -29,7 +29,12 @@
                                 <span class="block text-xs text-slate-500">Sem conta. Baixe e entregue</span>
                             @endif
                         </td>
-                        <td class="px-4 py-2">{{ \App\Models\Certificate::typeLabel($c->tipo) }}</td>
+                        <td class="px-4 py-2">
+                            {{ \App\Models\Certificate::typeLabel($c->tipo) }}
+                            @if($c->work)
+                                <span class="block text-xs text-slate-500">{{ $c->work->listTitleCompact(true) }}</span>
+                            @endif
+                        </td>
                         <td class="px-4 py-2 font-mono text-xs">{{ $c->codigo_validacao }}</td>
                         <td class="px-4 py-2 text-right">
                             <a href="{{ route('certificates.download', $c) }}" class="dash-link font-medium no-underline">Baixar</a>

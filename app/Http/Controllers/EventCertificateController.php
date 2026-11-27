@@ -474,7 +474,7 @@ class EventCertificateController extends Controller
 
         $certificates = Certificate::query()
             ->where('event_id', $event->id)
-            ->with(['user', 'eventGuest', 'workAuthor'])
+            ->with(['user', 'eventGuest', 'workAuthor', 'work'])
             ->orderByDesc('data_emissao')
             ->paginate(40);
 
@@ -878,5 +878,4 @@ class EventCertificateController extends Controller
             );
         }
     }
-
 }

@@ -7,7 +7,7 @@
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
         <div class="mb-6">
             <p class="dash-muted text-sm mb-1">{{ $work->event->title }}</p>
-            <h1 class="dash-title font-montserrat font-bold text-2xl sm:text-3xl">{{ $work->listTitleCompact() }}</h1>
+            <h1 class="dash-title font-montserrat font-bold text-2xl sm:text-3xl">{{ $work->listTitleCompact(true) }}</h1>
             @if(!empty($isCorrectionReReview) && $isCorrectionReReview)
                 <div class="dash-panel dash-text mt-4 rounded-xl px-4 py-3 text-sm">
                     <p class="font-semibold m-0 mb-1">Reavaliação da versão corrigida</p>

@@ -56,7 +56,7 @@
                                     {{ $assignment->work->event->title }}
                                 </td>
                                 <td class="px-4 py-3 font-medium text-slate-900 break-words [overflow-wrap:anywhere] max-w-[14rem]">
-                                    {{ $assignment->work->listTitleCompact() }}
+                                    {{ $assignment->work->listTitleCompact(true) }}
                                     @if($workCorrRound)
                                         <span class="dash-link block mt-1.5 text-[0.7rem] font-semibold uppercase tracking-wide">
                                             Reavaliação: versão corrigida

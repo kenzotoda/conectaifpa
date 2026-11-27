@@ -118,7 +118,7 @@
                                                 {{ Work::workTypeLabels()[$work->work_type] ?? $work->work_type }}
                                             </span>
                                         </div>
-                                        <h2 class="dash-title text-xl font-bold m-0 break-words leading-tight tracking-tight">{{ $work->listTitleCompact() }}</h2>
+                                        <h2 class="dash-title text-xl font-bold m-0 break-words leading-tight tracking-tight">{{ $work->listTitleCompact(true) }}</h2>
                                         @php
                                             $authorLine = $work->authors->pluck('author_name')->filter()->take(5)->join(', ');
                                         @endphp

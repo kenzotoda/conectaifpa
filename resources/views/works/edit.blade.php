@@ -11,13 +11,13 @@
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
         <div class="mb-6">
             <p class="dash-muted text-sm mb-1">Edição de submissão</p>
-            <h1 class="dash-title font-montserrat font-bold text-2xl sm:text-3xl">{{ $work->listTitleCompact() }}</h1>
+            <h1 class="dash-title font-montserrat font-bold text-2xl sm:text-3xl">{{ $work->listTitleCompact(true) }}</h1>
         </div>
 
         <div class="dash-card rounded-2xl p-5 sm:p-6">
             <x-validation-errors class="mb-4" />
 
-            <form action="{{ route('works.update', $work->id) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+            <form action="{{ route('works.update', $work->id) }}" method="POST" enctype="multipart/form-data" class="space-y-4" data-single-submit>
                 @csrf
                 @method('PUT')
 

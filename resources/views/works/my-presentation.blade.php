@@ -55,7 +55,7 @@
                                         <span class="min-w-0">{{ $work->event->title }}</span>
                                     </a>
                                     <h2 class="font-semibold text-lg sm:text-xl text-slate-900 leading-snug m-0 [overflow-wrap:anywhere]">
-                                        {{ $work->listTitleCompact() }}
+                                        {{ $work->listTitleCompact(true) }}
                                     </h2>
                                 </div>
                                 <span class="inline-flex items-center shrink-0 rounded-full border px-3 py-1 text-xs font-bold tracking-wide ring-1 {{ $badgeClass }}">

@@ -51,7 +51,7 @@
                                     {{ $work->event->title }}
                                 </td>
                                 <td class="px-4 py-3 font-medium text-slate-900 break-words [overflow-wrap:anywhere]">
-                                    {{ $work->listTitleCompact() }}
+                                    {{ $work->listTitleCompact(true) }}
                                 </td>
                                 <td class="px-4 py-3 text-slate-700 whitespace-nowrap">
                                     {{ $workTypeLabels[$work->work_type] ?? $work->work_type }}

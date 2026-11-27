@@ -17,7 +17,7 @@
         <div class="dash-card rounded-2xl p-5 sm:p-6 overflow-hidden">
             <x-validation-errors class="mb-4" />
 
-            <form action="{{ route('events.works.store', $event->id) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+            <form action="{{ route('events.works.store', $event->id) }}" method="POST" enctype="multipart/form-data" class="space-y-4" data-single-submit>
                 @csrf
 
                 <div>

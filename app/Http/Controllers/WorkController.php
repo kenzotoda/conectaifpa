@@ -16,9 +16,10 @@ use App\Services\WorkScoreService;
 use Carbon\Carbon;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class WorkController extends Controller
 {
@@ -116,15 +117,9 @@ class WorkController extends Controller
         $event = Event::findOrFail($eventId);
         $this->ensureCanSubmitToEvent($event);
 
-        $workTypes = $this->availableWorkTypesForStudentSubmit($event, auth()->user());
-        if (empty($workTypes)) {
-            return redirect()->route('works.my')
-                ->with('msg', 'Você já submeteu um trabalho para cada tipo disponível neste evento.');
-        }
-
         return view('works.create', [
             'event' => $event,
-            'workTypes' => $workTypes,
+            'workTypes' => $this->availableWorkTypesForEvent($event),
         ]);
     }
 
@@ -135,7 +130,6 @@ class WorkController extends Controller
 
         $data = $request->validate($this->studentSubmitRules(), $this->messages());
         $this->ensureAcceptedWorkType($event, $data['work_type']);
-        $this->ensureSubmitterHasNoWorkOfType($event, auth()->id(), $data['work_type']);
 
         if (! $request->hasFile('file') || ! $request->file('file')->isValid()) {
             return back()->withErrors(['file' => 'Envie um arquivo válido (PDF, DOC, DOCX ou ODT).'])->withInput();
@@ -147,26 +141,26 @@ class WorkController extends Controller
 
         try {
             $work = DB::transaction(function () use ($data, $event, $filePath, $submitter, $manualCoauthors) {
-            $work = Work::create([
-                'event_id' => $event->id,
-                'submitter_user_id' => $submitter->id,
-                'title' => null,
-                'abstract' => null,
-                'work_type' => $data['work_type'],
-                'file_path' => $filePath,
-                'status' => Work::STATUS_SUBMITTED,
-            ]);
+                $work = Work::create([
+                    'event_id' => $event->id,
+                    'submitter_user_id' => $submitter->id,
+                    'title' => null,
+                    'abstract' => null,
+                    'work_type' => $data['work_type'],
+                    'file_path' => $filePath,
+                    'status' => Work::STATUS_SUBMITTED,
+                ]);
 
-            $this->syncAuthorsFromSubmission($work, $submitter, $manualCoauthors);
+                $this->syncAuthorsFromSubmission($work, $submitter, $manualCoauthors);
 
-            $this->createVersionSnapshot(
-                work: $work,
-                filePath: $filePath,
-                changeLog: 'Versão inicial submetida pelo autor.',
-                uploadedByUserId: auth()->id()
-            );
+                $this->createVersionSnapshot(
+                    work: $work,
+                    filePath: $filePath,
+                    changeLog: 'Versão inicial submetida pelo autor.',
+                    uploadedByUserId: auth()->id()
+                );
 
-            return $work;
+                return $work;
             });
         } catch (\Throwable $e) {
             $this->deleteFileFromStorage($filePath);
@@ -349,7 +343,7 @@ class WorkController extends Controller
         return view('works.edit', [
             'work' => $work,
             'event' => $work->event,
-            'workTypes' => $this->availableWorkTypesForStudentEdit($work->event, $work),
+            'workTypes' => $this->availableWorkTypesForEvent($work->event, $work->work_type),
             'manualCoauthorRows' => $manualCoauthorRows,
         ]);
     }
@@ -361,9 +355,6 @@ class WorkController extends Controller
 
         $data = $request->validate($this->studentSubmitRules($work->id), $this->messages());
         $this->ensureAcceptedWorkType($work->event, $data['work_type']);
-        if ($data['work_type'] !== $work->work_type) {
-            $this->ensureSubmitterHasNoWorkOfType($work->event, $work->submitter_user_id, $data['work_type'], $work->id);
-        }
 
         $manualCoauthors = $this->normalizedManualCoauthors($request, $work->submitter);
 
@@ -376,23 +367,23 @@ class WorkController extends Controller
 
         try {
             DB::transaction(function () use ($work, $data, $newPath, $manualCoauthors) {
-            if ($newPath) {
-                $work->file_path = $newPath;
-            }
+                if ($newPath) {
+                    $work->file_path = $newPath;
+                }
 
-            $work->work_type = $data['work_type'];
-            $work->save();
+                $work->work_type = $data['work_type'];
+                $work->save();
 
-            $this->syncAuthorsFromSubmission($work, $work->submitter, $manualCoauthors);
+                $this->syncAuthorsFromSubmission($work, $work->submitter, $manualCoauthors);
 
-            if ($newPath) {
-                $this->createVersionSnapshot(
-                    work: $work,
-                    filePath: $newPath,
-                    changeLog: 'Arquivo atualizado pelo autor durante a janela de submissão.',
-                    uploadedByUserId: auth()->id()
-                );
-            }
+                if ($newPath) {
+                    $this->createVersionSnapshot(
+                        work: $work,
+                        filePath: $newPath,
+                        changeLog: 'Arquivo atualizado pelo autor durante a janela de submissão.',
+                        uploadedByUserId: auth()->id()
+                    );
+                }
             });
         } catch (\Throwable $e) {
             if ($newPath) {
@@ -827,57 +818,6 @@ class WorkController extends Controller
         return $acceptedTypes;
     }
 
-    /** Tipos que o aluno ainda não usou neste evento (uma submissão por tipo). */
-    private function availableWorkTypesForStudentSubmit(Event $event, User $user): array
-    {
-        $all = $this->availableWorkTypesForEvent($event);
-        $used = Work::query()
-            ->where('event_id', $event->id)
-            ->where('submitter_user_id', $user->id)
-            ->pluck('work_type')
-            ->unique()
-            ->all();
-
-        return array_values(array_diff($all, $used));
-    }
-
-    /** Tipos permitidos na edição: os ainda não usados em outra submissão + o tipo atual. */
-    private function availableWorkTypesForStudentEdit(Event $event, Work $work): array
-    {
-        $all = $this->availableWorkTypesForEvent($event, $work->work_type);
-        $usedElsewhere = Work::query()
-            ->where('event_id', $event->id)
-            ->where('submitter_user_id', $work->submitter_user_id)
-            ->where('id', '!=', $work->id)
-            ->pluck('work_type')
-            ->unique()
-            ->all();
-
-        $available = array_values(array_diff($all, $usedElsewhere));
-        if (! in_array($work->work_type, $available, true)) {
-            $available[] = $work->work_type;
-        }
-        sort($available);
-
-        return $available;
-    }
-
-    private function ensureSubmitterHasNoWorkOfType(Event $event, int $submitterUserId, string $workType, ?int $exceptWorkId = null): void
-    {
-        $query = Work::query()
-            ->where('event_id', $event->id)
-            ->where('submitter_user_id', $submitterUserId)
-            ->where('work_type', $workType);
-
-        if ($exceptWorkId !== null) {
-            $query->where('id', '!=', $exceptWorkId);
-        }
-
-        if ($query->exists()) {
-            abort(403, 'Você já possui uma submissão deste tipo neste evento. Cada tipo só pode ser enviado uma vez.');
-        }
-    }
-
     private function createVersionSnapshot(Work $work, string $filePath, ?string $changeLog, int $uploadedByUserId): void
     {
         $nextVersion = ((int) $work->versions()->max('version_number')) + 1;
@@ -911,7 +851,7 @@ class WorkController extends Controller
     private function uploadFileToBucket($file, string $bucket): string
     {
         $extension = strtolower($file->getClientOriginalExtension() ?: 'pdf');
-        $fileName = md5($file->getClientOriginalName().now()->timestamp.rand()).'.'.$extension;
+        $fileName = (string) Str::uuid().'.'.$extension;
         $path = "works/{$fileName}";
 
         $response = Http::withHeaders([

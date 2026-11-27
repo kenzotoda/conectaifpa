@@ -300,7 +300,7 @@
                                     <div class="dash-panel px-4 py-3.5 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 gap-x-4">
                                         <div class="min-w-0 flex-1">
                                             <p class="dash-muted text-[11px] font-bold uppercase tracking-wider m-0">Submissão / referência</p>
-                                            <p class="font-semibold text-slate-900 m-0 mt-1 [overflow-wrap:anywhere] leading-snug">{{ $w->listTitleCompact() }}</p>
+                                            <p class="font-semibold text-slate-900 m-0 mt-1 [overflow-wrap:anywhere] leading-snug">{{ $w->listTitleCompact(true) }}</p>
                                             <p class="text-sm text-slate-600 m-0 mt-1.5">
                                                 <span class="text-slate-500 font-medium">Autor principal:</span> {{ $w->submitter?->name ?? '-' }}
                                             </p>

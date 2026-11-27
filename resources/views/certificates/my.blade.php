@@ -14,6 +14,9 @@
                 <div>
                     <p class="dash-title font-semibold m-0">{{ \App\Models\Certificate::typeLabel($c->tipo) }}</p>
                     <p class="dash-text text-sm m-0 mt-1">{{ $c->event->title }}</p>
+                    @if($c->work)
+                        <p class="dash-muted text-sm m-0 mt-1">{{ $c->work->listTitleCompact(true) }}</p>
+                    @endif
                     <p class="dash-muted text-xs m-0 mt-1 font-mono">{{ $c->codigo_validacao }} · {{ $c->data_emissao->format('d/m/Y') }}</p>
                     <p class="text-xs m-0 mt-1"><a href="{{ route('certificates.verify', ['codigo' => $c->codigo_validacao]) }}" class="dash-link no-underline" target="_blank" rel="noopener">Abrir página de validação</a></p>
                 </div>

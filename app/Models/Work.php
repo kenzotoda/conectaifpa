@@ -263,32 +263,8 @@ class Work extends Model
     }
 
     /**
-     * O participante ainda pode abrir nova submissão neste evento (falta algum tipo de trabalho não usado).
-     */
-    public static function submitterCanSubmitAnotherWork(Event $event, int $userId): bool
-    {
-        if (! $event->acceptsSubmissions()) {
-            return false;
-        }
-
-        $pool = $event->acceptedWorkTypes()->values()->all();
-        if (empty($pool)) {
-            $pool = self::workTypeOptions();
-        }
-
-        $used = self::query()
-            ->where('event_id', $event->id)
-            ->where('submitter_user_id', $userId)
-            ->pluck('work_type')
-            ->unique()
-            ->all();
-
-        return count(array_diff($pool, $used)) > 0;
-    }
-
-    /**
      * Título para listas e telas quando o aluno não informou título na submissão.
-     * O sufixo #id aparece apenas para visão do coordenador (controle interno).
+     * O sufixo #id distingue várias submissões do mesmo tipo.
      */
     public function listTitle(bool $includeCoordinatorNumber = false): string
     {
@@ -305,7 +281,7 @@ class Work extends Model
 
     /**
      * Rótulo curto para tabelas/cabeçalhos: sem o prefixo "Submissão:" quando só há tipo.
-     * Evita redundância com colunas já nomeadas "Submissão" ou "Trabalho".
+     * O sufixo #id distingue várias submissões do mesmo tipo.
      */
     public function listTitleCompact(bool $includeCoordinatorNumber = false): string
     {

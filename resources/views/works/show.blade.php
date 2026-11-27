@@ -68,7 +68,7 @@
                 </p>
                 <div class="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-5">
                     <div class="min-w-0 flex-1">
-                        <h1 class="dash-title font-montserrat font-bold text-2xl sm:text-3xl lg:text-[1.875rem] leading-tight [overflow-wrap:anywhere] m-0">{{ $work->listTitleCompact($isCoordinator) }}</h1>
+                        <h1 class="dash-title font-montserrat font-bold text-2xl sm:text-3xl lg:text-[1.875rem] leading-tight [overflow-wrap:anywhere] m-0">{{ $work->listTitleCompact(true) }}</h1>
                         <p class="mt-3 m-0">
                             <span class="inline-flex items-center rounded-lg px-3 py-1 text-sm font-semibold {{ $workStatusBadgeClass }}">{{ $work->statusLabel() }}</span>
                         </p>

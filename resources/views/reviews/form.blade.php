@@ -16,9 +16,19 @@
                         Na reavaliação você deve apenas <strong>aceitar</strong> ou <strong>rejeitar</strong>; não use "aceitar com correções".
                     </p>
                     <p class="m-0 text-xs opacity-95">
-                        O arquivo que você enviar fica só para a coordenação, separado da versão registrada pelo autor, que não é alterada.
+                        @if(!empty($directCoordinatorReview) && $directCoordinatorReview)
+                            O arquivo refinado fica separado da versão do autor. Ao aceitar, a versão oficial final é o arquivo que passa a valer.
+                        @else
+                            O arquivo que você enviar fica só para a coordenação, separado da versão registrada pelo autor, que não é alterada.
+                        @endif
                         Mantenha a <strong>mesma extensão</strong> do trabalho atual (ex.: PDF).
                     </p>
+                </div>
+            @endif
+            @if(!empty($directCoordinatorReview) && $directCoordinatorReview)
+                <div class="dash-panel dash-text mt-4 rounded-xl px-4 py-3 text-sm">
+                    <p class="font-semibold m-0 mb-1">Você é o avaliador deste evento</p>
+                    <p class="m-0">O parecer que você enviar já registra a decisão final. Não há encaminhamento para outra pessoa.</p>
                 </div>
             @endif
             <div class="mt-3">
@@ -102,14 +112,41 @@
                               class="dash-field w-full px-4 py-3 rounded-xl outline-none">{{ old('comment_to_author', $review->comment_to_author ?? '') }}</textarea>
                 </div>
 
+                @if(!empty($directCoordinatorReview) && $directCoordinatorReview)
+                    <div>
+                        <label class="dash-title block text-sm font-medium mb-2" for="official_final_file">Versão oficial final</label>
+                        <p class="dash-muted text-xs mb-2">Obrigatória ao aceitar o trabalho. É o arquivo que passa a valer para a apresentação. PDF, DOC, DOCX ou ODT, até 10MB.</p>
+                        <input id="official_final_file" type="file" name="official_final_file"
+                               accept=".pdf,.doc,.docx,.odt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text"
+                               class="dash-field w-full px-4 py-3 rounded-xl outline-none">
+                    </div>
+                    @if(empty($isCorrectionReReview) || ! $isCorrectionReReview)
+                        <div>
+                            <label class="dash-title block text-sm font-medium mb-2" for="correction_deadline_at">Prazo para a versão corrigida</label>
+                            <p class="dash-muted text-xs mb-2">Obrigatório ao aceitar com correções. Precisa ser uma data futura e anterior ao prazo de avaliação do evento.</p>
+                            <input id="correction_deadline_at" type="datetime-local" name="correction_deadline_at"
+                                   value="{{ old('correction_deadline_at') }}"
+                                   class="dash-field w-full px-4 py-3 rounded-xl outline-none">
+                        </div>
+                    @endif
+                @endif
+
                 <div>
                     <label class="dash-title block text-sm font-medium mb-2">
-                        Arquivo para a coordenação
+                        {{ !empty($directCoordinatorReview) && $directCoordinatorReview ? 'Arquivo de correções para o autor' : 'Arquivo para a coordenação' }}
                     </label>
                     <p class="dash-muted text-xs mb-2">
                         @if(!empty($isCorrectionReReview) && $isCorrectionReReview)
                             <strong>Obrigatório nesta rodada.</strong>
-                            Envie a sua versão refinada (pode ser igual à do autor com ajustes pontuais). Fica apenas à disposição da coordenação, sem alterar a versão do autor no sistema. Use a mesma extensão da submissão atual (ex.: PDF).
+                            Envie a sua versão refinada (pode ser igual à do autor com ajustes pontuais). Ela não substitui a versão do autor.
+                            @if(!empty($directCoordinatorReview) && $directCoordinatorReview)
+                                Ao aceitar, envie também a versão oficial final.
+                            @else
+                                Fica apenas à disposição da coordenação.
+                            @endif
+                            Use a mesma extensão da submissão atual (ex.: PDF).
+                        @elseif(!empty($directCoordinatorReview) && $directCoordinatorReview)
+                            Obrigatório se a recomendação for “Aceitar com correções”. Este arquivo é enviado diretamente ao autor. PDF, DOC, DOCX ou ODT, até 10MB.
                         @else
                             Obrigatório se a recomendação for “Aceitar com correções”. Serve de base para o coordenador preparar o retorno ao autor. PDF, DOC, DOCX ou ODT, até 10MB.
                         @endif
@@ -124,7 +161,7 @@
                     <button type="submit"
                             class="dash-btn inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold disabled:opacity-60">
                         <ion-icon name="checkmark-done-outline"></ion-icon>
-                        Enviar avaliação
+                        {{ !empty($directCoordinatorReview) && $directCoordinatorReview ? 'Enviar parecer e registrar decisão' : 'Enviar avaliação' }}
                     </button>
                     <a href="{{ route('reviews.assigned') }}"
                        class="dash-btn-secondary inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold no-underline">

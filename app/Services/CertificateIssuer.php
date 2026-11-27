@@ -191,6 +191,7 @@ class CertificateIssuer
         $hours = $event->certificate_total_hours;
 
         $payload = [
+            'template' => CertificateDocument::templateRevision(),
             'recipient' => $user->name,
             'eventTitle' => $event->title,
             'organizer' => $event->certificateOrganizerDisplay(),
@@ -304,6 +305,7 @@ class CertificateIssuer
         $event->loadMissing('certificateSignatures');
 
         $payload = [
+            'template' => CertificateDocument::templateRevision(),
             'recipient' => $user->name,
             'activity' => $activity->title,
             'eventTitle' => $event->title,
@@ -442,6 +444,7 @@ class CertificateIssuer
         $recipientName = $mainAuthor?->author_name ?: $user->name;
 
         $payload = [
+            'template' => CertificateDocument::templateRevision(),
             'recipient' => $recipientName,
             'eventTitle' => $event->title,
             'organizer' => $event->certificateOrganizerDisplay(),
@@ -826,6 +829,7 @@ class CertificateIssuer
         $event->loadMissing('certificateSignatures');
 
         $payload = [
+            'template' => CertificateDocument::templateRevision(),
             'tipo' => $tipo,
             'recipient' => $recipientName,
             'role' => $recipientRole,
@@ -929,6 +933,7 @@ class CertificateIssuer
     {
         $pdf = Pdf::loadView($view, $viewData);
         $pdf->setPaper('a4', 'landscape');
+        $pdf->setOption('enable_font_subsetting', true);
 
         $binary = $pdf->output();
 

@@ -433,14 +433,20 @@
         @endif
 
         {{-- ===== AVALIADOR: Trabalhos designados ===== --}}
-        @if(auth()->check() && auth()->user()->isReviewer())
+        @if(auth()->check() && auth()->user()->canAccessReviewerArea())
         <div class="mb-8">
             <div class="dash-card rounded-2xl p-8 sm:p-10 text-center">
                 <div class="dash-icon-well w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                     <ion-icon name="clipboard-outline" class="text-3xl" aria-hidden="true"></ion-icon>
                 </div>
-                <h3 class="dash-title font-semibold text-lg mb-2">Painel do avaliador</h3>
-                <p class="dash-text mb-6 max-w-md mx-auto text-sm">Acesse os trabalhos designados e envie suas avaliações por critério.</p>
+                <h3 class="dash-title font-semibold text-lg mb-2">{{ auth()->user()->isReviewer() ? 'Painel do avaliador' : 'Avaliação dos trabalhos' }}</h3>
+                <p class="dash-text mb-6 max-w-md mx-auto text-sm">
+                    @if(auth()->user()->isReviewer())
+                        Acesse os trabalhos designados e envie suas avaliações por critério.
+                    @else
+                        Você está avaliando os trabalhos do seu evento. O parecer que enviar já registra a decisão.
+                    @endif
+                </p>
                 <a href="{{ route('reviews.assigned') }}"
                    class="dash-btn inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold no-underline transition-colors">
                     <ion-icon name="arrow-forward-outline" aria-hidden="true"></ion-icon>

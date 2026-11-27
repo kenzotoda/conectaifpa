@@ -17,7 +17,13 @@
         @if($assignments->isEmpty())
             <div class="dash-card rounded-2xl p-8 text-center">
                 <h3 class="dash-title font-semibold text-lg mb-2">Nenhum trabalho designado</h3>
-                <p class="dash-muted m-0">Quando um coordenador vincular você como avaliador, os trabalhos aparecerão aqui.</p>
+                <p class="dash-muted m-0">
+                    @if(auth()->user()->isCoordinator())
+                        Quando você vincular os trabalhos na página do evento, eles aparecerão aqui para o parecer.
+                    @else
+                        Quando um coordenador vincular você como avaliador, os trabalhos aparecerão aqui.
+                    @endif
+                </p>
             </div>
         @else
             <div class="dash-card dash-table overflow-x-auto overflow-y-auto max-h-[min(75vh,52rem)] rounded-2xl">

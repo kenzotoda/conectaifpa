@@ -96,7 +96,9 @@ class ReviewController extends Controller
             ? (float) $assignment->prior_evaluation_score
             : null;
 
-        return view('reviews.form', compact('work', 'review', 'assignment', 'isCorrectionReReview', 'carryOverScore'));
+        $directCoordinatorReview = $this->coordinatorReviewsThisWorkDirectly($work, (int) auth()->id());
+
+        return view('reviews.form', compact('work', 'review', 'assignment', 'isCorrectionReReview', 'carryOverScore', 'directCoordinatorReview'));
     }
 
     public function submit(Request $request, $workId, WorkScoreService $scoreService)
@@ -140,6 +142,7 @@ class ReviewController extends Controller
         }
 
         $isCorrectionReReview = $work->isAwaitingCorrectionReReview();
+        $directCoordinatorReview = $this->coordinatorReviewsThisWorkDirectly($work, (int) $reviewerId);
 
         if ($isCorrectionReReview && $assignment->prior_evaluation_score !== null) {
             $request->merge([
@@ -157,7 +160,9 @@ class ReviewController extends Controller
 
         $data = $request->validate([
             'recommendation' => ['required', Rule::in($allowedRecommendations)],
-            'score' => 'required|numeric',
+            'score' => $directCoordinatorReview
+                ? ['required', 'numeric', 'min:0', 'max:999.99']
+                : 'required|numeric',
             'general_comment' => 'nullable|string|max:5000',
             'comment_to_author' => 'nullable|string|max:5000',
             'feedback_file' => [
@@ -175,12 +180,65 @@ class ReviewController extends Controller
             'recommendation.in' => 'A recomendação selecionada não é válida para esta etapa do trabalho.',
             'score.required' => 'A nota da avaliação é obrigatória.',
             'score.numeric' => 'A nota deve conter apenas números.',
+            'score.min' => 'A nota final não pode ser negativa.',
+            'score.max' => 'A nota final não pode ultrapassar 999,99.',
             'feedback_file.required' => $isCorrectionReReview
-                ? 'Na reavaliação da versão corrigida é obrigatório enviar o arquivo refinado para a coordenação (fica registado como documento separado da versão enviada pelo autor).'
-                : 'Ao aceitar com correções, o arquivo de feedback para a coordenação é obrigatório.',
+                ? 'Na reavaliação da versão corrigida é obrigatório enviar o arquivo refinado. Ele fica separado da versão enviada pelo autor.'
+                : ($directCoordinatorReview
+                    ? 'Ao aceitar com correções, o arquivo de correções para o autor é obrigatório.'
+                    : 'Ao aceitar com correções, o arquivo de feedback para a coordenação é obrigatório.'),
             'feedback_file.mimes' => 'O arquivo deve estar em PDF, DOC, DOCX ou ODT.',
             'feedback_file.max' => 'O arquivo deve ter no máximo 10MB.',
         ]);
+
+        if ($directCoordinatorReview) {
+            $request->validate([
+                'correction_deadline_at' => [
+                    Rule::requiredIf(fn () => ! $isCorrectionReReview && $request->input('recommendation') === Review::RECOMMENDATION_ACCEPT_WITH_CORRECTIONS),
+                    'nullable',
+                    'date',
+                    'after:now',
+                ],
+                'official_final_file' => [
+                    Rule::requiredIf(fn () => $request->input('recommendation') === Review::RECOMMENDATION_ACCEPT),
+                    'nullable',
+                    'file',
+                    'mimes:'.self::FEEDBACK_FILE_MIMES,
+                    'max:'.self::FEEDBACK_FILE_MAX_KB,
+                ],
+            ], [
+                'correction_deadline_at.required' => 'Informe o prazo para o autor enviar a versão corrigida.',
+                'correction_deadline_at.required_if' => 'Informe o prazo para o autor enviar a versão corrigida.',
+                'correction_deadline_at.after' => 'O prazo de correção deve ser uma data/hora futura.',
+                'official_final_file.required' => 'Para aceitar o trabalho é obrigatório enviar a versão oficial final.',
+                'official_final_file.mimes' => 'A versão oficial deve estar em PDF, DOC, DOCX ou ODT.',
+                'official_final_file.max' => 'A versão oficial deve ter no máximo 10MB.',
+            ]);
+
+            if (
+                ! $isCorrectionReReview
+                && $data['recommendation'] === Review::RECOMMENDATION_ACCEPT_WITH_CORRECTIONS
+                && $work->event->hasReviewDeadline()
+                && ! Event::flowUnlocked()
+            ) {
+                if ($work->event->reviewDeadlinePassed()) {
+                    return back()
+                        ->withErrors([
+                            'correction_deadline_at' => 'O prazo de avaliação já encerrou. Não é possível pedir correções que precisem de nova avaliação.',
+                        ])
+                        ->withInput();
+                }
+
+                $correctionAt = Carbon::parse($request->input('correction_deadline_at'));
+                if ($correctionAt->greaterThanOrEqualTo(Carbon::parse($work->event->review_deadline_at))) {
+                    return back()
+                        ->withErrors([
+                            'correction_deadline_at' => 'O prazo de correção precisa ser anterior ao prazo de avaliação do evento.',
+                        ])
+                        ->withInput();
+                }
+            }
+        }
 
         $feedbackUploaded = $request->hasFile('feedback_file') && $request->file('feedback_file')->isValid();
 
@@ -219,10 +277,13 @@ class ReviewController extends Controller
 
         $feedbackFilePath = null;
         if ($feedbackUploaded && ! $isCorrectionReReview) {
+            $feedbackBucket = $directCoordinatorReview
+                ? (string) config('services.supabase.bucket_coordinator_to_participant')
+                : (string) config('services.supabase.bucket_corrected_works');
             try {
                 $feedbackFilePath = $this->uploadFileToBucket(
                     $request->file('feedback_file'),
-                    (string) config('services.supabase.bucket_corrected_works')
+                    $feedbackBucket
                 );
             } catch (\RuntimeException $e) {
                 return back()->withErrors([
@@ -230,6 +291,19 @@ class ReviewController extends Controller
                 ])->withInput();
             }
         }
+
+        $officialFileName = null;
+        if ($directCoordinatorReview && $data['recommendation'] === Review::RECOMMENDATION_ACCEPT) {
+            try {
+                $officialFileName = $this->uploadOfficialWorkFile($request->file('official_final_file'));
+            } catch (\RuntimeException $e) {
+                return back()->withErrors([
+                    'official_final_file' => 'Falha ao enviar a versão oficial: '.$e->getMessage(),
+                ])->withInput();
+            }
+        }
+
+        $directDecisionStatus = null;
 
         DB::transaction(function () use (
             $data,
@@ -240,6 +314,10 @@ class ReviewController extends Controller
             $feedbackFilePath,
             $isCorrectionReReview,
             $refinedCorrectionFileName,
+            $directCoordinatorReview,
+            $officialFileName,
+            $request,
+            &$directDecisionStatus,
         ) {
             $payload = [
                 'recommendation' => $data['recommendation'],
@@ -280,7 +358,9 @@ class ReviewController extends Controller
                     'work_id' => $work->id,
                     'version_number' => $nextVersion,
                     'file_path' => $work->file_path,
-                    'change_log' => 'Reavaliação: arquivo refinado enviado pelo avaliador '.$refinedByName.' à coordenação (documento à parte da versão corrigida pelo autor; cada avaliador reconvocado pode ter o seu registro).',
+                    'change_log' => $directCoordinatorReview
+                        ? 'Reavaliação: arquivo refinado registrado pelo coordenador '.$refinedByName.' ao decidir o trabalho (documento à parte da versão corrigida pelo autor).'
+                        : 'Reavaliação: arquivo refinado enviado pelo avaliador '.$refinedByName.' à coordenação (documento à parte da versão corrigida pelo autor; cada avaliador reconvocado pode ter o seu registro).',
                     'uploaded_by_user_id' => $reviewerId,
                     'submitted_at' => now(),
                 ]);
@@ -295,7 +375,33 @@ class ReviewController extends Controller
                 $work->final_score = $scoreService->calculateFinalScore($work);
             }
             $work->save();
+
+            if ($directCoordinatorReview) {
+                $directDecisionStatus = $this->applyDirectCoordinatorDecision(
+                    $work,
+                    (int) $reviewerId,
+                    $data,
+                    $feedbackFilePath,
+                    $officialFileName,
+                    $isCorrectionReReview,
+                    $request->input('correction_deadline_at')
+                );
+            }
         });
+
+        if ($directDecisionStatus !== null) {
+            $work->refresh()->loadMissing('submitter');
+            if ($work->submitter && (int) $work->submitter->id !== (int) $reviewerId) {
+                $outcome = match ($directDecisionStatus) {
+                    Work::STATUS_APPROVED_FINAL => WorkDecisionRecorded::ACCEPTED,
+                    Work::STATUS_ACCEPTED_WITH_CORRECTIONS => WorkDecisionRecorded::CORRECTIONS,
+                    default => WorkDecisionRecorded::REJECTED,
+                };
+                EventMailer::notify($work->submitter, new WorkDecisionRecorded($work, $outcome));
+            }
+
+            return redirect()->route('reviews.assigned')->with('msg', 'Avaliação enviada e decisão registrada.');
+        }
 
         return redirect()->route('reviews.assigned')->with('msg', 'Avaliação enviada com sucesso!');
     }
@@ -433,6 +539,7 @@ class ReviewController extends Controller
         foreach ([
             (string) config('services.supabase.bucket_corrected_works'),
             (string) config('services.supabase.bucket_evaluator_to_coordinator'),
+            (string) config('services.supabase.bucket_coordinator_to_participant'),
         ] as $bucket) {
             if ($bucket === '') {
                 continue;
@@ -466,6 +573,52 @@ class ReviewController extends Controller
             ->with('msg', 'A remoção individual foi desativada. Use a distribuição geral na página de gerenciar trabalhos.');
     }
 
+    public function setCoordinatorAsReviewer(Request $request, $eventId)
+    {
+        $event = Event::findOrFail($eventId);
+
+        if ((int) auth()->id() !== (int) $event->user_id) {
+            abort(403, 'Somente o coordenador que criou o evento pode assumir a avaliação.');
+        }
+
+        if ($request->boolean('enabled')) {
+            $event->coordinator_is_reviewer = true;
+            $event->save();
+
+            return back()->with('msg', 'Opção marcada. Selecione os trabalhos e confirme a vinculação. Nenhum trabalho foi atribuído a você ainda.');
+        }
+
+        if ($this->coordinatorHasCompletedReview($event)) {
+            return back()->with('msg', 'Não é possível desfazer: você já enviou um parecer neste evento.');
+        }
+
+        DB::transaction(function () use ($event) {
+            $workIds = Work::query()->where('event_id', $event->id)->pluck('id');
+
+            WorkReviewer::query()
+                ->whereIn('work_id', $workIds)
+                ->where('reviewer_user_id', $event->user_id)
+                ->delete();
+
+            Review::query()
+                ->whereIn('work_id', $workIds)
+                ->where('reviewer_user_id', $event->user_id)
+                ->whereNull('submitted_at')
+                ->delete();
+
+            Work::query()
+                ->whereIn('id', $workIds)
+                ->where('status', Work::STATUS_UNDER_REVIEW)
+                ->whereDoesntHave('reviewerAssignments')
+                ->update(['status' => Work::STATUS_SUBMITTED]);
+
+            $event->coordinator_is_reviewer = false;
+            $event->save();
+        });
+
+        return back()->with('msg', 'A avaliação pelo coordenador foi desativada.');
+    }
+
     public function distributeReviewersForEvent(Request $request, $eventId)
     {
         $event = Event::findOrFail($eventId);
@@ -490,6 +643,10 @@ class ReviewController extends Controller
                 'msg',
                 'A distribuição de avaliadores só é permitida dentro do prazo de avaliação.'
             );
+        }
+
+        if ($event->coordinatorActsAsReviewer()) {
+            return $this->distributeCoordinatorAsReviewer($request, $event);
         }
 
         $minReviewers = $event->minReviewersPerWork();
@@ -673,6 +830,199 @@ class ReviewController extends Controller
             'msg',
             "Distribuição concluída para {$worksCount} {$label}. Cada trabalho ficou com {$reviewersPerWork} avaliadores."
         );
+    }
+
+    private function distributeCoordinatorAsReviewer(Request $request, Event $event)
+    {
+        $coordinatorId = (int) $event->user_id;
+        $eligibleStatuses = [
+            Work::STATUS_SUBMITTED,
+            Work::STATUS_UNDER_REVIEW,
+            Work::STATUS_CONFLICT,
+            Work::STATUS_ACCEPTED_WITH_CORRECTIONS,
+        ];
+
+        $data = $request->validate([
+            'work_ids' => ['required', 'array', 'min:1'],
+            'work_ids.*' => ['integer', Rule::exists('works', 'id')],
+        ], [
+            'work_ids.required' => 'Selecione pelo menos um trabalho para avaliar.',
+            'work_ids.min' => 'Selecione pelo menos um trabalho para avaliar.',
+        ]);
+
+        $requestedWorkIds = collect($data['work_ids'] ?? [])
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        $works = Work::query()
+            ->with(['reviewerAssignments'])
+            ->where('event_id', $event->id)
+            ->whereIn('id', $requestedWorkIds)
+            ->whereIn('status', $eligibleStatuses)
+            ->orderBy('id')
+            ->get();
+
+        if ($works->count() !== $requestedWorkIds->count()) {
+            return back()->withErrors([
+                'work_ids' => 'Alguns trabalhos selecionados não pertencem a este evento ou não estão elegíveis para avaliação.',
+            ])->withInput();
+        }
+
+        $ownWork = $works->first(fn (Work $work) => (int) $work->submitter_user_id === $coordinatorId);
+        if ($ownWork) {
+            return back()->withErrors([
+                'work_ids' => 'Você não pode avaliar um trabalho enviado por você: '.$ownWork->listTitle(true).'.',
+            ])->withInput();
+        }
+
+        DB::transaction(function () use ($works, $coordinatorId) {
+            $workIds = $works->pluck('id');
+
+            Review::query()
+                ->whereIn('work_id', $workIds)
+                ->where('reviewer_user_id', '!=', $coordinatorId)
+                ->whereNull('submitted_at')
+                ->delete();
+
+            WorkReviewer::query()
+                ->whereIn('work_id', $workIds)
+                ->where('reviewer_user_id', '!=', $coordinatorId)
+                ->delete();
+
+            foreach ($works as $work) {
+                $assignment = WorkReviewer::query()
+                    ->where('work_id', $work->id)
+                    ->where('reviewer_user_id', $coordinatorId)
+                    ->first();
+
+                if (! $assignment) {
+                    WorkReviewer::create([
+                        'work_id' => $work->id,
+                        'reviewer_user_id' => $coordinatorId,
+                        'assigned_by' => $coordinatorId,
+                        'assigned_at' => now(),
+                        'status' => WorkReviewer::STATUS_ASSIGNED,
+                    ]);
+                } elseif ($assignment->status !== WorkReviewer::STATUS_COMPLETED) {
+                    $assignment->assigned_by = $coordinatorId;
+                    $assignment->assigned_at = now();
+                    $assignment->status = WorkReviewer::STATUS_ASSIGNED;
+                    $assignment->save();
+                }
+
+                if ($work->status === Work::STATUS_SUBMITTED) {
+                    $work->status = Work::STATUS_UNDER_REVIEW;
+                    $work->save();
+                }
+            }
+        });
+
+        $worksCount = $works->count();
+        $label = $worksCount > 1 ? 'trabalhos' : 'trabalho';
+
+        return back()->with(
+            'msg',
+            "A avaliação de {$worksCount} {$label} ficou só com o coordenador do evento. Outros vínculos desses trabalhos foram removidos. Ao enviar o parecer, a decisão é registrada na hora."
+        );
+    }
+
+    private function coordinatorHasCompletedReview(Event $event): bool
+    {
+        return WorkReviewer::query()
+            ->where('reviewer_user_id', $event->user_id)
+            ->where('status', WorkReviewer::STATUS_COMPLETED)
+            ->whereHas('work', fn ($query) => $query->where('event_id', $event->id))
+            ->exists();
+    }
+
+    private function coordinatorReviewsThisWorkDirectly(Work $work, int $reviewerId): bool
+    {
+        return $work->event->coordinatorActsAsReviewer()
+            && (int) $work->event->user_id === $reviewerId;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function applyDirectCoordinatorDecision(
+        Work $work,
+        int $reviewerId,
+        array $data,
+        ?string $feedbackFilePath,
+        ?string $officialFileName,
+        bool $isCorrectionReReview,
+        ?string $correctionDeadlineAt,
+    ): string {
+        $recommendation = (string) $data['recommendation'];
+        $approvalAfterCorrection = $isCorrectionReReview;
+
+        $work->author_feedback = $data['comment_to_author'] ?? null;
+        $work->decision_at = now();
+        $work->decision_by = $reviewerId;
+        $work->final_score = round((float) $data['score'], 2);
+        $work->final_score_is_manual = true;
+
+        if ($recommendation === Review::RECOMMENDATION_ACCEPT) {
+            if ($officialFileName === null) {
+                throw new \RuntimeException('Versão oficial ausente.');
+            }
+
+            if (! empty($work->final_version_file_path)) {
+                $this->deleteOfficialWorkObject((string) $work->final_version_file_path);
+            }
+
+            $work->final_version_file_path = $officialFileName;
+            $nextOfficialVersion = ((int) WorkVersion::query()->where('work_id', $work->id)->max('version_number')) + 1;
+            WorkVersion::create([
+                'work_id' => $work->id,
+                'version_number' => $nextOfficialVersion,
+                'file_path' => $officialFileName,
+                'change_log' => $approvalAfterCorrection
+                    ? 'Versão oficial final registrada pelo coordenador na reavaliação, sem etapa separada de parecer.'
+                    : 'Versão oficial final registrada pelo coordenador ao aceitar o trabalho como avaliador.',
+                'uploaded_by_user_id' => $reviewerId,
+                'submitted_at' => now(),
+            ]);
+            $work->final_version_source = $approvalAfterCorrection
+                ? Work::FINAL_VERSION_SOURCE_CORRECTED
+                : Work::FINAL_VERSION_SOURCE_DIRECT;
+            $work->final_version_validated_at = now();
+            $work->final_version_validated_by = $reviewerId;
+            $work->status = Work::STATUS_FINAL_VALIDATED;
+            $work->correction_requested_at = null;
+            $work->correction_deadline_at = null;
+            $work->correction_submitted_at = null;
+            $work->correction_change_log = null;
+            $work->correction_status = null;
+            $work->save();
+
+            return Work::STATUS_APPROVED_FINAL;
+        }
+
+        if ($recommendation === Review::RECOMMENDATION_ACCEPT_WITH_CORRECTIONS) {
+            $work->status = Work::STATUS_ACCEPTED_WITH_CORRECTIONS;
+            if ($feedbackFilePath !== null) {
+                $work->coordinator_feedback_file_path = $feedbackFilePath;
+            }
+            $work->correction_requested_at = now();
+            $work->correction_deadline_at = $correctionDeadlineAt;
+            $work->correction_submitted_at = null;
+            $work->correction_status = 'pending';
+            $work->save();
+
+            return Work::STATUS_ACCEPTED_WITH_CORRECTIONS;
+        }
+
+        $work->status = Work::STATUS_REJECTED;
+        $work->correction_requested_at = null;
+        $work->correction_deadline_at = null;
+        $work->correction_submitted_at = null;
+        $work->correction_change_log = null;
+        $work->correction_status = null;
+        $work->save();
+
+        return Work::STATUS_REJECTED;
     }
 
     /**

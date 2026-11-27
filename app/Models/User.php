@@ -207,6 +207,23 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->role === self::ROLE_REVIEWER;
     }
 
+    /**
+     * Avaliadores entram na área de pareceres. O coordenador só entra depois
+     * que um trabalho foi vinculado a ele na distribuição.
+     */
+    public function canAccessReviewerArea(): bool
+    {
+        if ($this->isReviewer()) {
+            return true;
+        }
+
+        if (! $this->isCoordinator()) {
+            return false;
+        }
+
+        return WorkReviewer::query()->where('reviewer_user_id', $this->id)->exists();
+    }
+
     public function isGuest()
     {
         return $this->role === self::ROLE_GUEST;

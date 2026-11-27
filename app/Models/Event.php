@@ -52,6 +52,7 @@ class Event extends Model
         'certificate_guest_enabled' => 'boolean',
         'certificate_organization_enabled' => 'boolean',
         'certificate_coauthor_enabled' => 'boolean',
+        'coordinator_is_reviewer' => 'boolean',
         'edicao' => 'integer',
     ];
 
@@ -109,6 +110,15 @@ class Event extends Model
     public function user()
     {
         return $this->belongsTo('App\Models\User');
+    }
+
+    /**
+     * O criador marcou que ele mesmo avalia os trabalhos deste evento.
+     * A marcação não vincula trabalhos; a distribuição continua sendo um passo à parte.
+     */
+    public function coordinatorActsAsReviewer(): bool
+    {
+        return (bool) $this->coordinator_is_reviewer;
     }
 
     // Retorna as novidades do evento (mais recentes primeiro).

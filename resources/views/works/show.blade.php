@@ -734,6 +734,24 @@
                     </div>
                 </article>
 
+                @php
+                    $coordinatorOpenAssignment = $work->reviewerAssignments->first(
+                        fn ($row) => (int) $row->reviewer_user_id === (int) auth()->id()
+                            && $row->status !== \App\Models\WorkReviewer::STATUS_COMPLETED
+                    );
+                @endphp
+                @if($isCoordinator && $work->event->coordinatorActsAsReviewer() && $coordinatorOpenAssignment && $work->event->reviewersEvaluationWindowOpen() && $work->coordinatorCanRegisterNewDecision() && ! $work->isAwaitingAuthorCorrection())
+                    <div class="dash-card rounded-2xl p-5 sm:p-6">
+                        <h2 class="font-semibold text-slate-900 text-lg mb-2">Sua avaliação registra a decisão</h2>
+                        <p class="text-sm text-slate-600 mb-4 m-0">Você é o avaliador deste evento. Envie o parecer na tela de avaliação. Não há uma etapa separada para a coordenação.</p>
+                        <a href="{{ route('reviews.form', $work->id) }}"
+                           class="dash-btn inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold no-underline">
+                            <ion-icon name="create-outline"></ion-icon>
+                            Avaliar este trabalho
+                        </a>
+                    </div>
+                @endif
+
                 @if(!empty($showCoordinatorDecisionForm) && $showCoordinatorDecisionForm)
                 @php
                     $isDecisionPostCorrectionRound = $work->isAwaitingCorrectionReReview();

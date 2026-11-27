@@ -116,6 +116,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/events/{event}/works/reviewers/distribute', [ReviewController::class, 'distributeReviewersForEvent'])
         ->middleware('managesEvent')
         ->name('events.works.reviewers.distribute');
+    Route::post('/events/{event}/works/coordinator-reviewer', [ReviewController::class, 'setCoordinatorAsReviewer'])
+        ->middleware('managesEvent')
+        ->name('events.works.coordinator-reviewer');
 
     Route::get('/events/{event}/works/create', [WorkController::class, 'create'])
         ->name('events.works.create');

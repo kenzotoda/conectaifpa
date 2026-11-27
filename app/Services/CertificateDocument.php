@@ -15,6 +15,40 @@ use chillerlan\QRCode\QROptions;
 class CertificateDocument
 {
     /**
+     * O JPEG oficial fica em resources/certificates, fora de public/.
+     * Assim o papel em branco não tem URL, e o PDF só é montado no servidor.
+     */
+    public static function templateDataUri(): string
+    {
+        return 'data:image/jpeg;base64,'.base64_encode(self::templateBinary());
+    }
+
+    /**
+     * Muda quando o arquivo do modelo muda, para a próxima geração regravar o PDF.
+     */
+    public static function templateRevision(): string
+    {
+        return substr(hash('sha256', self::templateBinary()), 0, 16);
+    }
+
+    private static function templateBinary(): string
+    {
+        static $binary = null;
+        if ($binary !== null) {
+            return $binary;
+        }
+
+        $path = resource_path('certificates/template.jpg');
+        if (! is_readable($path)) {
+            throw new \RuntimeException('O modelo visual do certificado não está disponível.');
+        }
+
+        $binary = (string) file_get_contents($path);
+
+        return $binary;
+    }
+
+    /**
      * Dados que o PDF e a página pública repetem.
      *
      * @return array{

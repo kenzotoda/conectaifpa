@@ -23,9 +23,17 @@
         <div class="dash-card rounded-2xl p-5 sm:p-6 mb-6">
             <h2 class="dash-title font-semibold text-lg mb-2">Vinculação de avaliadores</h2>
             <p class="dash-text text-sm mb-4">
-                Depois do prazo de submissão e dentro do prazo de avaliação, selecione os trabalhos (por tipo), escolha os avaliadores e distribua.
-                Cada trabalho marcado deve ficar com no mínimo <span class="font-semibold">{{ $minReviewers }}</span> e no máximo
-                <span class="font-semibold">{{ $maxReviewers }}</span> avaliadores.
+                @if($coordinatorActsAsReviewer)
+                    @if((int) auth()->id() === (int) $event->user_id)
+                        Você marcou que vai avaliar os trabalhos. A distribuição abaixo vincula só você, e o parecer que enviar já registra a decisão.
+                    @else
+                        O coordenador deste evento marcou que vai avaliar os trabalhos. A distribuição abaixo vincula só ele.
+                    @endif
+                @else
+                    Depois do prazo de submissão e dentro do prazo de avaliação, selecione os trabalhos (por tipo), escolha os avaliadores e distribua.
+                    Cada trabalho marcado deve ficar com no mínimo <span class="font-semibold">{{ $minReviewers }}</span> e no máximo
+                    <span class="font-semibold">{{ $maxReviewers }}</span> avaliadores.
+                @endif
                 @if($event->review_deadline_at)
                     Prazo de avaliação: <span class="font-semibold">{{ $event->review_deadline_at->format('d/m/Y H:i') }}</span>.
                 @endif
@@ -55,9 +63,134 @@
                 </div>
             @endif
 
-            @if($availableReviewers->isEmpty())
+            @if((int) auth()->id() === (int) $event->user_id)
+                <form action="{{ route('events.works.coordinator-reviewer', $event->id) }}" method="POST" class="mb-4">
+                    @csrf
+                    <input type="hidden" name="enabled" value="0">
+                    <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer">
+                        <input type="checkbox" name="enabled" value="1"
+                               class="dash-check mt-0.5 w-4 h-4 rounded"
+                               @checked($coordinatorActsAsReviewer)
+                               @disabled($coordinatorReviewLocked)
+                               onchange="this.form.submit()">
+                        <span class="text-sm text-slate-700">
+                            <span class="font-medium text-slate-900">Eu mesmo vou avaliar os trabalhos</span>
+                            <span class="block text-slate-500 mt-1">Marque se não houver avaliadores ou se você quiser fazer a avaliação. A marcação não vincula nenhum trabalho: a distribuição abaixo é que faz isso.</span>
+                        </span>
+                    </label>
+                </form>
+            @endif
+
+            @if($coordinatorActsAsReviewer)
+                @if(auth()->user()->canAccessReviewerArea())
+                    <div class="mb-4">
+                        <a href="{{ route('reviews.assigned') }}"
+                           class="dash-btn-secondary inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold no-underline">
+                            <ion-icon name="clipboard-outline"></ion-icon>
+                            Abrir minhas avaliações
+                        </a>
+                    </div>
+                @endif
+                <form action="{{ route('events.works.reviewers.distribute', $event->id) }}" method="POST" class="space-y-4" id="distribute-coordinator-form">
+                    @csrf
+                    <fieldset class="space-y-4 min-w-0 border-0 p-0 m-0" @disabled(!$distributionAllowed)>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2">
+                                Trabalhos que você vai avaliar
+                            </label>
+                            @if($worksGroupedByType->isEmpty())
+                                <p class="text-sm text-slate-500 m-0">Não há trabalhos elegíveis para avaliação neste momento.</p>
+                            @else
+                                <div class="space-y-4 max-h-96 overflow-y-auto pr-1">
+                                    @foreach($worksGroupedByType as $typeKey => $typeWorks)
+                                        <div class="dash-panel rounded-xl p-3 work-type-group">
+                                            <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                                                <span class="text-sm font-semibold text-slate-900">{{ $workTypeLabels[$typeKey] ?? $typeKey }}</span>
+                                                <span class="flex flex-wrap gap-1">
+                                                    <button type="button" class="select-all-in-type dash-badge-positive text-xs font-semibold px-2 py-1 rounded-lg transition-colors">
+                                                        Marcar todos deste tipo
+                                                    </button>
+                                                    <button type="button" class="deselect-all-in-type dash-badge text-xs font-semibold px-2 py-1 rounded-lg transition-colors">
+                                                        Desmarcar todos deste tipo
+                                                    </button>
+                                                </span>
+                                            </div>
+                                            <div class="space-y-2">
+                                                @foreach($typeWorks as $w)
+                                                    <label class="flex items-start gap-3 p-2 rounded-lg hover:bg-white cursor-pointer border border-transparent hover:border-slate-200 work-select-row">
+                                                        <input
+                                                            type="checkbox"
+                                                            name="work_ids[]"
+                                                            value="{{ $w->id }}"
+                                                            @checked(in_array($w->id, $oldWorkIds, true))
+                                                            class="dash-check coordinator-work-checkbox mt-0.5 w-4 h-4 rounded"
+                                                        >
+                                                        <span class="text-sm text-slate-700 min-w-0">
+                                                            <span class="font-medium break-words">{{ $w->listTitleCompact(true) }}</span>
+                                                            <span class="text-slate-500">, {{ $w->submitter->name ?? 'não informado' }}</span>
+                                                        </span>
+                                                    </label>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                            @error('work_ids')
+                                <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <button id="distribute-coordinator-button" type="submit"
+                                class="dash-btn inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                                @disabled(!$distributionAllowed || $worksGroupedByType->isEmpty())>
+                            <ion-icon name="person-outline"></ion-icon>
+                            {{ (int) auth()->id() === (int) $event->user_id ? 'Vincular minha avaliação' : 'Vincular a avaliação do coordenador' }}
+                        </button>
+                    </fieldset>
+                </form>
+                @if($coordinatorReviewLocked)
+                    <p class="text-sm text-slate-500 mt-4 m-0">A opção permanece marcada porque você já enviou um parecer neste evento.</p>
+                @endif
+                <script>
+                    (function () {
+                        const form = document.getElementById('distribute-coordinator-form');
+                        const button = document.getElementById('distribute-coordinator-button');
+                        if (!form || !button || button.disabled) {
+                            return;
+                        }
+                        const boxes = () => form.querySelectorAll('.coordinator-work-checkbox');
+                        const refresh = () => {
+                            const any = [...boxes()].some((box) => box.checked);
+                            button.disabled = !any;
+                            button.classList.toggle('opacity-60', !any);
+                            button.classList.toggle('cursor-not-allowed', !any);
+                        };
+                        form.querySelectorAll('.select-all-in-type').forEach((btn) => {
+                            btn.addEventListener('click', () => {
+                                btn.closest('.work-type-group')?.querySelectorAll('.coordinator-work-checkbox').forEach((box) => {
+                                    box.checked = true;
+                                });
+                                refresh();
+                            });
+                        });
+                        form.querySelectorAll('.deselect-all-in-type').forEach((btn) => {
+                            btn.addEventListener('click', () => {
+                                btn.closest('.work-type-group')?.querySelectorAll('.coordinator-work-checkbox').forEach((box) => {
+                                    box.checked = false;
+                                });
+                                refresh();
+                            });
+                        });
+                        boxes().forEach((box) => box.addEventListener('change', refresh));
+                        refresh();
+                    })();
+                </script>
+            @elseif($availableReviewers->isEmpty())
                 <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm">
-                    Não há avaliadores cadastrados no sistema para fazer a distribuição.
+                    <p class="m-0">Não há avaliadores cadastrados no sistema para fazer a distribuição.</p>
+                    @if((int) auth()->id() !== (int) $event->user_id)
+                        <p class="m-0 mt-2">Somente quem criou o evento pode marcar a opção de avaliar os trabalhos.</p>
+                    @endif
                 </div>
             @else
                 @php

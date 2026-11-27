@@ -90,6 +90,12 @@ class WorkController extends Controller
 
         $minReviewers = $event->minReviewersPerWork();
         $maxReviewers = $event->maxReviewersPerWork();
+        $coordinatorActsAsReviewer = $event->coordinatorActsAsReviewer();
+        $coordinatorReviewLocked = $coordinatorActsAsReviewer && WorkReviewer::query()
+            ->where('reviewer_user_id', $event->user_id)
+            ->where('status', WorkReviewer::STATUS_COMPLETED)
+            ->whereHas('work', fn ($query) => $query->where('event_id', $event->id))
+            ->exists();
 
         return view('works.index', compact(
             'event',
@@ -99,7 +105,9 @@ class WorkController extends Controller
             'maxReviewers',
             'distributionAllowed',
             'worksGroupedByType',
-            'oldWorkIds'
+            'oldWorkIds',
+            'coordinatorActsAsReviewer',
+            'coordinatorReviewLocked'
         ));
     }
 
@@ -756,6 +764,10 @@ class WorkController extends Controller
     private function shouldShowCoordinatorDecisionForm(Work $work, bool $allReviewersCompleted): bool
     {
         if (! $work->coordinatorCanRegisterNewDecision()) {
+            return false;
+        }
+
+        if ($work->event->coordinatorActsAsReviewer()) {
             return false;
         }
 

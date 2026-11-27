@@ -53,15 +53,40 @@
                             Minha conta
                         </a>
                         @if(auth()->user()->isCoordinator())
-                            <a href="/dashboard"
-                               class="site-nav-link px-4 py-2 text-sm font-medium transition-colors">
-                                Painel
-                            </a>
-                            @if(auth()->user()->hasIssuedCertificates())
-                                <a href="{{ route('certificates.my') }}"
+                            @if(auth()->user()->canAccessReviewerArea())
+                                <details class="relative">
+                                    <summary class="site-nav-link list-none px-4 py-2 text-sm font-medium transition-colors cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap">
+                                        Área do coordenador
+                                        <ion-icon name="chevron-down-outline" class="text-base"></ion-icon>
+                                    </summary>
+                                    <div class="site-menu absolute right-0 mt-2 w-56 rounded-xl p-1 z-50">
+                                        <a href="/dashboard"
+                                           class="site-nav-link block px-3 py-2 text-sm transition-colors">
+                                            Painel
+                                        </a>
+                                        <a href="{{ route('reviews.assigned') }}"
+                                           class="site-nav-link block px-3 py-2 text-sm transition-colors">
+                                            Avaliações
+                                        </a>
+                                        @if(auth()->user()->hasIssuedCertificates())
+                                            <a href="{{ route('certificates.my') }}"
+                                               class="site-nav-link block px-3 py-2 text-sm transition-colors">
+                                                Meus certificados
+                                            </a>
+                                        @endif
+                                    </div>
+                                </details>
+                            @else
+                                <a href="/dashboard"
                                    class="site-nav-link px-4 py-2 text-sm font-medium transition-colors">
-                                    Meus certificados
+                                    Painel
                                 </a>
+                                @if(auth()->user()->hasIssuedCertificates())
+                                    <a href="{{ route('certificates.my') }}"
+                                       class="site-nav-link px-4 py-2 text-sm font-medium transition-colors">
+                                        Meus certificados
+                                    </a>
+                                @endif
                             @endif
                         @endif
                         @if(auth()->user()->isParticipant())
@@ -193,6 +218,13 @@
                                 <ion-icon name="grid-outline" class="site-nav-icon text-xl"></ion-icon>
                                 Painel
                             </a>
+                            @if(auth()->user()->canAccessReviewerArea())
+                                <a href="{{ route('reviews.assigned') }}"
+                                   class="site-nav-link flex items-center gap-3 px-4 py-3 font-medium transition-colors">
+                                    <ion-icon name="clipboard-outline" class="site-nav-icon text-xl"></ion-icon>
+                                    Avaliações
+                                </a>
+                            @endif
                             @if(auth()->user()->hasIssuedCertificates())
                                 <a href="{{ route('certificates.my') }}"
                                    class="site-nav-link flex items-center gap-3 px-4 py-3 font-medium transition-colors">

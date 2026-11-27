@@ -191,6 +191,150 @@ class ReviewWindowTest extends TestCase
         Notification::assertSentTo($reviewer, ReviewerAssigned::class);
     }
 
+    public function test_coordinator_can_review_directly_when_there_are_no_reviewers(): void
+    {
+        $coordinator = User::factory()->create();
+        $author = User::factory()->create(['role' => User::ROLE_PARTICIPANT]);
+        $event = $this->makeEvent([
+            'user_id' => $coordinator->id,
+            'accepts_submissions' => true,
+            'submission_deadline_at' => now()->subDay(),
+            'review_deadline_at' => now()->addDays(4),
+            'reviewers_min_per_work' => 2,
+            'reviewers_max_per_work' => 2,
+        ]);
+        $work = $this->makeWork($event, $author);
+
+        $this->actingAs($coordinator)
+            ->get(route('events.works.index', $event))
+            ->assertOk()
+            ->assertSee('Eu mesmo vou avaliar os trabalhos')
+            ->assertSee('Não há avaliadores cadastrados')
+            ->assertDontSee('Vincular minha avaliação');
+
+        $this->actingAs($coordinator)
+            ->post(route('events.works.coordinator-reviewer', $event), ['enabled' => 1])
+            ->assertRedirect();
+
+        $this->assertTrue($event->fresh()->coordinatorActsAsReviewer());
+        $this->assertDatabaseMissing('work_reviewers', [
+            'work_id' => $work->id,
+            'reviewer_user_id' => $coordinator->id,
+        ]);
+
+        $this->actingAs($coordinator)
+            ->post(route('events.works.reviewers.distribute', $event), [
+                'work_ids' => [$work->id],
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('work_reviewers', [
+            'work_id' => $work->id,
+            'reviewer_user_id' => $coordinator->id,
+        ]);
+        Notification::assertNothingSent();
+
+        $this->actingAs($coordinator)
+            ->get(route('reviews.assigned'))
+            ->assertOk()
+            ->assertSee($event->title);
+
+        $this->actingAs($coordinator)
+            ->get(route('reviews.form', $work))
+            ->assertOk()
+            ->assertSee('já registra a decisão final');
+
+        $this->actingAs($coordinator)
+            ->post(route('reviews.submit', $work), [
+                'recommendation' => 'reject',
+                'score' => '4',
+                'comment_to_author' => 'O trabalho não atende ao edital.',
+            ])
+            ->assertRedirect(route('reviews.assigned'));
+
+        $work->refresh();
+        $this->assertSame(Work::STATUS_REJECTED, $work->status);
+        $this->assertSame($coordinator->id, (int) $work->decision_by);
+        $this->assertSame('4.00', number_format((float) $work->final_score, 2, '.', ''));
+
+        $this->actingAs($coordinator)
+            ->get(route('works.show', $work))
+            ->assertOk()
+            ->assertDontSee('Decisão final da coordenação');
+    }
+
+    public function test_marking_self_review_does_not_assign_works_even_when_reviewers_exist(): void
+    {
+        $coordinator = User::factory()->create();
+        User::factory()->create(['role' => User::ROLE_REVIEWER]);
+        $author = User::factory()->create(['role' => User::ROLE_PARTICIPANT]);
+        $event = $this->makeEvent([
+            'user_id' => $coordinator->id,
+            'accepts_submissions' => true,
+            'submission_deadline_at' => now()->subDay(),
+            'review_deadline_at' => now()->addDays(4),
+        ]);
+        $work = $this->makeWork($event, $author);
+
+        $this->assertFalse($event->coordinatorActsAsReviewer());
+
+        $this->actingAs($coordinator)
+            ->get(route('events.works.index', $event))
+            ->assertOk()
+            ->assertSee('Vinculação de avaliadores')
+            ->assertSee('Eu mesmo vou avaliar os trabalhos')
+            ->assertSee('Distribuir avaliadores')
+            ->assertDontSee('Vincular minha avaliação');
+
+        $this->actingAs($coordinator)
+            ->post(route('events.works.coordinator-reviewer', $event), ['enabled' => 1])
+            ->assertRedirect();
+
+        $this->assertTrue($event->fresh()->coordinatorActsAsReviewer());
+        $this->assertDatabaseMissing('work_reviewers', [
+            'work_id' => $work->id,
+        ]);
+    }
+
+    public function test_linking_the_coordinator_replaces_other_reviewers(): void
+    {
+        $coordinator = User::factory()->create();
+        $reviewer = User::factory()->create(['role' => User::ROLE_REVIEWER]);
+        $author = User::factory()->create(['role' => User::ROLE_PARTICIPANT]);
+        $event = $this->makeEvent([
+            'user_id' => $coordinator->id,
+            'accepts_submissions' => true,
+            'submission_deadline_at' => now()->subDay(),
+            'review_deadline_at' => now()->addDays(4),
+            'coordinator_is_reviewer' => true,
+        ]);
+        $work = $this->makeWork($event, $author);
+        WorkReviewer::create([
+            'work_id' => $work->id,
+            'reviewer_user_id' => $reviewer->id,
+            'assigned_by' => $coordinator->id,
+            'assigned_at' => now(),
+            'status' => WorkReviewer::STATUS_ASSIGNED,
+        ]);
+
+        $this->actingAs($coordinator)
+            ->post(route('events.works.reviewers.distribute', $event), [
+                'work_ids' => [$work->id],
+            ])
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseMissing('work_reviewers', [
+            'work_id' => $work->id,
+            'reviewer_user_id' => $reviewer->id,
+        ]);
+        $this->assertDatabaseHas('work_reviewers', [
+            'work_id' => $work->id,
+            'reviewer_user_id' => $coordinator->id,
+        ]);
+    }
+
     private function makeEvent(array $overrides = []): Event
     {
         $coordinatorId = $overrides['user_id'] ?? User::factory()->create()->id;

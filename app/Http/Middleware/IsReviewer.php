@@ -11,7 +11,7 @@ class IsReviewer
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (! Auth::check() || ! Auth::user()->isReviewer()) {
+        if (! Auth::check() || ! Auth::user()->canAccessReviewerArea()) {
             abort(403, 'Acesso negado. Somente avaliadores podem acessar esta página.');
         }
 

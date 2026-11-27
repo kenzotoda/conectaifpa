@@ -71,7 +71,11 @@ class CertificateDocumentTest extends TestCase
         $this->assertStringContainsString('Presencial', $html);
         $this->assertStringContainsString('123456789012', $html);
         $this->assertStringContainsString('Presença no evento registrada', $html);
+        $this->assertStringContainsString('PARTICIPAÇÃO', $html);
         $this->assertStringContainsString('data:image/png;base64', $html);
+        $this->assertStringContainsString('data:image/jpeg;base64', $html);
+        $this->assertFileExists(resource_path('certificates/template.jpg'));
+        $this->assertFileDoesNotExist(public_path('certificates/template.jpg'));
 
         $this->get(route('certificates.verify', ['codigo' => $studentCertificate->codigo_validacao]))
             ->assertOk()
@@ -88,6 +92,48 @@ class CertificateDocumentTest extends TestCase
             ->assertOk()
             ->assertSee('Bruno Externo')
             ->assertDontSee('Matrícula:');
+    }
+
+    public function test_all_certificate_views_print_on_the_same_template(): void
+    {
+        $shared = [
+            'period' => '05/05/2026',
+            'activityPeriod' => '06/05/2026, 10:00 às 12:00',
+            'place' => 'Belém/PA',
+            'modality' => 'Presencial',
+            'matricula' => '123456789012',
+            'presence' => 'Presença no evento registrada',
+            'validationUrl' => 'https://example.test/certificado/ABC',
+            'qrDataUri' => '',
+            'validationCode' => 'ABC123',
+            'issuedDate' => '26/11/2026',
+            'institution' => 'IFPA Campus Belém',
+            'signatures' => [
+                ['nome' => 'Maria Souza', 'cargo' => 'Coordenadora', 'src' => null],
+            ],
+            'hours' => '8',
+            'recipientName' => 'Ana Discente',
+            'eventTitle' => 'Semana de Tecnologia',
+            'organizer' => 'Coordenação',
+            'activityTitle' => 'Oficina de PHP',
+            'activityTypeLabel' => 'oficina',
+            'workTitle' => 'Um título de trabalho',
+            'publicationKind' => 'anais',
+            'title' => 'Certificado de convidado',
+            'bodyHtml' => 'Certificamos que <strong>Ana Discente</strong> participou como convidada.',
+        ];
+
+        foreach ([
+            'certificates.pdf.participacao',
+            'certificates.pdf.atividade',
+            'certificates.pdf.apresentacao',
+            'certificates.pdf.publicacao',
+            'certificates.pdf.opcional',
+        ] as $view) {
+            $html = view($view, $shared)->render();
+            $this->assertStringContainsString('data:image/jpeg;base64', $html, $view);
+            $this->assertStringContainsString('Maria Souza', $html, $view);
+        }
     }
 
     public function test_activity_sheet_includes_the_activity_period_and_room(): void

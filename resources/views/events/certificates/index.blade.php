@@ -16,7 +16,7 @@
             </p>
             <h1 class="dash-title text-2xl sm:text-[1.65rem] font-bold tracking-tight m-0">Certificados e presença</h1>
             <p class="dash-text mt-3 m-0 max-w-2xl text-sm leading-relaxed">
-                Há três marcações separadas: <strong>participação geral</strong>, <strong>apresentações</strong> (eventos com submissão) e <strong>atividades</strong>. Cada uma tem modelo de PDF próprio e usa as <strong>mesmas assinaturas</strong> configuradas aqui para o evento.
+                Há três marcações separadas: <strong>participação geral</strong>, <strong>apresentações</strong> (eventos com submissão) e <strong>atividades</strong>. Todos os PDFs usam o mesmo modelo visual. O texto muda conforme o tipo, e as <strong>assinaturas</strong> são as configuradas aqui para o evento.
             </p>
             <p class="dash-muted text-xs m-0 mt-4 max-w-2xl leading-relaxed">Ao usar qualquer botão <strong>Salvar</strong> abaixo, a página recarrega e mostra <strong>no topo</strong> se as alterações foram gravadas (mensagem em verde).</p>
         </div>
